@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 階級淘汰樹</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--rec-w:min(460px,94vw);--rec-wm-op:.22;--rec-wm-spin:48s;--rec-mask:rgba(2,4,9,.82);
+    --void:#03060d; --field:#22d3ee; --field2:#1de9b6; --accent:#c77dff;
+    --deep:#a855f7; --core:#eafcff; --ink:#dbeafe; --dim:#5b7089;
+    --teal:#1de9b6; --magenta:#ff3cac; --line:rgba(29,233,182,.16);
+    --plat:#4d9fff; --gold:#ffcf33; --silver:#ff4d6a; --bronze:#34e07a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--void);color:var(--ink);font-family:'Share Tech Mono',monospace;
+    min-height:100vh;overflow-x:hidden;
+    background-image:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(34,211,238,.10),transparent 60%);}
+  #bg3d{position:fixed;inset:0;z-index:0;display:block}
+  .hz{position:fixed;z-index:2;width:120px;height:9px;pointer-events:none;opacity:.4;
+    background:repeating-linear-gradient(45deg,var(--teal) 0 8px,#03060d 8px 20px)}
+  .hz.tl{top:0;left:0}.hz.tr{top:0;right:0}.hz.bl{bottom:0;left:0}.hz.br{bottom:0;right:0}
+
+  .shell{position:relative;z-index:5;max-width:1180px;margin:0 auto;padding:24px 18px 64px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;margin-bottom:20px}
+  .ttl .eye{font-size:9.5px;letter-spacing:.3em;color:var(--field);display:flex;align-items:center;gap:8px}
+  .ttl .eye .pip{width:7px;height:7px;background:var(--field);box-shadow:0 0 10px var(--field);
+    clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);animation:pip 1.3s infinite}
+  @keyframes pip{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+  .ttl h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1);line-height:.92;
+    color:var(--core);letter-spacing:.02em;margin-top:7px;text-shadow:0 0 26px rgba(34,211,238,.5),0 0 54px rgba(168,85,247,.22)}
+  .ttl h1 .f{background:linear-gradient(120deg,var(--field),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .ttl .zh{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(12px,2.4vw,16px);letter-spacing:.22em;color:var(--accent);margin-top:6px}
+  .stat{text-align:right;font-size:9.5px;letter-spacing:.12em;line-height:1.85;color:var(--dim)}
+  .stat b{color:var(--field);font-family:'Orbitron',sans-serif}
+
+  .lanes-h{font-size:9px;letter-spacing:.18em;color:var(--dim);margin-bottom:9px}
+  .lane{display:flex;align-items:center;gap:9px;padding:10px 11px;margin-bottom:7px;cursor:pointer;
+    border:1px solid var(--line);background:rgba(10,16,28,.55);transition:.25s;position:relative;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .lane::-webkit-scrollbar{height:0}
+  .lane:hover{border-color:rgba(34,211,238,.5)}
+  .lane.on{border-color:var(--tc);box-shadow:0 0 22px var(--tg)}
+  .lane .badge{font-family:'Orbitron',sans-serif;font-weight:900;font-size:12.5px;letter-spacing:.04em;
+    min-width:50px;text-align:center;padding:6px 4px;border-radius:3px;flex-shrink:0}
+  .lane .stages{display:flex;align-items:center;gap:5px;flex:1;min-width:540px}
+  .lane .stg{font-size:9.5px;letter-spacing:.03em;color:var(--ink);padding:5px 8px;border:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.02);white-space:nowrap;flex-shrink:0}
+  .lane .stg.cyc{border-color:rgba(199,125,255,.35);color:var(--accent)}
+  .lane .stg.fin{border-color:var(--tc);color:var(--tc2);font-family:'Orbitron',sans-serif;font-weight:700}
+  .lane .stg.done{border-color:var(--tc);color:var(--tc2);background:color-mix(in srgb,var(--tc) 14%,transparent);box-shadow:0 0 12px var(--tg)}
+  .lane .stg.live{border-color:var(--tc);color:var(--core);animation:stgLive 1.6s ease-in-out infinite}
+  .lane .stg.off{border-color:rgba(255,255,255,.06)!important;color:#39485c!important;background:transparent!important;box-shadow:none!important;opacity:.62}
+  @keyframes stgLive{0%,100%{box-shadow:0 0 4px var(--tg);opacity:.75}50%{box-shadow:0 0 16px var(--tg);opacity:1}}
+  .lane .crown{transition:.3s}
+  .lane .crown.done{filter:drop-shadow(0 0 8px var(--tc));transform:scale(1.15)}
+  .lane .crown.dimc{opacity:.3;filter:grayscale(1)}
+  .lane .arw{color:var(--dim);font-size:10px;flex-shrink:0}
+  .lane .crown{flex-shrink:0;font-size:13px;color:var(--tc2);text-shadow:0 0 10px var(--tg)}
+  .lane .open{position:absolute;right:8px;top:5px;font-size:7.5px;letter-spacing:.12em;color:var(--dim)}
+  .badge-p{background:rgba(77,159,255,.16);color:#6db4ff;border:1px solid rgba(77,159,255,.5)}
+  .badge-g{background:rgba(255,207,51,.16);color:#ffd84d;border:1px solid rgba(255,207,51,.5)}
+  .badge-s{background:rgba(255,77,106,.15);color:#ff6b82;border:1px solid rgba(255,77,106,.5)}
+  .badge-b{background:rgba(52,224,122,.15);color:#5ce89a;border:1px solid rgba(52,224,122,.5)}
+
+  #detail{margin-top:22px;border-top:1px solid var(--line);padding-top:20px;min-height:200px}
+  .dh{display:flex;align-items:center;gap:11px;margin-bottom:6px;flex-wrap:wrap}
+  .dh .dbadge{font-family:'Orbitron',sans-serif;font-weight:900;font-size:17px;padding:5px 13px;border-radius:3px}
+  .dh .dt{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;color:var(--core)}
+  .dh .dn{font-size:9.5px;color:var(--dim);letter-spacing:.08em;margin-left:auto}
+  .dsub{font-size:9.5px;letter-spacing:.08em;color:var(--dim);margin-bottom:16px;line-height:1.7}
+  .dsub .hl{color:var(--accent)}
+  .taphint{font-size:9px;color:var(--field);letter-spacing:.1em;margin-bottom:14px;opacity:.8}
+
+  .flow{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;padding-bottom:12px}
+  .flow::-webkit-scrollbar{height:6px}.flow::-webkit-scrollbar-thumb{background:rgba(34,211,238,.3);border-radius:3px}
+  .phase-row{display:flex;align-items:stretch;gap:18px;min-width:760px}
+  .phase{display:flex;flex-direction:column;scroll-snap-align:start}
+  .phase .pt{font-size:8.5px;letter-spacing:.12em;color:var(--field);margin-bottom:9px;text-align:center;
+    border-bottom:1px solid var(--line);padding-bottom:5px}
+  .phase .pt .pn{color:var(--dim);font-size:7.5px;display:block;margin-top:2px}
+  .phase-body{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:8px}
+
+  .pent-wrap{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:18px 54px}
+  @media(max-width:680px){.pent-wrap{grid-template-columns:repeat(2,auto);gap:16px 44px}}
+  .pcell{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .ptop2{display:flex;flex-direction:column;gap:3px;align-items:center}
+  .ptop2 .pt{font-size:9.5px;color:var(--field2);letter-spacing:.04em;white-space:nowrap}
+  .ptop2 .pt b{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--core)}
+  .ptop2 .pth{font-size:7.5px;letter-spacing:.14em;color:var(--dim)}
+  .pent{position:relative;width:118px;height:118px;transition:.22s}
+  .pent:hover{filter:drop-shadow(0 0 12px rgba(199,125,255,.55));transform:translateY(-2px)}
+  .pent svg{width:100%;height:100%;overflow:visible}
+  .pent .lbl{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+  .pent .lbl .g{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--core)}
+  .pent .lbl .q{font-size:7px;letter-spacing:.08em;color:var(--field2);margin-top:1px}
+
+  .seed{display:flex;align-items:center;gap:7px;padding:9px 13px;border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.02);font-size:12.5px;white-space:nowrap;transition:.2s;cursor:pointer;position:relative;border-radius:3px}
+  .seed:hover{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.05)}
+  .seed.win{border-color:var(--tc);color:var(--core);box-shadow:0 0 10px var(--tg);background:rgba(34,211,238,.06)}
+  .seed.win .s{color:var(--tc2)}
+  .seed .s{margin-left:auto;font-family:'Orbitron',sans-serif;font-weight:700;color:var(--dim);font-size:11.5px}
+  .seed.bye{opacity:.4;cursor:default}
+  /* 晉級光子流動：勝者節點右緣一條流光線 */
+  .seed.win::after{content:"";position:absolute;right:-19px;top:50%;width:19px;height:2px;transform:translateY(-50%);
+    background:linear-gradient(90deg,var(--field),transparent);
+    background-size:200% 100%;animation:photon 1.4s linear infinite}
+  @keyframes photon{0%{background-position:120% 0;opacity:.3}50%{opacity:1}100%{background-position:-40% 0;opacity:.3}}
+  .pair{display:flex;flex-direction:column;gap:3px}
+  .matchcol{display:flex;flex-direction:column;justify-content:space-around;gap:13px;height:100%}
+
+  /* 複賽一輪 30 隊網格 */
+  .r1block{margin-bottom:24px}
+  .r1head{font-size:9px;letter-spacing:.12em;color:var(--field);border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:13px}
+  .r1head .pn{color:var(--dim);margin-left:8px}
+  /* 決勝 bracket / 五角複賽區塊 */
+  .rrblock,.brblock{margin-bottom:24px}
+  .rrhead{font-size:9px;letter-spacing:.12em;color:var(--tc);border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:14px}
+  .rrhead .pn{color:var(--dim);margin-left:8px}
+  .brwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+  .brwrap .brsvg{width:100%;min-width:680px;height:auto;display:block;overflow:visible}
+  .bnode{cursor:pointer}
+  .bnode:hover rect{filter:brightness(1.25)}
+  /* 進度拉桿 */
+  .progbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .progbar .pglab{font-size:9px;letter-spacing:.12em;color:var(--dim)}
+  .progbar .pgrange{flex:1;min-width:160px;max-width:340px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:linear-gradient(90deg,var(--tc),rgba(255,255,255,.1));outline:none;cursor:pointer}
+  .progbar .pgrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--tc);box-shadow:0 0 10px var(--tg);cursor:pointer}
+  .progbar .pgrange::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--tc);border:none;box-shadow:0 0 10px var(--tg);cursor:pointer}
+  .progbar .pgstate{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;color:var(--tc);min-width:72px}
+  .r1grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px}
+  /* 複賽一輪橫向捲動展示 */
+  .r1scroll{display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity;padding:2px 0 12px}
+  .r1scroll::-webkit-scrollbar{height:6px}
+  .r1scroll::-webkit-scrollbar-thumb{background:rgba(34,211,238,.35);border-radius:3px}
+  .r1scroll::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+  .r1scroll .r1card{flex:0 0 194px;scroll-snap-align:start}
+  .r1hint{font-size:8px;letter-spacing:.14em;color:var(--dim);margin-left:10px}
+  .r1card{border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.015);padding:8px 9px;border-radius:3px}
+  .r1card .gno{font-size:7.5px;letter-spacing:.1em;color:var(--dim);margin-bottom:6px}
+  .r1card .seed{margin-bottom:4px}
+  .r1card .seed:last-child{margin-bottom:0}
+  .r1card .seed.win::after{display:none}
+
+  /* 複賽二輪 */
+  .r2block{margin-bottom:24px}
+  .r2cols{display:grid;grid-template-columns:1fr;gap:18px}
+  .r2sub{font-size:8.5px;letter-spacing:.1em;color:var(--field2);margin-bottom:10px}
+  .r2grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:11px}
+  .tri.big{padding:13px;max-width:280px}
+  .tri.big .seed{margin-bottom:5px}
+  .trimatches{margin-top:10px;border-top:1px dashed rgba(199,125,255,.3);padding-top:9px;display:flex;flex-direction:column;gap:6px}
+  .trim{font-size:9.5px;color:var(--dim);letter-spacing:.03em;display:flex;justify-content:space-between;gap:8px}
+  .trim b{color:var(--accent);font-family:'Orbitron',sans-serif;font-weight:700;flex-shrink:0}
+  @media(min-width:820px){.r2cols{grid-template-columns:1fr 300px}}
+
+  .tri{border:1px dashed rgba(199,125,255,.5);background:rgba(168,85,247,.05);padding:8px;border-radius:4px}
+  .tri .tl{font-size:7.5px;letter-spacing:.1em;color:var(--accent);margin-bottom:5px;text-align:center}
+
+  .champ{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-width:118px}
+  .champ .oct{width:62px;height:62px}
+  .champ .cn{font-size:10px;color:var(--tc2);font-family:'Orbitron',sans-serif;font-weight:700;text-align:center;cursor:pointer}
+  .champ .ttl2{font-size:7.5px;letter-spacing:.14em;color:var(--dim)}
+  .third{margin-top:11px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.02);padding:6px 9px;font-size:8.5px;color:var(--dim)}
+  .third b{color:var(--bronze)}
+
+  .legend{margin-top:20px;display:flex;gap:14px;flex-wrap:wrap;font-size:8.5px;letter-spacing:.06em;color:var(--dim)}
+  .legend .lg{display:flex;align-items:center;gap:6px}
+  .legend .sw{width:18px;height:0;border-top:2px solid}
+  footer{margin-top:26px;text-align:center;font-size:9px;letter-spacing:.14em;color:var(--dim);line-height:2}
+  footer .demo{color:var(--accent)}
+
+  /* 戰績卡：桌機置中 modal / 手機底部 sheet */
+  #rec{position:fixed;inset:0;z-index:20;display:none;background:var(--rec-mask);backdrop-filter:blur(4px)}
+  #rec.show{display:flex;align-items:center;justify-content:center;animation:sc2FadeIn .2s ease-out}
+  #rec.show .reccard{animation:sc2CardIn .26s ease-out}
+  .reccard{width:var(--rec-w);max-height:86vh;overflow:auto;background:var(--void);--rc:#22d3ee;
+    border:1px solid color-mix(in srgb,var(--rc) 45%,transparent);box-shadow:0 0 50px color-mix(in srgb,var(--rc) 28%,transparent);position:relative}
+  .reccard .rx{position:absolute;top:11px;right:14px;font-size:13px;color:var(--dim);cursor:pointer;z-index:5}
+  /* 背景隊徽水印 */
+  .recbg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
+  .recbg .recbgsvg{width:120%;height:120%;overflow:visible;opacity:var(--rec-wm-op);
+    filter:drop-shadow(0 0 16px color-mix(in srgb,var(--rc) 65%,transparent));animation:recspin var(--rec-wm-spin) linear infinite}
+  @keyframes recspin{to{transform:rotate(360deg)}}
+  .reccard::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 88% 66% at 50% 40%,rgba(3,6,13,.66),rgba(3,6,13,.46) 60%,rgba(3,6,13,.78))}
+  .recfg{position:relative;z-index:2}
+  /* 濃度拉桿 */
+  .recctrl{display:flex;align-items:center;gap:10px;padding:12px 20px 18px;font-size:8.5px;letter-spacing:.1em;color:var(--dim);border-top:1px solid var(--line)}
+  .recctrl input[type=range]{flex:1;accent-color:var(--rc);height:3px}
+  .recctrl .recval{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--rc);min-width:34px;text-align:right}
+  /* 組進程卡 */
+  .gsec{padding:15px 20px 6px}
+  .gstand{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  .gstand .grk{font-family:'Orbitron',sans-serif;font-weight:900;font-size:13px;color:var(--dim);min-width:18px;text-align:center}
+  .gstand .gchip{width:20px;height:20px;flex-shrink:0;display:inline-flex}
+  .gstand .gchip svg{width:100%;height:100%;overflow:visible}
+  .gstand .gnm{flex:1;color:var(--ink)}
+  .gstand .gwl{font-size:10px;color:var(--dim);letter-spacing:.04em}
+  .gstand .gwl i{font-style:normal;font-size:8px;opacity:.7}
+  .gstand .gadv{font-size:8.5px;font-weight:700;min-width:34px;text-align:center;padding:2px 0;border-radius:2px;color:var(--dim)}
+  .gstand.adv{background:linear-gradient(90deg,color-mix(in srgb,var(--rc) 10%,transparent),transparent)}
+  .gstand.adv .grk{color:var(--rc)}
+  .gstand.adv .gnm{color:var(--core);font-weight:700}
+  .gstand.adv .gadv{color:var(--rc);background:color-mix(in srgb,var(--rc) 15%,transparent)}
+  .gmatch{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
+  .gmatch .gmno{font-size:8px;letter-spacing:.06em;color:var(--dim);min-width:30px}
+  .gmatch .gmt{flex:1;text-align:right;color:var(--dim)}
+  .gmatch .gmt.r{text-align:left}
+  .gmatch .gmt.w{color:var(--core);font-weight:700}
+  .gmatch .gmsc{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;color:var(--rc);min-width:56px;text-align:center}
+  /* 五角關係圖 */
+  .gpent{padding:6px 4px 0}
+  .gpent .gpsvg{width:100%;height:auto;display:block;overflow:visible}
+  .gpent .glink{cursor:pointer;transition:.15s}
+  .gpent .glink.dim{opacity:.12}
+  .gpent .gnode{cursor:pointer}
+  .gpent .gnode.dim{opacity:.26;transition:.2s}
+  .gpent .scoreLbl{opacity:0;transition:.15s;pointer-events:none}
+  .gpent .scoreLbl.show{opacity:1}
+  .gphint{text-align:center;font-size:8.5px;letter-spacing:.06em;color:var(--dim);padding:4px 8px 10px;line-height:1.5}
+  /* 組別切換 tab */
+  .gtabs{display:flex;gap:6px;padding:12px 20px 4px;flex-wrap:wrap}
+  .gtabs .gtab{flex:1;min-width:56px;text-align:center;padding:7px 4px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;
+    border:1px solid var(--line);border-radius:3px;cursor:pointer;color:var(--dim);transition:.18s;letter-spacing:.02em}
+  .gtabs .gtab:hover{border-color:color-mix(in srgb,var(--rc) 45%,transparent);color:var(--ink)}
+  .gtabs .gtab.on{border-color:var(--rc);color:var(--core);background:color-mix(in srgb,var(--rc) 12%,transparent);box-shadow:0 0 12px color-mix(in srgb,var(--rc) 30%,transparent)}
+  .rhead{padding:20px 20px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--rc) 14%,transparent),transparent 70%)}
+  .rhead .remblem{width:74px;height:74px;flex-shrink:0;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--rc) 60%,transparent))}
+  .rhead .remblem svg{width:100%;height:100%;overflow:visible}
+  .rhead .rhtext{min-width:0}
+  .rhead .rlabel{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:var(--core);line-height:1.1}
+  .rhead .rclub{font-size:11px;letter-spacing:.08em;color:var(--rc);margin-top:5px;font-weight:700}
+  .rhead .rplayers{font-size:11px;color:var(--ink);margin-top:6px;letter-spacing:.04em}
+  .rhead .rplayers::before{content:"◈ ";color:var(--rc);font-size:9px}
+  .rhead .rmeta{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:9.5px;color:var(--dim);letter-spacing:.06em}
+  .rtier{font-size:8.5px;padding:2px 8px;border-radius:2px;font-weight:700}
+  .t-p{background:rgba(77,159,255,.16);color:#6db4ff;border:1px solid rgba(77,159,255,.4)}
+  .t-g{background:rgba(255,207,51,.16);color:#ffd84d;border:1px solid rgba(255,207,51,.4)}
+  .t-s{background:rgba(255,77,106,.15);color:#ff6b82;border:1px solid rgba(255,77,106,.35)}
+  .t-b{background:rgba(52,224,122,.15);color:#5ce89a;border:1px solid rgba(52,224,122,.4)}
+  .rstats{display:flex;gap:0;border-bottom:1px solid var(--line)}
+  .rstats .rst{flex:1;text-align:center;padding:13px 6px;border-right:1px solid var(--line)}
+  .rstats .rst:last-child{border-right:none}
+  .rstats .rsv{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:var(--rc)}
+  .rstats .rsk{font-size:8px;letter-spacing:.14em;color:var(--dim);margin-top:3px}
+  .rlog{padding:14px 20px 20px}
+  .rlog .rlh{font-size:8.5px;letter-spacing:.14em;color:var(--rc);margin-bottom:10px}
+  .mt{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:11px}
+  .mt .mr{font-size:8px;letter-spacing:.08em;color:var(--dim);min-width:62px}
+  .mt .mvs{flex:1;color:var(--ink)}
+  .mt .msc{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px}
+  .mt .res{font-size:8.5px;font-weight:700;min-width:26px;text-align:center;padding:1px 0;border-radius:2px}
+  .res.w{color:var(--field2);background:rgba(29,233,182,.12)} .res.l{color:var(--magenta);background:rgba(255,60,172,.1)}
+  .rfoot{padding:0 20px 18px;font-size:8.5px;color:var(--dim);letter-spacing:.06em}
+  .rfoot .pts{color:var(--rc);font-family:'Orbitron',sans-serif;font-weight:700}
+  /* 節點球團徽記圖釘 */
+  .seed .chip{width:19px;height:19px;flex-shrink:0;display:inline-flex}
+  .seed .chip .chipsvg{width:100%;height:100%;overflow:visible}
+
+  @media(max-width:680px){
+    .hz{width:74px}.stat{text-align:left}
+    .ttl h1{font-size:30px}
+    #rec.show{align-items:center}
+    .reccard{width:min(440px,92vw);max-height:86vh;border-radius:6px;
+      animation:pop .25s ease}
+    @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+    .reccard .rx{font-size:15px}
+  }
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,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") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html" class="on">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<canvas id="bg3d"></canvas>
+<div class="hz tl"></div><div class="hz tr"></div><div class="hz bl"></div><div class="hz br"></div>
+
+<div class="shell">
+  <header>
+    <div class="ttl">
+      <div class="eye"><span class="pip"></span>NERV TACTICAL OPS · ELIMINATION TREE</div>
+      <h1>BRACKET <span class="f">TREE</span></h1>
+      <div class="zh">階級淘汰樹 · 四階級晉級路徑</div>
+    </div>
+    <div class="stat">OPERATION <b>SOLAR CUP TWO</b><br>白金 · 黃金 · 白銀 · 青銅 · 點隊伍 → 戰績檔案</div>
+  </header>
+
+  <div class="lanes-h">▸ 四階級晉級路徑概覽（點任一階級展開完整賽程）</div>
+  <div id="lanes"></div>
+
+  <div id="detail"></div>
+
+  <div class="legend">
+    <span class="lg"><span class="sw" style="border-color:var(--accent)"></span>循環賽（取前二）</span>
+    <span class="lg"><span class="sw" style="border-color:var(--field)"></span>晉級光子流</span>
+    <span class="lg" style="margin-left:auto">◆ DEMO · 隊伍與戰績為模擬資料</span>
+  </div>
+
+  <footer>
+    BRACKET ｜ 階級淘汰樹 · Solar Cup Two · 曜日盃 TWO · NERV 競技部<br>
+    <span class="demo">白金／黃金：五角複賽 → 8 強 ·　白銀／青銅：30 單淘汰 → 15→8 混合 → 8 強 ·　四階級 8 強後同為單淘汰＋季軍戰</span>
+  </footer>
+</div>
+
+<div id="rec"><div class="reccard" id="reccard"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="tournament-data.js"></script>
+<script>
+/* ---------- 背景 3D 資料流 ---------- */
+(function(){
+  if(!window.THREE)return;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const mobile=innerWidth<680;
+  const canvas=document.getElementById('bg3d');
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));
+  renderer.setSize(innerWidth,innerHeight);
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);
+  camera.position.z=18;
+  function glow(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+    const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');
+    gr.addColorStop(.35,'rgba(150,220,255,.7)');gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+  const TEX=glow();
+  const N=mobile?70:150, pos=new Float32Array(N*3), spd=[];
+  const cols=[[0.13,0.83,0.92],[0.11,0.91,0.71],[0.78,0.49,1]];
+  const colArr=new Float32Array(N*3);
+  for(let i=0;i<N;i++){
+    pos[i*3]=(Math.random()-0.5)*44;pos[i*3+1]=(Math.random()-0.5)*30;pos[i*3+2]=(Math.random()-0.5)*30;
+    spd.push(0.01+Math.random()*0.04);
+    const c=cols[i%3];colArr[i*3]=c[0];colArr[i*3+1]=c[1];colArr[i*3+2]=c[2];
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
+  const mat=new THREE.PointsMaterial({size:mobile?0.5:0.42,map:TEX,vertexColors:true,transparent:true,
+    blending:THREE.AdditiveBlending,depthWrite:false,opacity:.9});
+  const pts=new THREE.Points(geo,mat);scene.add(pts);
+  // 流動連線
+  const lpos=[];for(let i=0;i<N;i+=2){lpos.push(pos[i*3],pos[i*3+1],pos[i*3+2],pos[(i+1)*3],pos[(i+1)*3+1],pos[(i+1)*3+2]);}
+  const lgeo=new THREE.BufferGeometry();lgeo.setAttribute('position',new THREE.Float32BufferAttribute(lpos,3));
+  const lines=new THREE.LineSegments(lgeo,new THREE.LineBasicMaterial({color:0x22d3ee,transparent:true,opacity:.07,blending:THREE.AdditiveBlending}));
+  scene.add(lines);
+  let mx=0,my=0;
+  addEventListener('pointermove',e=>{mx=(e.clientX/innerWidth-.5);my=(e.clientY/innerHeight-.5);},{passive:true});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  let t=0;
+  // 華麗層④:封王瞬間背景粒子爆發(加速外衝+染冠軍色再退回)
+  let burstT=0,burstCol=null;const baseTint=new THREE.Color(0xffffff);mat.color.copy(baseTint);
+  window.sc2Burst=function(hex){burstT=1;try{burstCol=new THREE.Color(hex);}catch(e){burstCol=null;}};
+  function loop(){requestAnimationFrame(loop);t+=0.01;
+    const bf=burstT>0?(1+burstT*7):1;
+    for(let i=0;i<N;i++){pos[i*3+2]+=spd[i]*8*0.06*bf;if(pos[i*3+2]>16)pos[i*3+2]=-16;
+      if(burstT>0){pos[i*3]*=1+burstT*0.010;pos[i*3+1]*=1+burstT*0.010;
+        if(Math.abs(pos[i*3])>26)pos[i*3]*=0.55;if(Math.abs(pos[i*3+1])>18)pos[i*3+1]*=0.55;}}
+    if(burstT>0){if(burstCol)mat.color.lerp(burstCol,0.10);burstT-=0.009;}
+    else if(!mat.color.equals(baseTint)){mat.color.lerp(baseTint,0.04);}
+    geo.attributes.position.needsUpdate=true;
+    pts.rotation.y+=0.0006;lines.rotation.y=pts.rotation.y;
+    camera.position.x+=((mx*4)-camera.position.x)*0.04;
+    camera.position.y+=((-my*3)-camera.position.y)*0.04;camera.lookAt(0,0,0);
+    renderer.render(scene,camera);}
+  loop();
+})();
+</script>
+<script>
+/* ---------- 淘汰樹 + 戰績 ---------- */
+(function(){
+  // 十團設定（key/名/色）—— 色已避開階級藍黃紅綠
+  const CLUB_DATA=[
+    {key:'huanle',name:'歡樂',c:'#ff8a3c'},{key:'yuzhou',name:'小羽宙',c:'#22d3ee'},
+    {key:'poli',name:'魄力',c:'#ff3ca6'},{key:'dachuan',name:'大船',c:'#6b6bff'},
+    {key:'limao',name:'狸貓拳',c:'#2ee6c8'},{key:'dangdang',name:'蕩蕩',c:'#a3e635'},
+    {key:'yuguang',name:'羽光',c:'#a855f7'},{key:'solarA',name:'曜日A',c:'#ffb3d1'},
+    {key:'solarB',name:'曜日B',c:'#ff9ec4'},{key:'free',name:'自由',c:'#8a95a5'},
+  ];
+  const CLUB_BY_NAME={};CLUB_DATA.forEach(c=>CLUB_BY_NAME[c.name]=c);
+  const CLUBS=CLUB_DATA.map(c=>c.name);
+  const BASE={白金:300,黃金:200,白銀:100,青銅:0};
+  const TIERCLS={白金:'t-p',黃金:'t-g',白銀:'t-s',青銅:'t-b'};
+  let sd=20260815;function rnd(){sd=(sd*9301+49297)%233280;return sd/233280;}
+  function pick(a){return a[Math.floor(rnd()*a.length)]}
+
+  // ---- 十團徽記繪製（移植自 EMBLEM SYSTEM）----
+  function ngon(cx,cy,r,n,rot){const p=[];for(let i=0;i<n;i++){const a=(rot||0)+i*2*Math.PI/n;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return p;}
+  function pstr(pts){return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');}
+  function EMB(C){return{
+    poly:(pts,w,op)=>`<polygon points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="${w||1.5}" stroke-linejoin="round" opacity="${op||1}"/>`,
+    fpoly:(pts,op)=>`<polygon points="${pstr(pts)}" fill="${C}" opacity="${op||1}"/>`,
+    circ:(x,y,r,w,op)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="none" stroke="${C}" stroke-width="${w||1.4}" opacity="${op||1}"/>`,
+    dot:(x,y,r)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r||1.7}" fill="${C}"/>`,
+    line:(x1,y1,x2,y2,w,op)=>`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${C}" stroke-width="${w||1.3}" stroke-linecap="round" opacity="${op||1}"/>`,
+  };}
+  const ECX=100,ECY=100;
+  function embCenter(key,C){
+    const e=EMB(C);let s='';
+    switch(key){
+      case 'huanle':{[54,40,26,13].forEach((r,i)=>{s+=e.poly(ngon(ECX,ECY,r,3,-Math.PI/2),i<2?1.4:2);});
+        ngon(ECX,ECY,54,3,-Math.PI/2).forEach(p=>{s+=e.dot(p[0],p[1],2.3);s+=e.line(ECX,ECY,p[0],p[1],.8,.4);});
+        s+=e.poly(ngon(ECX,ECY,44,3,Math.PI/2),.9,.5);s+=e.fpoly(ngon(ECX,ECY,9,3,-Math.PI/2));
+        ngon(ECX,ECY,40,3,Math.PI/2).forEach(p=>s+=e.dot(p[0],p[1],1.5));break;}
+      case 'yuzhou':{[[50,-Math.PI/2],[50,Math.PI/2],[36,-Math.PI/2],[36,Math.PI/2]].forEach((t,i)=>{s+=e.poly(ngon(ECX,ECY,t[0],3,t[1]),i<2?1.6:1);});
+        ngon(ECX,ECY,50,6,-Math.PI/2).forEach((p,i)=>{s+=e.dot(p[0],p[1],2.2);if(i%2===0)s+=e.line(ECX,ECY,p[0],p[1],.8,.45);});
+        s+=e.circ(ECX,ECY,20,1.2,.7);s+=e.circ(ECX,ECY,10,1.4);s+=e.fpoly(ngon(ECX,ECY,5,6,0));break;}
+      case 'poli':{const dia=(r)=>[[ECX,ECY-r],[ECX+r,ECY],[ECX,ECY+r],[ECX-r,ECY]];
+        [52,38,24,11].forEach((r,i)=>s+=e.poly(dia(r),i<2?1.5:2));
+        [[ECX,ECY-30],[ECX+30,ECY],[ECX,ECY+30],[ECX-30,ECY]].forEach(c=>{s+=e.poly([[c[0],c[1]-9],[c[0]+9,c[1]],[c[0],c[1]+9],[c[0]-9,c[1]]],1);s+=e.dot(c[0],c[1],1.8);});
+        dia(52).forEach(p=>s+=e.dot(p[0],p[1],2.3));s+=e.fpoly(dia(7));break;}
+      case 'dachuan':{[[50,0],[42,Math.PI/4],[32,0],[22,Math.PI/4],[12,0]].forEach((t,i)=>s+=e.poly(ngon(ECX,ECY,t[0],4,t[1]),i<2?1.5:1.2));
+        ngon(ECX,ECY,50,4,0).forEach(p=>{s+=e.dot(p[0],p[1],2.3);s+=e.line(ECX,ECY,p[0],p[1],.7,.35);});
+        ngon(ECX,ECY,42,4,Math.PI/4).forEach(p=>s+=e.dot(p[0],p[1],1.6));s+=e.fpoly(ngon(ECX,ECY,7,4,Math.PI/4));break;}
+      case 'limao':{s+=e.poly(ngon(ECX,ECY,20,6,0),1.8);
+        ngon(ECX,ECY,36,6,0).forEach(c=>{s+=e.poly(ngon(c[0],c[1],15,6,0),1.2);s+=e.dot(c[0],c[1],1.6);s+=e.line(ECX,ECY,c[0],c[1],.7,.4);});
+        s+=e.poly(ngon(ECX,ECY,54,6,0),1,.55);ngon(ECX,ECY,54,6,0).forEach(p=>s+=e.dot(p[0],p[1],2.1));s+=e.fpoly(ngon(ECX,ECY,7,6,0));break;}
+      case 'dangdang':{const off=13;[52,43,34,25,16].forEach((r,i)=>{s+=e.circ(ECX-off,ECY,r,i%2?.8:1.3,i%2?.5:.9);});
+        [52,43,34,25,16].forEach((r,i)=>{s+=e.circ(ECX+off,ECY,r,i%2?.8:1.3,i%2?.5:.9);});
+        s+=e.circ(ECX,ECY,54,1.2,.55);[[ECX,ECY-30],[ECX,ECY+30],[ECX-off,ECY],[ECX+off,ECY]].forEach(p=>s+=e.dot(p[0],p[1],2));
+        s+=e.circ(ECX,ECY,5,0,1);s+=e.dot(ECX,ECY,2.6);break;}
+      case 'yuguang':{for(let arm=0;arm<4;arm++){let pts=[];for(let t=0;t<=30;t++){const r=6+t*1.55;const a=arm*Math.PI/2+t*0.34;pts.push([ECX+Math.cos(a)*r,ECY+Math.sin(a)*r]);}
+          s+=`<polyline points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="1.6" stroke-linecap="round" opacity="${.55+arm*0.1}"/>`;
+          [8,18,28].forEach(ti=>{const r=6+ti*1.55,a=arm*Math.PI/2+ti*0.34;s+=e.dot(ECX+Math.cos(a)*r,ECY+Math.sin(a)*r,1.7);});}
+        s+=e.circ(ECX,ECY,52,.9,.4);s+=e.circ(ECX,ECY,10,1.4);s+=e.dot(ECX,ECY,3.5);break;}
+      case 'solarA':{for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const tip=[ECX+Math.cos(a)*54,ECY+Math.sin(a)*54];
+          const bl=[ECX+Math.cos(a-0.1)*15,ECY+Math.sin(a-0.1)*15],br=[ECX+Math.cos(a+0.1)*15,ECY+Math.sin(a+0.1)*15];
+          s+=(i%2?e.poly([tip,bl,[ECX,ECY],br]):e.fpoly([tip,bl,[ECX,ECY],br],.92));s+=e.dot(tip[0],tip[1],1.8);}
+        for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.PI/8-Math.PI/2;s+=e.line(ECX,ECY,ECX+Math.cos(a)*30,ECY+Math.sin(a)*30,1);}
+        s+=e.circ(ECX,ECY,11,1.4);s+=e.fpoly(ngon(ECX,ECY,6,8,-Math.PI/2));break;}
+      case 'solarB':{[50,38,26].forEach((r,i)=>s+=e.circ(ECX,ECY,r,i?1:1.5,i?.6:1));
+        for(let i=0;i<16;i++){const a=i*Math.PI/8-Math.PI/2;const rout=i%2?62:53;const tip=[ECX+Math.cos(a)*rout,ECY+Math.sin(a)*rout];
+          const bl=[ECX+Math.cos(a-0.085)*50,ECY+Math.sin(a-0.085)*50],br=[ECX+Math.cos(a+0.085)*50,ECY+Math.sin(a+0.085)*50];
+          s+=(i%2?e.poly([tip,bl,br],1):e.fpoly([tip,bl,br],.9));}
+        for(let i=0;i<8;i++){const a=i*Math.PI/4;s+=e.dot(ECX+Math.cos(a)*38,ECY+Math.sin(a)*38,1.7);}
+        s+=e.circ(ECX,ECY,15,1.2,.7);s+=e.fpoly(ngon(ECX,ECY,10,12,0));break;}
+      case 'free':{const arc=(r,st,sw,w)=>{const x1=ECX+Math.cos(st)*r,y1=ECY+Math.sin(st)*r,x2=ECX+Math.cos(st+sw)*r,y2=ECY+Math.sin(st+sw)*r,lg=sw>Math.PI?1:0;
+          return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${C}" stroke-width="${w}" stroke-linecap="round"/>`;};
+        s+=arc(52,-1.9,4.4,1.6)+arc(40,0.6,4.0,1.3)+arc(28,2.4,3.8,1.6);
+        [[150,58,3,'tri'],[158,84,4,'dia'],[46,150,3.4,'sq'],[70,158,3,'tri']].forEach(f=>{
+          if(f[3]==='dia')s+=e.poly([[f[0],f[1]-f[2]],[f[0]+f[2],f[1]],[f[0],f[1]+f[2]],[f[0]-f[2],f[1]]],1.2);
+          else if(f[3]==='sq')s+=e.poly(ngon(f[0],f[1],f[2],4,Math.PI/4),1.2);
+          else s+=e.poly(ngon(f[0],f[1],f[2],3,-Math.PI/2),1.2);s+=e.dot(f[0],f[1],1.2);});
+        [-1.9,2.6,0.6].forEach(a=>s+=e.dot(ECX+Math.cos(a)*52,ECY+Math.sin(a)*52,2));s+=e.dot(ECX,ECY,3);break;}
+    }
+    return s;
+  }
+  function embMini(key,C){
+    const e=EMB(C);
+    switch(key){
+      case 'huanle':return e.poly(ngon(ECX,ECY,52,3,-Math.PI/2),6)+e.fpoly(ngon(ECX,ECY,14,3,-Math.PI/2));
+      case 'yuzhou':return e.poly(ngon(ECX,ECY,52,3,-Math.PI/2),5)+e.poly(ngon(ECX,ECY,52,3,Math.PI/2),5);
+      case 'poli':return e.poly([[ECX,ECY-54],[ECX+54,ECY],[ECX,ECY+54],[ECX-54,ECY]],6)+e.fpoly([[ECX,ECY-16],[ECX+16,ECY],[ECX,ECY+16],[ECX-16,ECY]]);
+      case 'dachuan':return e.poly(ngon(ECX,ECY,50,4,0),6)+e.poly(ngon(ECX,ECY,30,4,Math.PI/4),4);
+      case 'limao':return e.poly(ngon(ECX,ECY,52,6,0),6)+e.poly(ngon(ECX,ECY,26,6,0),4);
+      case 'dangdang':return e.circ(ECX-13,ECY,46,5)+e.circ(ECX-13,ECY,26,4)+e.circ(ECX+13,ECY,46,5)+e.circ(ECX+13,ECY,26,4);
+      case 'yuguang':{let s='';for(let arm=0;arm<3;arm++){let pts=[];for(let t=0;t<=22;t++){const r=6+t*2.1,a=arm*2*Math.PI/3+t*0.4;pts.push([ECX+Math.cos(a)*r,ECY+Math.sin(a)*r]);}s+=`<polyline points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="5" stroke-linecap="round"/>`;}return s;}
+      case 'solarA':{let s='';for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const tip=[ECX+Math.cos(a)*56,ECY+Math.sin(a)*56],bl=[ECX+Math.cos(a-0.13)*16,ECY+Math.sin(a-0.13)*16],br=[ECX+Math.cos(a+0.13)*16,ECY+Math.sin(a+0.13)*16];s+=(i%2?e.poly([tip,bl,[ECX,ECY],br],4):e.fpoly([tip,bl,[ECX,ECY],br]));}return s+e.fpoly(ngon(ECX,ECY,8,8,-Math.PI/2));}
+      case 'solarB':{let s=e.circ(ECX,ECY,44,5)+e.circ(ECX,ECY,26,4);for(let i=0;i<12;i++){const a=i*Math.PI/6-Math.PI/2;const tip=[ECX+Math.cos(a)*60,ECY+Math.sin(a)*60],bl=[ECX+Math.cos(a-0.1)*44,ECY+Math.sin(a-0.1)*44],br=[ECX+Math.cos(a+0.1)*44,ECY+Math.sin(a+0.1)*44];s+=e.fpoly([tip,bl,br]);}return s+e.fpoly(ngon(ECX,ECY,10,12,0));}
+      case 'free':{const arc=(r,st,sw,w)=>{const x1=ECX+Math.cos(st)*r,y1=ECY+Math.sin(st)*r,x2=ECX+Math.cos(st+sw)*r,y2=ECY+Math.sin(st+sw)*r,lg=sw>Math.PI?1:0;return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${C}" stroke-width="${w}" stroke-linecap="round"/>`;};
+        return arc(50,-1.6,4.8,6)+e.dot(ECX+Math.cos(-1.6)*50,ECY+Math.sin(-1.6)*50,4)+e.dot(ECX+Math.cos(3.2)*50,ECY+Math.sin(3.2)*50,4);}
+    }
+    return '';
+  }
+  // 完整徽記（含外環銘文）供戰績卡用
+  function embFull(club,unitLabel){
+    const C=club.c,ring=`SOLAR CUP TWO ✦ ${club.name} ✦ ${unitLabel} ✦ NERV ✦ `;
+    return `<svg viewBox="0 0 200 200">
+      <defs><path id="rtp-${club.key}" d="M100,196 A96,96 0 1,1 100.01,196" fill="none"/></defs>
+      <circle cx="100" cy="100" r="90" fill="none" stroke="${C}" stroke-width="1.4" opacity=".9"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="${C}" stroke-width=".7" opacity=".5"/>
+      <circle cx="100" cy="100" r="70" fill="none" stroke="${C}" stroke-width="3.5" stroke-dasharray="1 7" opacity=".45"/>
+      <text font-family="Share Tech Mono, monospace" font-size="8.5" letter-spacing="2" fill="${C}" opacity=".85">
+        <textPath href="#rtp-${club.key}" startOffset="0">${ring}${ring}</textPath></text>
+      ${embCenter(club.key,C)}</svg>`;
+  }
+  // 極簡徽記（圓框）供節點用
+  function embChip(club){
+    return `<svg viewBox="0 0 200 200" class="chipsvg"><circle cx="100" cy="100" r="86" fill="rgba(3,6,13,.6)" stroke="${club.c}" stroke-width="6"/>${embMini(club.key,club.c)}</svg>`;
+  }
+
+  const TIERS=[
+    {key:'plat',name:'白金',en:'PLATINUM',badge:'badge-p',col:'#4d9fff',glow:'rgba(77,159,255,.45)',type:'comp',kind:'競技',cr:'C'},
+    {key:'gold',name:'黃金',en:'GOLD',badge:'badge-g',col:'#ffcf33',glow:'rgba(255,207,51,.45)',type:'comp',kind:'競技',cr:'C'},
+    {key:'silver',name:'白銀',en:'SILVER',badge:'badge-s',col:'#ff4d6a',glow:'rgba(255,77,106,.45)',type:'cas',kind:'休閒',cr:'R'},
+    {key:'bronze',name:'青銅',en:'BRONZE',badge:'badge-b',col:'#34e07a',glow:'rgba(52,224,122,.45)',type:'cas',kind:'休閒',cr:'R'},
+  ];
+
+  // 各階級賽程進度（0未開打 1:8強完 2:4強完 3:決賽完 4:全部完）— 四階級各異
+  const progState={plat:3,gold:2,silver:1,bronze:4};
+  const PROGLBL=['尚未開打','8 強結束','4 強結束','決賽結束','全部完賽'];
+
+  // 隊伍池：每階級唯一身分(球團+編號) + 戰績；十團盡量平均分布
+  const REG={}; // tid -> team
+  // 資料層真隊快取（buildAllTeams 的 tiers，含初賽分流結果）
+  let _TD_TIERS=null;
+  function tdTiers(){
+    if(_TD_TIERS!==null)return _TD_TIERS;
+    try{ _TD_TIERS = (window.SolarCupData&&SolarCupData.buildTournament) ? SolarCupData.buildTournament().tiers : false; }
+    catch(e){ _TD_TIERS=false; }
+    return _TD_TIERS;
+  }
+  // 從資料層取該階級真隊，轉成 bracket 複賽用格式（保留身分，複賽戰績重置由 play 灌）
+  function poolFromTD(tier,n){
+    const T=tdTiers();
+    if(!T||!T[tier.key]||!T[tier.key].length) return null; // 無資料層 → 交回 fallback
+    const src=T[tier.key].slice(0,n);
+    return src.map((s,i)=>{
+      const t={tid:s.tid,label:s.label,club:s.clubObj.name,clubObj:s.clubObj,num:0,
+        tier:tier.name,kind:tier.kind,base:BASE[tier.name],
+        matches:[],w:0,l:0,stage:'複賽',placePts:0};
+      REG[s.tid]=t;return t;
+    });
+  }
+  function makePool(tier,n){
+    const fromTD=poolFromTD(tier,n);
+    if(fromTD) return fromTD; // ✅ 優先用資料層真隊（跨頁同名同色同暱稱）
+    // ---- fallback：單檔預覽無資料層時自行生成 ----
+    const pool=[];const used=new Set();
+    // 平均分布：輪流指派十團，順序打散
+    const order=[];for(let i=0;i<n;i++)order.push(CLUB_DATA[i%CLUB_DATA.length]);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+    for(let i=0;i<n;i++){
+      const club=order[i];let num,label,guard=0;
+      do{num=1+Math.floor(rnd()*(tier.kind==='競技'?4:6));label=club.name+tier.cr+num;guard++;}
+      while(used.has(label)&&guard<200);
+      used.add(label);
+      const tid=tier.key+'_'+i;
+      const t={tid,label,club:club.name,clubObj:club,num,tier:tier.name,kind:tier.kind,base:BASE[tier.name],
+        matches:[],w:0,l:0,stage:'複賽',placePts:0};
+      REG[tid]=t;pool.push(t);
+    }
+    return pool;
+  }
+  function score(win){return win?21:(11+Math.floor(rnd()*9));}
+  function play(a,b,round){ // 回填雙方戰績，回傳勝者
+    const aw=rnd()<0.5;const sa=aw?21:score(false),sb=aw?score(false):21;
+    a.matches.push({round,vs:b.label,sc:sa+'：'+sb,win:aw});
+    b.matches.push({round,vs:a.label,sc:sb+'：'+sa,win:!aw});
+    if(aw){a.w++;b.l++;return a;}else{b.w++;a.l++;return b;}
+  }
+  function setPlace(t,pts,stage){t.placePts=pts;t.stage=stage;}
+
+  // 快取各階級資料
+  const DATA={};
+  function buildTier(tier){
+    if(DATA[tier.key])return DATA[tier.key];
+    let d;
+    if(tier.type==='comp'){
+      const pool=makePool(tier,20);
+      const groups=[[],[],[],[]];
+      pool.forEach((t,i)=>groups[i%4].push(t)); // 4 組 × 5
+      const eight=[];const groupMatches=[[],[],[],[]];
+      groups.forEach((g,gi)=>{
+        // 五角全循環（記錄每場對戰）
+        for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){
+          const w=play(g[i],g[j],'複賽 '+'ABCD'[gi]+'組');
+          const m=g[i].matches[g[i].matches.length-1]; // g[i] 視角的比分
+          groupMatches[gi].push({a:g[i],b:g[j],sc:m.sc,winner:w});
+        }
+        const rank=[...g].sort((x,y)=>y.w-x.w);
+        rank.forEach((t,r)=>{if(r>=2)setPlace(t,0,'複賽止步');});
+        eight.push(rank[0],rank[1]); // 各組前二
+      });
+      d={pool,groups,eight,groupMatches};
+    }else{
+      const pool=makePool(tier,30);
+      // 複賽一輪 30→15 單淘汰
+      const r1pairs=[];for(let i=0;i<30;i+=2)r1pairs.push([pool[i],pool[i+1]]);
+      const survivors=r1pairs.map(p=>{const w=play(p[0],p[1],'複賽一輪');const l=p[0]===w?p[1]:p[0];setPlace(l,0,'複賽一輪止步');return w;});
+      // 複賽二輪 15→8：12 隊單淘汰取 6 ＋ 3 隊三角循環取 2（抽籤分組，此處示意前 12 單淘汰、後 3 三角）
+      const r2ko=survivors.slice(0,12), r2tri=survivors.slice(12,15);
+      const r2pairs=[];for(let i=0;i<12;i+=2)r2pairs.push([r2ko[i],r2ko[i+1]]);
+      const r2koWin=r2pairs.map(p=>{const w=play(p[0],p[1],'複賽二輪');const l=p[0]===w?p[1]:p[0];setPlace(l,20,'複賽二輪止步');return w;});
+      // 三角循環 3 場
+      const triW={};r2tri.forEach(t=>triW[t.tid]=0);const triMatches=[];
+      function triPlay(a,b){const aw=rnd()<0.5;const sa=aw?21:11+Math.floor(rnd()*9),sb=aw?11+Math.floor(rnd()*9):21;
+        a.matches.push({round:'二輪三角',vs:b.label,sc:sa+'：'+sb,win:aw});b.matches.push({round:'二輪三角',vs:a.label,sc:sb+'：'+sa,win:!aw});
+        if(aw){a.w++;b.l++;triW[a.tid]++;}else{b.w++;a.l++;triW[b.tid]++;}triMatches.push({a:a.label,b:b.label,sc:sa+'：'+sb});}
+      triPlay(r2tri[0],r2tri[1]);triPlay(r2tri[0],r2tri[2]);triPlay(r2tri[1],r2tri[2]);
+      const triRank=[...r2tri].sort((a,b)=>triW[b.tid]-triW[a.tid]);
+      const triTop2=triRank.slice(0,2), tri3rd=triRank[2];
+      setPlace(tri3rd,20,'三角循環止步');
+      const eight=[...r2koWin,...triTop2];
+      d={pool,survivors,eight,r1pairs,r2pairs,r2koWin,r2tri,triTop2,tri3rd,triMatches};
+    }
+    // 8強→4強→決賽，回填戰績與名次分
+    const e=d.eight.slice(0,8);
+    const qfW=[];for(let i=0;i<8;i+=2){const w=play(e[i],e[i+1],'8 強');qfW.push(w);
+      const l=e[i]===w?e[i+1]:e[i];if(l.placePts<40)setPlace(l,40,'8 強止步');}
+    const sfW=[];for(let i=0;i<4;i+=2){const w=play(qfW[i],qfW[i+1],'4 強');sfW.push(w);}
+    const sfL=qfW.filter(t=>!sfW.includes(t));
+    // 季軍戰
+    const thirdW=sfL.length===2?play(sfL[0],sfL[1],'季軍戰'):null;
+    sfL.forEach(t=>setPlace(t,60,t===thirdW?'季軍':'第四名'));
+    const champ=play(sfW[0],sfW[1],'決賽');
+    const runner=sfW[0]===champ?sfW[1]:sfW[0];
+    setPlace(champ,100,'冠軍');setPlace(runner,80,'亞軍');
+    d.qfW=qfW;d.sfW=sfW;d.champ=champ;d.runner=runner;d.thirdW=thirdW;d.sfL=sfL;
+    DATA[tier.key]=d;return d;
+  }
+
+  // ---- 概覽泳道 ----
+  const lanesEl=document.getElementById('lanes');
+  function laneStages(type){return type==='comp'
+    ?[{t:'五角複賽',cyc:1,th:1},{t:'8 強',th:1},{t:'4 強',th:2},{t:'決賽',fin:1,th:3}]
+    :[{t:'30 單淘汰',th:1},{t:'15→8 混合',cyc:1,th:1},{t:'8 強',th:1},{t:'4 強',th:2},{t:'決賽',fin:1,th:3}];}
+  // 依 progState 亮燈：完成=done(亮階級色)、鋒面=live(呼吸)、prog=4 全亮含 ♛
+  function updateLanes(){
+    document.querySelectorAll('.lane').forEach(lane=>{
+      const tk=lane.dataset.key,prog=progState[tk],tr=TIERS.find(t=>t.key===tk);
+      const stgs=[...lane.querySelectorAll('.stg')],ths=laneStages(tr.type).map(s=>s.th);
+      let liveSet=false;
+      stgs.forEach((el,i)=>{
+        el.classList.remove('done','live','off');
+        if(prog>=ths[i]){el.classList.add('done');}
+        else if(!liveSet&&prog<4){el.classList.add('live');liveSet=true;}
+        else{el.classList.add('off');}
+      });
+      const cr=lane.querySelector('.crown');
+      if(cr){cr.classList.toggle('done',prog>=4);cr.classList.toggle('dimc',prog<4);}
+    });
+  }
+  TIERS.forEach(tr=>{
+    const lane=document.createElement('div');lane.className='lane';lane.dataset.key=tr.key;
+    lane.style.setProperty('--tc',tr.col);lane.style.setProperty('--tg',tr.glow);lane.style.setProperty('--tc2',tr.col);
+    let html=`<div class="badge ${tr.badge}">${tr.name}</div><div class="stages">`;
+    const st=laneStages(tr.type);
+    st.forEach((s,i)=>{html+=`<div class="stg ${s.cyc?'cyc':''} ${s.fin?'fin':''}">${s.t}</div>`;if(i<st.length-1)html+=`<span class="arw">▸</span>`;});
+    html+=`<span class="arw">▸</span><span class="crown">♛</span></div><span class="open">▸ 展開</span>`;
+    lane.innerHTML=html;
+    lane.addEventListener('click',()=>{document.querySelectorAll('.lane').forEach(l=>l.classList.remove('on'));lane.classList.add('on');renderDetail(tr);});
+    lanesEl.appendChild(lane);
+  });
+  updateLanes();
+
+  // ---- 細節 ----
+  const detail=document.getElementById('detail');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let r1raf=0;
+  function stopR1(){if(r1raf)cancelAnimationFrame(r1raf);r1raf=0;}
+  function startR1(){
+    const el=detail.querySelector('.r1scroll');if(!el)return;
+    let paused=false,resume=0;
+    el.addEventListener('mouseenter',()=>paused=true);
+    el.addEventListener('mouseleave',()=>paused=false);
+    el.addEventListener('touchstart',()=>{paused=true;clearTimeout(resume);},{passive:true});
+    el.addEventListener('touchend',()=>{resume=setTimeout(()=>paused=false,2500);},{passive:true});
+    function step(){
+      if(detail.querySelector('.r1scroll')!==el){r1raf=0;return;}
+      if(!paused){el.scrollLeft+=0.45;
+        if(el.scrollLeft>=el.scrollWidth-el.clientWidth-1)el.scrollLeft=0;}
+      r1raf=requestAnimationFrame(step);
+    }
+    r1raf=requestAnimationFrame(step);
+  }
+  function seed(t,sc,win,bye){if(bye)return `<div class="seed bye"><span>（輪空）</span></div>`;
+    const chip=t.clubObj?`<span class="chip">${embChip(t.clubObj)}</span>`:'';
+    return `<div class="seed ${win?'win':''}" data-tid="${t.tid}">${chip}<span>${t.label}</span>${sc!=null?`<span class="s">${sc}</span>`:''}</div>`;}
+  function lastSc(t,round){const m=[...t.matches].reverse().find(x=>x.round===round);return m?m.sc.split('：')[0]:'';}
+
+  function champOct(t){return `<div class="champ">
+    <svg class="oct" viewBox="0 0 100 100">
+      <polygon points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30" fill="none" stroke="#22d3ee" stroke-width="3"/>
+      <polygon points="38,16 62,16 84,38 84,62 62,84 38,84 16,62 16,38" fill="rgba(168,85,247,.16)" stroke="#c77dff" stroke-width="1.5"/>
+    </svg><div class="cn" data-tid="${t.tid}">${t.label}</div><div class="ttl2">CHAMPION ♛</div></div>`;}
+
+  function pentSVG(g,teams,gkey){
+    const dots=teams.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/5;const x=50+Math.cos(a)*38,y=50+Math.sin(a)*38;
+      const top2=t.w>=[...teams].sort((p,q)=>q.w-p.w)[1].w;
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="${top2?'#1de9b6':'#5b7089'}" data-tid="${t.tid}" style="cursor:pointer"/>`;}).join('');
+    const srt=[...teams].sort((p,q)=>q.w-p.w);
+    const top2names=srt.slice(0,2).map(t=>`<span class="pt"><b>${t.label}</b> ${t.w}勝</span>`).join('');
+    return `<div class="pcell"><div class="pent"><svg viewBox="0 0 100 100"><polygon points="50,8 90,38 75,88 25,88 10,38" fill="rgba(199,125,255,.06)" stroke="rgba(199,125,255,.5)" stroke-width="1.6" data-group="${gkey}" style="cursor:pointer"/>${dots}</svg>
+      <div class="lbl" data-group="${gkey}" style="cursor:pointer;pointer-events:auto"><div class="g">${g}</div><div class="q">▸ 組進程</div></div></div>
+      <div class="ptop2"><span class="pth">晉級前二</span>${top2names}</div></div>`;}
+
+  function finalBracketSVG(d,tr,prog){
+    prog=(prog==null?4:prog); // 0未開打 1:8強完 2:4強完 3:決賽完 4:全部完
+    const TC=tr.col,T=2.6; // T=光子/注滿同步週期
+    const FW=182,FH=42,GAPY=14,TOP=12,COLX=[8,232,456,680];
+    const cy8=i=>TOP+i*(FH+GAPY)+FH/2;
+    const E=d.eight,QW=d.qfW,SW=d.sfW,CH=d.champ;
+    const r4cy=[ (cy8(0)+cy8(1))/2,(cy8(2)+cy8(3))/2,(cy8(4)+cy8(5))/2,(cy8(6)+cy8(7))/2 ];
+    const r2cy=[ (r4cy[0]+r4cy[1])/2,(r4cy[2]+r4cy[3])/2 ];
+    const chCy=(r2cy[0]+r2cy[1])/2;
+    function embG(co,x,y){return co.key?`<g transform="translate(${x},${y}) scale(0.11)">${embMini(co.key,co.c)}</g>`:'';}
+    // inj: 0無 / 1注滿動態(漸層+網格+雜訊,只給最新一輪) / 2靜態色底(已定案,完整清晰)
+    function node(t,x,cy,win,sc,inj){
+      const co=t.clubObj||{c:'#8a95a5',key:''},c=co.c,y=cy-FH/2;
+      const uid=Math.round(x)+'_'+Math.round(cy); // 位置唯一：同隊在多欄出現也不衝突
+      const fc=win?TC:'rgba(255,255,255,.13)';
+      let s=`<g class="bnode ${win?'win':''}" data-tid="${t.tid}">`;
+      s+=`<rect x="${x}" y="${y}" width="${FW}" height="${FH}" rx="4" fill="rgba(6,11,20,.92)" stroke="${fc}" stroke-width="${win?1.8:1}"/>`;
+      if(win&&inj===1){ // 華麗層②:鋒面節點光暈呼吸
+        s=`<radialGradient id="hl_${uid}"><stop offset="0" stop-color="${c}" stop-opacity=".34"/><stop offset=".6" stop-color="${c}" stop-opacity=".12"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient>
+        <circle cx="${x+FW/2}" cy="${cy}" r="${FH*1.9}" fill="url(#hl_${uid})">
+          <animate attributeName="opacity" values=".5;1;.5" dur="2.2s" repeatCount="indefinite"/></circle>`+s;
+      }
+      const cid='cl_'+uid;
+      if(inj===2){ // 靜態色底：完整清晰、不動
+        s+=`<clipPath id="${cid}"><rect x="${x}" y="${y}" width="${FW}" height="${FH}" rx="4"/></clipPath>
+          <rect clip-path="url(#${cid})" x="${x}" y="${y}" width="${FW}" height="${FH}" fill="${c}" opacity=".26"/>`;
+      }else if(inj===1){ // 注滿動態：水位由左上漲→停→再從頭；底填漸層+網格+雜訊質感
+        s+=`<clipPath id="${cid}"><rect x="${x}" y="${y}" width="${FW}" height="${FH}" rx="4"/></clipPath>
+          <linearGradient id="lg_${uid}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${c}" stop-opacity=".5"/><stop offset="1" stop-color="${c}" stop-opacity=".18"/></linearGradient>
+          <g clip-path="url(#${cid})">
+            <rect x="${x}" y="${y}" height="${FH}" fill="url(#lg_${uid})">
+              <animate attributeName="width" values="0;${FW};${FW};0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+            <rect x="${x}" y="${y}" height="${FH}" fill="url(#brGrid)" opacity=".5">
+              <animate attributeName="width" values="0;${FW};${FW};0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+            <rect x="${x}" y="${y}" height="${FH}" fill="url(#brNoise)" opacity=".4">
+              <animate attributeName="width" values="0;${FW};${FW};0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+          </g>`;
+      }
+      s+=embG(co,x+7,y+FH/2-11);
+      s+=`<text x="${x+34}" y="${cy+4.5}" font-family="Orbitron,sans-serif" font-weight="700" font-size="13" fill="${win?'#eafcff':'#9fb0c8'}">${t.label}</text>`;
+      if(sc!=null&&sc!=='')s+=`<text x="${x+FW-12}" y="${cy+4.5}" text-anchor="end" font-family="Orbitron,sans-serif" font-weight="700" font-size="12" fill="${win?c:'#5b7089'}">${sc}</text>`;
+      return s+`</g>`;
+    }
+    function nodeTBD(x,cy){const y=cy-FH/2;
+      return `<g><rect x="${x}" y="${y}" width="${FW}" height="${FH}" rx="4" fill="rgba(6,11,20,.5)" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="${x+FW/2}" y="${cy+4}" text-anchor="middle" font-family="Share Tech Mono" font-size="11" fill="#3f4d61">待　定　TBD</text></g>`;}
+    // state: 'future'無晉級線 / 'front'光子流+注滿 / 'done'晉級線常亮+光子
+    function conn(cyA,cyB,x1r,x2l,nextCy,winnerCy,wc,state){
+      const midX=(x1r+x2l)/2,cyMid=(cyA+cyB)/2;
+      const struct=`<path d="M${x1r},${cyA} H${midX} M${x1r},${cyB} H${midX} M${midX},${Math.min(cyA,cyB)} V${Math.max(cyA,cyB)} M${midX},${cyMid} H${x2l}" fill="none" stroke="rgba(120,140,170,.26)" stroke-width="1.2"/>`;
+      if(state==='future')return struct;
+      const ap=`M${x1r},${winnerCy} L${midX},${winnerCy} L${midX},${nextCy} L${x2l},${nextCy}`;
+      const pathLen=Math.abs(midX-x1r)+Math.abs(nextCy-winnerCy)+Math.abs(x2l-midX);
+      const uid2=Math.round(x1r)+'_'+Math.round(winnerCy)+'_'+Math.round(nextCy);
+      // ② 注滿飽和：底線常亮(done更飽和粗)、鋒面用 dash 由頭注滿到尾
+      const baseW=state==='done'?2.6:2, baseOp=state==='done'?.95:.7;
+      let adv=`<path d="${ap}" fill="none" stroke="${wc}" stroke-width="${baseW}" opacity="${baseOp}" filter="url(#brGlow)" stroke-linecap="round"/>`;
+      if(state==='front'){ // 注滿:亮線從 0 長到滿再循環(dashoffset)
+        adv+=`<path d="${ap}" fill="none" stroke="${wc}" stroke-width="${baseW+1}" opacity="1" filter="url(#brGlow)" stroke-linecap="round" stroke-dasharray="${pathLen}" stroke-dashoffset="${pathLen}">
+          <animate attributeName="stroke-dashoffset" values="${pathLen};0;0;${pathLen}" keyTimes="0;.5;.82;1" dur="${T}s" repeatCount="indefinite"/></path>`;
+      }
+      if(state==='front'){ // 華麗層①:抵達爆發(光束到站瞬間,光暈炸開+擴散環)
+        adv+=`<radialGradient id="ag_${uid2}"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".35" stop-color="${wc}" stop-opacity=".6"/><stop offset="1" stop-color="${wc}" stop-opacity="0"/></radialGradient>
+        <circle cx="${x2l}" cy="${nextCy}" fill="url(#ag_${uid2})">
+          <animate attributeName="r" values="0;0;16;5;0" keyTimes="0;.48;.58;.8;1" dur="${T}s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;0;1;.5;0" keyTimes="0;.48;.56;.8;1" dur="${T}s" repeatCount="indefinite"/></circle>
+        <circle cx="${x2l}" cy="${nextCy}" fill="none" stroke="${wc}" stroke-width="1.6">
+          <animate attributeName="r" values="2;2;22" keyTimes="0;.5;1" dur="${T}s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;.8;0" keyTimes="0;.52;1" dur="${T}s" repeatCount="indefinite"/></circle>`;
+      }
+      return struct+adv;
+    }
+    let nodes='',conns='';
+    // 8 強（對戰恆排定；prog>=1 已打完→勝者亮/比分/靜態色底）
+    E.forEach((t,i)=>{const w=prog>=1&&QW.includes(t);nodes+=node(t,COLX[0],cy8(i),w,prog>=1?lastSc(t,'8 強'):'',w?2:0);});
+    // 8→4 收束（輪1，front 條件 prog===1）
+    for(let j=0;j<4;j++){const wnr=QW[j];const wCy=(wnr===E[2*j]?cy8(2*j):cy8(2*j+1)),wc=(wnr.clubObj||{c:TC}).c;
+      const st=prog<1?'future':(prog===1?'front':'done');
+      conns+=conn(cy8(2*j),cy8(2*j+1),COLX[0]+FW,COLX[1],r4cy[j],wCy,wc,st);}
+    // 4 強（prog>=1 對戰確定；prog>=2 打完）
+    QW.forEach((t,i)=>{ if(prog<1){nodes+=nodeTBD(COLX[1],r4cy[i]);}
+      else{nodes+=node(t,COLX[1],r4cy[i],prog>=2&&SW.includes(t),prog>=2?lastSc(t,'4 強'):'',prog===1?1:2);}});
+    // 4→2 收束（輪2）
+    for(let j=0;j<2;j++){const wnr=SW[j];const wCy=(wnr===QW[2*j]?r4cy[2*j]:r4cy[2*j+1]),wc=(wnr.clubObj||{c:TC}).c;
+      const st=prog<2?'future':(prog===2?'front':'done');
+      conns+=conn(r4cy[2*j],r4cy[2*j+1],COLX[1]+FW,COLX[2],r2cy[j],wCy,wc,st);}
+    // 決賽（prog>=2 對戰確定；prog>=3 打完）
+    SW.forEach((t,i)=>{ if(prog<2){nodes+=nodeTBD(COLX[2],r2cy[i]);}
+      else{nodes+=node(t,COLX[2],r2cy[i],prog>=3&&t===CH,prog>=3?lastSc(t,'決賽'):'',prog===2?1:2);}});
+    // 2→冠軍 收束（輪3）
+    {const wnr=CH,wCy=(wnr===SW[0]?r2cy[0]:r2cy[1]),wc=(wnr.clubObj||{c:TC}).c;
+      const st=prog<3?'future':(prog===3?'front':'done');
+      conns+=conn(r2cy[0],r2cy[1],COLX[2]+FW,COLX[3],chCy,wCy,wc,st);}
+    // 冠軍八角（prog>=3 才出爐）
+    const chx=COLX[3],chc=chx+46;let champ;
+    const octPts=(function(){let p='';for(let i=0;i<8;i++){const a=Math.PI/8+i*Math.PI/4;p+=(chc+Math.cos(a)*32).toFixed(1)+','+(chCy+Math.sin(a)*32).toFixed(1)+' ';}return p.trim();})();
+    if(prog<3){champ=`<g><polygon points="${octPts}" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-dasharray="4 4"/>
+      <text x="${chc}" y="${chCy+5}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="20" fill="#3f4d61">?</text>
+      <text x="${chc}" y="${chCy+52}" text-anchor="middle" font-family="Share Tech Mono" font-size="8" letter-spacing="2" fill="#3f4d61">CHAMPION</text></g>`;}
+    else{const chco=CH.clubObj||{c:TC,key:''},cc=chco.c;
+      const mob=typeof innerWidth!=='undefined'&&innerWidth<640;
+      const NR=mob?8:16; // 星芒道數(手機減半)
+      let rays='';for(let i=0;i<NR;i++){const a=i*2*Math.PI/NR;const L=i%2?52:78,w=i%2?1.1:1.9;
+        rays+=`<line x1="${(chc+Math.cos(a)*20).toFixed(1)}" y1="${(chCy+Math.sin(a)*20).toFixed(1)}" x2="${(chc+Math.cos(a)*L).toFixed(1)}" y2="${(chCy+Math.sin(a)*L).toFixed(1)}" stroke="${cc}" stroke-width="${w}" stroke-linecap="round" opacity=".7">
+          <animate attributeName="opacity" values=".25;.9;.25" dur="${(1.8+(i%3)*.5).toFixed(1)}s" repeatCount="indefinite"/></line>`;}
+      const glory=`<radialGradient id="chGlory"><stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".3" stop-color="${cc}" stop-opacity=".38"/><stop offset=".7" stop-color="${cc}" stop-opacity=".12"/><stop offset="1" stop-color="${cc}" stop-opacity="0"/></radialGradient>
+        <circle cx="${chc}" cy="${chCy}" r="92" fill="url(#chGlory)"><animate attributeName="opacity" values=".55;1;.55" dur="3.2s" repeatCount="indefinite"/></circle>
+        <g><animateTransform attributeName="transform" type="rotate" from="0 ${chc} ${chCy}" to="360 ${chc} ${chCy}" dur="42s" repeatCount="indefinite"/>${rays}</g>
+        <circle cx="${chc}" cy="${chCy}" fill="none" stroke="${cc}" stroke-width="1.4">
+          <animate attributeName="r" values="34;86" dur="2.6s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values=".7;0" dur="2.6s" repeatCount="indefinite"/></circle>`;
+      champ=`<g class="bnode" data-tid="${CH.tid}">`+glory+`
+        <clipPath id="chclip"><polygon points="${octPts}"/></clipPath>
+        <polygon points="${octPts}" fill="rgba(168,85,247,.14)" stroke="${TC}" stroke-width="2.4"/>
+        <linearGradient id="chlg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${cc}" stop-opacity=".55"/><stop offset="1" stop-color="${cc}" stop-opacity=".12"/></linearGradient>
+        <g clip-path="url(#chclip)">
+          <rect x="${chc-34}" width="68" fill="url(#chlg)"><animate attributeName="y" values="${chCy+34};${chCy-34};${chCy-34};${chCy+34}" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/><animate attributeName="height" values="0;68;68;0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+          <rect x="${chc-34}" width="68" fill="url(#brGrid)" opacity=".55"><animate attributeName="y" values="${chCy+34};${chCy-34};${chCy-34};${chCy+34}" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/><animate attributeName="height" values="0;68;68;0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+          <rect x="${chc-34}" width="68" fill="url(#brNoise)" opacity=".45"><animate attributeName="y" values="${chCy+34};${chCy-34};${chCy-34};${chCy+34}" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/><animate attributeName="height" values="0;68;68;0" keyTimes="0;.55;.85;1" dur="${T}s" repeatCount="indefinite"/></rect>
+        </g>
+        <polygon points="${octPts}" fill="none" stroke="${TC}" stroke-width="2.4"/>
+        ${chco.key?`<g transform="translate(${chc-19},${chCy-19}) scale(0.19)">${embMini(chco.key,cc)}</g>`:''}
+        <text x="${chc}" y="${chCy+52}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="13" fill="${cc}">${CH.label}</text>
+        <text x="${chc}" y="${chCy+66}" text-anchor="middle" font-family="Share Tech Mono" font-size="8" letter-spacing="2" fill="${TC}">CHAMPION ♛</text></g>`;}
+    // 季軍戰（prog>=3 才有結果）
+    const third=prog>=3
+      ?`<text x="8" y="${cy8(7)+FH/2+34}" font-family="Share Tech Mono" font-size="10" fill="#5b7089">季軍戰　<tspan fill="${d.thirdW&&d.thirdW.clubObj?d.thirdW.clubObj.c:'#34e07a'}" font-weight="700">${d.thirdW?d.thirdW.label:'—'}</tspan>${d.sfL.length===2?' 勝 '+d.sfL.filter(t=>t!==d.thirdW)[0].label:''}</text>`
+      :`<text x="8" y="${cy8(7)+FH/2+34}" font-family="Share Tech Mono" font-size="10" fill="#3f4d61">季軍戰　待決賽後進行</text>`;
+    const heads=['8 強 QUARTER','4 強 SEMI','決賽 FINAL','封王 CROWN'].map((h,i)=>`<text x="${COLX[i]+(i<3?FW/2:46)}" y="6" text-anchor="middle" font-family="Share Tech Mono" font-size="8.5" letter-spacing="1.5" fill="${TC}" opacity=".8">${h}</text>`).join('');
+    const H=cy8(7)+FH/2+48;
+    return `<svg class="brsvg" viewBox="0 -6 800 ${H}">
+      <defs><filter id="brGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <pattern id="brGrid" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M7 0H0V7" fill="none" stroke="#eafcff" stroke-width=".4" opacity=".5"/></pattern>
+        <filter id="brNoiseF"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .6 0"/></filter>
+        <pattern id="brNoise" width="60" height="42" patternUnits="userSpaceOnUse"><rect width="60" height="42" filter="url(#brNoiseF)"/></pattern></defs>
+      <g>${heads}</g><g>${conns}</g><g>${nodes}</g>${champ}${third}</svg>`;
+  }
+
+  function renderDetail(tr){
+    const d=buildTier(tr);
+    detail.style.setProperty('--tc',tr.col);detail.style.setProperty('--tg',tr.glow);detail.style.setProperty('--tc2',tr.col);
+    let head=`<div class="dh"><span class="dbadge ${tr.badge}">${tr.name}</span>
+      <span class="dt">${tr.en} 階級晉級路徑</span><span class="dn">${tr.type==='comp'?'競技組 · 20 隊':'休閒組 · 30 隊'}</span></div>`;
+    const hint=`<div class="taphint">▸ 點任一隊伍節點，查看該隊累積戰績檔案</div>`;
+    if(tr.type==='comp'){
+      head+=`<div class="dsub">五角複賽 <span class="hl">4 組 × 5 隊全循環</span>，各組取前二 → 8 強 → 單淘汰 → 決賽＋季軍戰</div>`+hint;
+      detail.innerHTML=head+`
+        <div class="rrblock"><div class="rrhead">五角複賽<span class="pn">4 組 × 5 隊全循環 · 取前二 · ▸ 點五角看組進程</span></div>
+          <div class="pent-wrap">
+            ${pentSVG('A',d.groups[0],tr.key+'_0')}${pentSVG('B',d.groups[1],tr.key+'_1')}${pentSVG('C',d.groups[2],tr.key+'_2')}${pentSVG('D',d.groups[3],tr.key+'_3')}
+          </div></div>
+        <div class="brblock"><div class="rrhead">決勝<span class="pn">8 強 → 4 強 → 決賽 ＋ 季軍戰 · 晉級光子流</span></div>
+          <div class="progbar"><span class="pglab">賽程進度</span>
+            <input type="range" class="pgrange" min="0" max="4" step="1" value="${progState[tr.key]}" data-tier="${tr.key}">
+            <span class="pgstate" id="pgState_${tr.key}">${PROGLBL[progState[tr.key]]}</span></div>
+          <div class="brwrap" id="brwrap_${tr.key}">${finalBracketSVG(d,tr,progState[tr.key])}</div></div>`;
+    }else{
+      head+=`<div class="dsub">30 隊<span class="hl">單淘汰</span> → 15 隊 → <span class="hl">12 單淘汰取 6 ＋ 3 隊三角循環取 2</span> → 8 強 → 單淘汰 → 決賽＋季軍戰</div>`+hint;
+      const r1cards=d.r1pairs.map((p,i)=>`<div class="r1card"><div class="gno">場 ${String(i+1).padStart(2,'0')}</div>${seed(p[0],lastSc(p[0],'複賽一輪'),d.survivors.includes(p[0]))}${seed(p[1],lastSc(p[1],'複賽一輪'),d.survivors.includes(p[1]))}</div>`).join('');
+      const r2cards=d.r2pairs.map((p,i)=>`<div class="r1card"><div class="gno">單淘汰 ${i+1}</div>${seed(p[0],lastSc(p[0],'複賽二輪'),d.r2koWin.includes(p[0]))}${seed(p[1],lastSc(p[1],'複賽二輪'),d.r2koWin.includes(p[1]))}</div>`).join('');
+      const triCards=d.r2tri.map(t=>seed(t,null,d.triTop2.includes(t))).join('');
+      const triLog=d.triMatches.map(m=>`<div class="trim"><span>${m.a} vs ${m.b}</span><b>${m.sc}</b></div>`).join('');
+      detail.innerHTML=head+`
+        <div class="r1block"><div class="r1head">複賽一輪<span class="pn">30 隊單淘汰 · 15 場 → 晉級 15 隊</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
+          <div class="r1scroll">${r1cards}</div></div>
+        <div class="r2block"><div class="r1head">複賽二輪<span class="pn">15 → 8 強 · 12 單淘汰取 6 ＋ 3 三角取 2</span></div>
+          <div class="r2cols">
+            <div><div class="r2sub">▸ 12 隊單淘汰 · 6 場 → 取 6 隊</div><div class="r2grid">${r2cards}</div></div>
+            <div><div class="r2sub">▸ 3 隊三角循環 · 取前 2</div>
+              <div class="tri big">${triCards}<div class="trimatches">${triLog}</div></div></div>
+          </div></div>
+        <div class="brblock"><div class="rrhead">決勝<span class="pn">8 強 → 4 強 → 決賽 ＋ 季軍戰 · 晉級光子流</span></div>
+          <div class="progbar"><span class="pglab">賽程進度</span>
+            <input type="range" class="pgrange" min="0" max="4" step="1" value="${progState[tr.key]}" data-tier="${tr.key}">
+            <span class="pgstate" id="pgState_${tr.key}">${PROGLBL[progState[tr.key]]}</span></div>
+          <div class="brwrap" id="brwrap_${tr.key}">${finalBracketSVG(d,tr,progState[tr.key])}</div></div>`;
+    }
+    stopR1();if(tr.type==='cas'&&!reduce)startR1();
+  }
+
+  // ---- 戰績卡 ----
+  const rec=document.getElementById('rec'),reccard=document.getElementById('reccard');
+  let recOpacity=22; // 背景徽記濃度(%),記住使用者設定
+  function openRec(tid){
+    const t=REG[tid];if(!t)return;
+    const co=t.clubObj||{c:'#22d3ee',name:t.club,key:''};
+    const rows=t.matches.map(m=>`<div class="mt"><span class="mr">${m.round}</span>
+      <span class="mvs">vs ${m.vs}</span><span class="msc">${m.sc}</span>
+      <span class="res ${m.win?'w':'l'}">${m.win?'勝':'負'}</span></div>`).join('');
+    reccard.style.setProperty('--rc',co.c);
+    reccard.innerHTML=`<span class="rx" id="rcx">✕</span>
+      <div class="recbg"><svg viewBox="0 0 200 200" class="recbgsvg">${co.key?embCenter(co.key,co.c):''}</svg></div>
+      <div class="recfg">
+        <div class="rhead">
+          <div class="remblem">${embFull(co,t.tier+' · '+t.kind)}</div>
+          <div class="rhtext"><div class="rlabel">${t.label}</div>
+            <div class="rclub">${co.name} 球團</div>
+            <div class="rplayers">隊員：${(window.SolarCupData&&SolarCupData.demoPlayers?SolarCupData.demoPlayers(t.tid):['—','—']).join(' · ')}</div>
+            <div class="rmeta"><span class="rtier ${TIERCLS[t.tier]}">${t.tier}</span><span>${t.kind}隊</span><span>·</span><span>編號 ${t.label.slice(-2)}</span></div></div></div>
+        <div class="rstats">
+          <div class="rst"><div class="rsv">${t.w}</div><div class="rsk">勝</div></div>
+          <div class="rst"><div class="rsv">${t.l}</div><div class="rsk">敗</div></div>
+          <div class="rst"><div class="rsv">${t.base+t.placePts}</div><div class="rsk">積分</div></div>
+        </div>
+        <div class="rlog"><div class="rlh">對戰紀錄 · MATCH LOG</div>${rows||'<div class="mt">尚無紀錄</div>'}</div>
+        <div class="rfoot">最終止步：${t.stage} · 積分 <span class="pts">${t.base+t.placePts}</span>（階級底分 ${t.base} ＋ 名次分 ${t.placePts}）</div>
+        <div class="recctrl"><span>背景徽記濃度</span><input type="range" id="recOpa" min="0" max="55" value="${recOpacity}"><span class="recval" id="recVal">${recOpacity}%</span></div>
+      </div>`;
+    const bgsvg=reccard.querySelector('.recbgsvg');
+    if(bgsvg)bgsvg.style.opacity=(recOpacity/100).toFixed(2);
+    const slider=document.getElementById('recOpa'),val=document.getElementById('recVal');
+    if(slider)slider.oninput=e=>{recOpacity=+e.target.value;if(bgsvg)bgsvg.style.opacity=(recOpacity/100).toFixed(2);if(val)val.textContent=recOpacity+'%';};
+    rec.classList.add('show');
+    document.getElementById('rcx').onclick=()=>rec.classList.remove('show');
+  }
+  // 組進程卡：五角循環賽 5隊10場
+  function openGroup(gkey){
+    const us=gkey.lastIndexOf('_');const tierKey=gkey.slice(0,us);let gi=+gkey.slice(us+1);
+    const tier=TIERS.find(t=>t.key===tierKey);const d=DATA[tierKey];
+    if(!tier||!d||!d.groupMatches)return;
+    const TC=tier.col;
+    reccard.style.setProperty('--rc',TC);
+
+    function drawGroup(gsvg){
+      const g=d.groups[gi],gm=d.groupMatches[gi];
+      const idx=new Map();g.forEach((t,i)=>idx.set(t,i));
+      const cx=200,cy=190,R=118,nodeR=21;
+      const V=g.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/5;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
+      function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,dd=Math.hypot(dx,dy),ux=dx/dd,uy=dy/dd;return {x1:a.x+ux*nodeR,y1:a.y+uy*nodeR,x2:b.x-ux*nodeR,y2:b.y-uy*nodeR};}
+      let defs='',links='',photons='',labels='',nodes='';
+      gm.forEach((m,k)=>{
+        const ai=idx.get(m.a),bi=idx.get(m.b),wi=idx.get(m.winner),li=wi===ai?bi:ai;
+        const A=V[ai],B=V[bi],wv=V[wi],lv=V[li],wc=(m.winner.clubObj||{c:TC}).c;
+        const e=edge(A,B),le=edge(lv,wv);
+        // 連線用勝方球團色（實色，非漸層）
+        links+=`<line class="glink" data-k="${k}" data-i="${ai}" data-j="${bi}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="2" opacity=".72"/>`;
+        // 光子：敗方 → 勝方（導向勝方自己）
+        const dur=(2.2+(k%3)*0.4).toFixed(1);
+        photons+=`<circle r="2.8" fill="${wc}" pointer-events="none"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${le.x1.toFixed(1)},${le.y1.toFixed(1)} L${le.x2.toFixed(1)},${le.y2.toFixed(1)}"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.85;1" dur="${dur}s" repeatCount="indefinite"/></circle>`;
+        // 比分標籤：左右數字對應左右頂點位置；勝方數字亮、敗方數字暗
+        const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+        const parts=m.sc.split('：');                 // parts 為 [m.a 得分, m.b 得分]（sc 由 a 視角記錄）
+        const leftIsA=A.x<=B.x;                         // 畫面上誰在左
+        const leftScore=leftIsA?parts[0]:parts[1];
+        const rightScore=leftIsA?parts[1]:parts[0];
+        const leftTeamIdx=leftIsA?ai:bi;
+        const leftWin=(leftTeamIdx===wi);               // 左側是否勝方
+        const dim='#5b7089';
+        labels+=`<g class="scoreLbl" data-k="${k}">
+          <rect x="${(mx-27).toFixed(1)}" y="${(my-11).toFixed(1)}" width="54" height="22" rx="3" fill="#03060d" stroke="${wc}" stroke-width="1.2"/>
+          <text x="${(mx-6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="end" font-family="Orbitron,sans-serif" font-weight="${leftWin?'900':'500'}" font-size="11" fill="${leftWin?wc:dim}">${leftScore}</text>
+          <text x="${mx.toFixed(1)}" y="${(my+3).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="${dim}">:</text>
+          <text x="${(mx+6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron,sans-serif" font-weight="${!leftWin?'900':'500'}" font-size="11" fill="${!leftWin?wc:dim}">${rightScore}</text></g>`;
+      });
+      const rank=[...g].map((t,i)=>({t,i})).sort((a,b)=>b.t.w-a.t.w||b.t.base-a.t.base);
+      const advSet=new Set([rank[0].i,rank[1].i]);
+      g.forEach((t,i)=>{const v=V[i],adv=advSet.has(i),co=t.clubObj||{c:TC,key:''},c=co.c;
+        const lyOff=(i===0)?-(nodeR+16):(nodeR+16);const labY=v.y+lyOff,labW=Math.max(52,t.label.length*11+16);
+        nodes+=`<g class="gnode ${adv?'adv':''}" data-i="${i}">
+          ${adv?`<circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR+5}" fill="none" stroke="${TC}" stroke-width="2" opacity=".9"/>`:''}
+          <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR}" fill="rgba(3,6,13,.9)" stroke="${c}" stroke-width="2.6"/>
+          ${co.key?`<g transform="translate(${(v.x-16).toFixed(1)},${(v.y-16).toFixed(1)}) scale(0.16)">${embMini(co.key,c)}</g>`:''}
+          <circle cx="${(v.x+15).toFixed(1)}" cy="${(v.y-15).toFixed(1)}" r="9" fill="${c}"/>
+          <text x="${(v.x+15).toFixed(1)}" y="${(v.y-11.5).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="10" fill="#03060d">${t.w}</text>
+          <g class="nlabel"><rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-11).toFixed(1)}" width="${labW}" height="22" rx="3" fill="rgba(3,6,13,.9)" stroke="${adv?TC:'rgba(255,255,255,.12)'}" stroke-width="1"/>
+            <text x="${v.x.toFixed(1)}" y="${(labY-1).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="11" fill="${adv?'#eafcff':'#9fb0c8'}">${t.label}</text>
+            <text x="${v.x.toFixed(1)}" y="${(labY+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="7.5" fill="${c}">${t.w}勝 ${t.l}敗</text></g></g>`;
+      });
+      gsvg.innerHTML=`<defs>${defs}</defs><g>${links}</g><g>${photons}</g><g>${labels}</g><g>${nodes}</g>`;
+      // 積分榜
+      const stand=rank.map((r,i)=>{const t=r.t,adv=i<2,co=t.clubObj||{c:'#8a95a5',key:''};
+        return `<div class="gstand ${adv?'adv':''}"><span class="grk">${i+1}</span>
+          <span class="gchip">${co.key?embChip(co):''}</span><span class="gnm">${t.label}</span>
+          <span class="gwl">${t.w}<i>勝</i> ${t.l}<i>敗</i></span><span class="gadv">${adv?'晉級':'止步'}</span></div>`;}).join('');
+      const standEl=reccard.querySelector('#gStand');if(standEl)standEl.innerHTML=stand;
+      // 互動
+      const links_=[...gsvg.querySelectorAll('.glink')],labels_=[...gsvg.querySelectorAll('.scoreLbl')],nodes_=[...gsvg.querySelectorAll('.gnode')];
+      let act=null;
+      function clr(){links_.forEach(l=>l.classList.remove('dim'));labels_.forEach(l=>l.classList.remove('show'));nodes_.forEach(n=>n.classList.remove('dim'));act=null;}
+      function showM(k){clr();act='m'+k;const l=links_.find(x=>x.dataset.k===k);links_.forEach(x=>{if(x.dataset.k!==k)x.classList.add('dim');});const lb=labels_.find(x=>x.dataset.k===k);if(lb)lb.classList.add('show');nodes_.forEach(n=>{if(n.dataset.i!==l.dataset.i&&n.dataset.i!==l.dataset.j)n.classList.add('dim');});}
+      function showT(i){clr();act='t'+i;links_.forEach(l=>{if(l.dataset.i===i||l.dataset.j===i){const lb=labels_.find(x=>x.dataset.k===l.dataset.k);if(lb)lb.classList.add('show');}else l.classList.add('dim');});}
+      links_.forEach(l=>l.addEventListener('click',ev=>{ev.stopPropagation();const k=l.dataset.k;act==='m'+k?clr():showM(k);}));
+      nodes_.forEach(n=>n.addEventListener('click',ev=>{ev.stopPropagation();const i=n.dataset.i;act==='t'+i?clr():showT(i);}));
+      gsvg.addEventListener('click',clr);
+    }
+
+    // 卡片外框（含 ABCD 切換）
+    const tabs=['A','B','C','D'].map((gl,k)=>`<div class="gtab ${k===gi?'on':''}" data-g="${k}">${tier.name.slice(0,2)}${gl}</div>`).join('');
+    reccard.innerHTML=`<span class="rx" id="rcx">✕</span>
+      <div class="recfg">
+        <div class="rhead" style="display:block">
+          <div class="rlabel" id="gTitle">${tier.name} · ${['A','B','C','D'][gi]} 組</div>
+          <div class="rclub" style="color:${TC}">五角循環賽 · 5 隊 10 場 · 光子由敗方流向勝方</div></div>
+        <div class="gtabs">${tabs}</div>
+        <div class="gpent"><svg class="gpsvg" viewBox="0 -6 400 412"></svg>
+          <div class="gphint">▸ 點連線看該場比分 · 點頂點看該隊所有對戰 · 點空白還原</div></div>
+        <div class="gsec"><div class="rlh" style="color:${TC}">積分榜 · STANDINGS</div><div id="gStand"></div></div>
+      </div>`;
+    rec.classList.add('show');
+    document.getElementById('rcx').onclick=()=>rec.classList.remove('show');
+    const gsvg=reccard.querySelector('.gpsvg');
+    drawGroup(gsvg);
+    reccard.querySelectorAll('.gtab').forEach(tab=>tab.onclick=()=>{
+      gi=+tab.dataset.g;
+      reccard.querySelectorAll('.gtab').forEach(x=>x.classList.remove('on'));tab.classList.add('on');
+      reccard.querySelector('#gTitle').textContent=`${tier.name} · ${['A','B','C','D'][gi]} 組`;
+      drawGroup(gsvg);
+    });
+  }
+  rec.addEventListener('click',e=>{if(e.target===rec)rec.classList.remove('show');});
+  // 事件委派：隊伍節點→戰績卡；五角組→組進程卡
+  detail.addEventListener('click',e=>{
+    const node=e.target.closest('[data-tid]');
+    if(node&&node.dataset.tid){openRec(node.dataset.tid);return;}
+    const gnode=e.target.closest('[data-group]');
+    if(gnode&&gnode.dataset.group){openGroup(gnode.dataset.group);}
+  });
+  // 進度拉桿：更新該階級 prog，只重繪對應 bracket
+  detail.addEventListener('input',e=>{
+    const r=e.target.closest('.pgrange');if(!r)return;
+    const tk=r.dataset.tier;const was=progState[tk];progState[tk]=+r.value;
+    if(progState[tk]===4&&was<4&&window.sc2Burst){const dd=DATA[tk];
+      const cc=(dd&&dd.champ&&dd.champ.clubObj)?dd.champ.clubObj.c:(TIERS.find(t=>t.key===tk)||{}).col;
+      window.sc2Burst(cc||'#22d3ee');}
+    const d=DATA[tk],tr=TIERS.find(t=>t.key===tk);
+    const wrap=document.getElementById('brwrap_'+tk);if(wrap&&d&&tr)wrap.innerHTML=finalBracketSVG(d,tr,progState[tk]);
+    const st=document.getElementById('pgState_'+tk);if(st)st.textContent=PROGLBL[progState[tk]];
+    updateLanes();
+  });
+
+  document.querySelector('.lane').classList.add('on');
+  renderDetail(TIERS[0]);
+})();
+</script>
+</body>
+</html>

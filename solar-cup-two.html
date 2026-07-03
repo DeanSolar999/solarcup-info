@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 曜日盃 · 賽事首頁</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#03060d; --teal:#1de9b6; --trace:#19c37d; --cyan:#22d3ee; --blue:#38bdf8;
+    --violet:#a855f7; --bright:#c77dff; --magenta:#ff3cac; --amber:#ffc24b; --green:#4ade80;
+    --ink:#dbeafe; --dim:#5b7089; --grid:rgba(120,200,200,.14); --pcb:rgba(29,233,182,.5);
+    --plat:#4d9fff; --gold:#ffcf33; --silver:#ff4d6a; --bronze:#34e07a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:'Share Tech Mono',monospace;overflow-x:hidden}
+
+  /* 頂部導航 */
+  #nav{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;
+    justify-content:space-between;padding:12px 22px;background:rgba(3,6,13,.82);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--grid)}
+  #nav .logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;letter-spacing:.1em;color:#fff}
+  #nav .logo .t{color:var(--teal)}
+  #nav .links{display:flex;gap:6px}
+  #nav .lk{font-size:11px;letter-spacing:.1em;padding:7px 14px;border:1px solid var(--grid);
+    background:rgba(10,16,32,.5);color:var(--dim);cursor:pointer;transition:.2s}
+  #nav .lk.on{color:var(--cyan);border-color:rgba(34,211,238,.6);background:rgba(34,211,238,.08)}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  /* ========== 首頁 ========== */
+  #photon{position:fixed;inset:0;z-index:-1;display:block}
+  #scene{position:fixed;inset:0;z-index:0;display:block}
+  #grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:46px 46px;opacity:.32;
+    -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 40%,#000 30%,transparent 80%)}
+  #scan{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.16) 2px 4px);mix-blend-mode:multiply;opacity:.4}
+  .wrap{position:relative;z-index:2}
+
+  .corner{position:fixed;z-index:5;font-size:9px;letter-spacing:.22em;color:var(--dim);pointer-events:none}
+  .corner.bl{bottom:16px;left:20px} .corner.br{bottom:16px;right:20px;text-align:right}
+  .corner .b{color:var(--teal)}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;padding:90px 24px 60px;position:relative}
+  .hero .sys{font-size:10px;letter-spacing:.4em;color:var(--teal);margin-bottom:22px;display:flex;align-items:center;gap:10px}
+  .hero .sys .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);animation:blink 1.5s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+  .hero h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1-hero);letter-spacing:.04em;line-height:.95;color:#fff;
+    text-shadow:0 0 30px rgba(168,85,247,.6),0 0 60px rgba(34,211,238,.25)}
+  .hero h1 .two{background:linear-gradient(120deg,var(--cyan),var(--violet),var(--teal));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .hero .zh{margin-top:14px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(22px,5vw,44px);letter-spacing:.28em;color:var(--bright)}
+  .hero .tag{margin-top:16px;font-size:clamp(10px,2.2vw,14px);letter-spacing:.26em;color:var(--cyan)}
+  .hero .meta{margin-top:30px;display:flex;gap:24px;flex-wrap:wrap;justify-content:center}
+  .hero .meta .it{display:flex;flex-direction:column;gap:5px;align-items:center}
+  .hero .meta .k{font-size:8.5px;letter-spacing:.2em;color:var(--dim)}
+  .hero .meta .v{font-family:'Orbitron',sans-serif;font-weight:700;font-size:15px;color:var(--cyan)}
+  .cta{margin-top:40px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .btn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;padding:14px 26px;
+    border:1px solid var(--pcb);background:rgba(29,233,182,.06);color:var(--teal);cursor:pointer;text-decoration:none;transition:.22s}
+  .btn:hover{background:rgba(29,233,182,.16);box-shadow:0 0 24px rgba(29,233,182,.35);transform:translateY(-2px)}
+  .btn.primary{border-color:var(--cyan);color:#03060d;background:linear-gradient(120deg,var(--cyan),var(--teal))}
+  .scroll-cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.2em;color:var(--dim);animation:bob 2s infinite}
+  @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+  #tip{position:fixed;z-index:6;pointer-events:none;opacity:0;transition:opacity .15s;padding:9px 13px;
+    border:1px solid var(--pcb);background:rgba(4,12,16,.95);backdrop-filter:blur(4px)}
+  #tip .k{font-size:8.5px;letter-spacing:.18em;color:var(--dim)} #tip .v{font-family:'Orbitron',sans-serif;font-weight:700;font-size:14px;color:var(--teal);margin-top:3px}
+
+  section.blk{max-width:1080px;margin:0 auto;padding:54px 24px}
+  .sh{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .sh .idx{font-family:'Orbitron',sans-serif;font-weight:900;font-size:13px;color:var(--teal);border:1px solid var(--pcb);padding:6px 10px}
+  .sh .t{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(17px,3.6vw,24px);color:#fff;letter-spacing:.05em}
+  .sh .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--pcb),transparent)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .card{position:relative;border:1px solid var(--grid);background:rgba(6,16,22,.6);padding:20px;transition:.2s}
+  .card::before{content:"";position:absolute;top:9px;left:9px;width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal)}
+  .card:hover{border-color:var(--pcb);box-shadow:0 0 24px rgba(29,233,182,.16);transform:translateY(-3px)}
+  .card .ct{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;letter-spacing:.08em;color:var(--cyan);margin:4px 0 14px;padding-left:16px}
+  .card .row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid rgba(120,200,200,.07)}
+  .card .row:last-child{border:0} .card .row .k{color:var(--dim)} .card .row .v{color:var(--ink);text-align:right}
+  .card .tierline{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0}
+  .card .tier{font-size:9px;padding:1px 7px;border-radius:2px;font-weight:700}
+  .tier-p{background:rgba(77,159,255,.16);color:var(--plat);border:1px solid rgba(77,159,255,.4)}
+  .tier-g{background:rgba(255,207,51,.16);color:var(--gold);border:1px solid rgba(255,207,51,.4)}
+  .tier-s{background:rgba(255,77,106,.14);color:var(--silver);border:1px solid rgba(255,77,106,.35)}
+  .tier-b{background:rgba(52,224,122,.14);color:var(--bronze);border:1px solid rgba(52,224,122,.35)}
+
+  .timeline{position:relative;padding-left:30px}
+  .timeline::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--teal),var(--violet))}
+  .tl-item{position:relative;padding:9px 0}
+  .tl-item::before{content:"";position:absolute;left:-29px;top:13px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:2px solid var(--teal);box-shadow:0 0 8px var(--teal)}
+  .tl-item .tm{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--bright);font-size:13px}
+  .tl-item .ds{font-size:12px;color:var(--ink);margin-top:3px}
+
+  .lock{border:1px solid rgba(224,36,60,.4);background:rgba(40,8,12,.5);padding:8px 12px;margin-bottom:6px;font-size:11.5px;display:flex;gap:10px;align-items:center}
+  .lock .ic{color:var(--magenta)} .lock b{color:var(--magenta);font-weight:700}
+
+  .rules{display:flex;flex-direction:column;gap:9px}
+  .rule{display:flex;gap:11px;font-size:12.5px;line-height:1.7;color:var(--ink);border-left:2px solid var(--pcb);padding:3px 0 3px 13px}
+  .rule b{color:var(--teal);font-weight:400}
+
+  .org{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .ogrp{border:1px solid var(--grid);background:rgba(6,16,22,.55);padding:16px}
+  .ogrp .gn{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--cyan);margin-bottom:8px}
+  .ogrp .gl{font-size:11px;color:var(--ink);line-height:1.7} .ogrp .lead{color:var(--teal)}
+
+  footer{text-align:center;padding:46px 24px 70px;font-size:10px;letter-spacing:.16em;color:var(--dim)}
+  footer .demo{color:var(--amber);margin-top:8px;font-size:9px}
+
+  /* ========== 看板 ========== */
+  #board{position:relative;min-height:100vh}
+  #bcanvas{position:fixed;inset:0;z-index:0;display:block}
+  #batmos{position:fixed;inset:0;z-index:1;pointer-events:none}
+  #batmos::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 80% 75% at 48% 46%,transparent 55%,rgba(3,6,13,.8))}
+  .bhud{position:fixed;z-index:3;pointer-events:none;user-select:none}
+  #bbrand{top:64px;left:24px}
+  #bbrand .t{font-family:'Orbitron',sans-serif;font-weight:900;font-size:18px;color:#fff;letter-spacing:.06em}
+  #bbrand .s{margin-top:5px;font-size:9px;letter-spacing:.2em;color:var(--cyan)}
+  #bbrand .demo{margin-top:6px;font-size:8px;letter-spacing:.16em;color:var(--amber);opacity:.85}
+  #btabs{top:64px;right:24px;display:flex;gap:6px;pointer-events:auto;flex-wrap:wrap;max-width:320px;justify-content:flex-end}
+  .btab{font-size:10px;letter-spacing:.1em;padding:6px 12px;border:1px solid var(--grid);background:rgba(10,16,32,.5);color:var(--dim);cursor:pointer;transition:.2s}
+  .btab.on{color:var(--cyan);border-color:rgba(34,211,238,.6);background:rgba(34,211,238,.08)}
+  #bcourts{top:50%;right:24px;transform:translateY(-50%);width:178px}
+  #bcourts .ph{font-size:9px;letter-spacing:.18em;color:var(--dim);margin-bottom:8px}
+  .crow{display:flex;align-items:center;gap:8px;padding:5px 9px;margin-bottom:3px;font-size:10px;border:1px solid var(--grid);background:rgba(10,16,32,.55)}
+  .crow .cid{font-family:'Orbitron',sans-serif;font-weight:700;font-size:9px;min-width:26px}
+  .crow .cinfo{flex:1;color:var(--dim);font-size:9px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .crow .led{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .crow.busy{border-color:rgba(34,211,238,.35)} .crow.busy .cinfo{color:var(--cyan)} .crow.busy .led{background:var(--cyan);box-shadow:0 0 7px var(--cyan)}
+  .crow.idle .led{background:var(--dim)}
+  #bfocus{bottom:20px;left:24px;right:24px;display:flex;align-items:center;gap:12px}
+  #bfocus .pill{font-family:'Orbitron',sans-serif;font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--bg);background:var(--magenta);padding:4px 9px;flex-shrink:0}
+  #bfocus .tk{flex:1;font-size:11px;color:var(--ink);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #bfocus .tk .hl{color:var(--cyan)}
+  #bhint{bottom:52px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.16em;color:var(--dim);opacity:.7}
+  #btip{position:fixed;z-index:6;pointer-events:none;opacity:0;transition:opacity .15s;min-width:170px;padding:10px 12px;border:1px solid rgba(34,211,238,.5);background:rgba(6,10,22,.95)}
+  #btip .r{font-size:9px;letter-spacing:.16em;color:var(--dim);margin-bottom:6px}
+  #btip .vs{display:flex;justify-content:space-between;font-size:12px;margin:3px 0} #btip .vs .sc{font-family:'Orbitron',sans-serif;font-weight:700}
+
+  #bdrill{position:fixed;z-index:10;inset:0;display:none;align-items:flex-start;justify-content:center;background:rgba(2,3,8,.8);backdrop-filter:blur(3px);overflow:auto;padding:8vh 0}
+  #bdrill.show{display:flex;animation:bdFade .2s ease-out}
+  #bdrill.show .card2{animation:bdCard .26s ease-out}
+  @keyframes bdFade{from{opacity:0}to{opacity:1}}
+  @keyframes bdCard{from{opacity:0;transform:translateY(12px) scale(.965)}to{opacity:1;transform:translateY(0) scale(1)}}
+  #bdrill .card2{width:min(540px,92vw);border:1px solid rgba(34,211,238,.4);background:rgba(6,10,22,.97);padding:22px 24px;pointer-events:auto}
+  #bdrill .ch{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
+  #bdrill .ch .g{font-family:'Orbitron',sans-serif;font-weight:900;font-size:22px;color:#fff}
+  #bdrill .ch .x{font-size:13px;color:var(--dim);cursor:pointer}
+  #bdrill table{width:100%;border-collapse:collapse;font-size:12px}
+  #bdrill th{text-align:left;font-size:8.5px;letter-spacing:.12em;color:var(--dim);padding:5px 6px;border-bottom:1px solid var(--grid);font-weight:400}
+  #bdrill td{padding:7px 6px;border-bottom:1px solid rgba(120,170,255,.06)}
+  #bdrill td.n{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--dim);width:20px}
+  #bdrill tr.q td.n,#bdrill tr.q td.tm{color:var(--cyan)}
+  #bdrill td.num{text-align:center} #bdrill td.pts{text-align:center;font-family:'Orbitron',sans-serif;font-weight:700;color:var(--bright)}
+
+  @media (max-width:760px){
+    #bcourts{display:none} #bbrand .t{font-size:15px} #btabs{max-width:200px}
+    .corner.bl,.corner.br{display:none} #bhint{display:none}
+  }
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,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") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html" class="on">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+
+<!-- ========================= 首頁 ========================= -->
+<div class="view active" id="view-home">
+  <canvas id="photon"></canvas>
+  <canvas id="scene"></canvas>
+  <div id="grid-bg"></div>
+  <div id="scan"></div>
+  <div class="corner bl">CASPER · MELCHIOR · BALTHASAR</div>
+  <div class="corner br">臺北市大安運動中心</div>
+
+  <div class="wrap">
+    <div class="hero">
+      <div class="sys"><span class="dot"></span>NERV BADMINTON DIVISION · MAGI ONLINE</div>
+      <h1>SOLAR CUP <span class="two">TWO</span></h1>
+      <div class="zh">曜日盃 TWO</div>
+      <div class="tag">NEUROLINK CHAMPIONSHIP · 使徒殲滅戰</div>
+      <div class="meta">
+        <div class="it"><span class="k">DATE</span><span class="v">08 / 15</span></div>
+        <div class="it"><span class="k">VENUE</span><span class="v">大安運動中心</span></div>
+        <div class="it"><span class="k">TEAMS</span><span class="v">100＋8</span></div>
+        <div class="it"><span class="k">COURTS</span><span class="v">10</span></div>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="terminal.html">▸ 進入賽事實時系統</a>
+        <a class="btn" href="#format">查看完整賽事資訊 ↓</a>
+      </div>
+      <div class="scroll-cue">⟱ 拖曳上方晶片可旋轉 · 滑過節點看資訊</div>
+    </div>
+
+    <section class="blk" id="format">
+      <div class="sh"><span class="idx">01</span><span class="t">賽制 FORMAT</span><span class="ln"></span></div>
+      <div class="cards">
+        <div class="card"><div class="ct">競技組 · 40 隊</div>
+          <div class="tierline"><span class="tier tier-p">白金</span>初賽前二 → 五角複賽取二 → 8 強單淘汰</div>
+          <div class="tierline"><span class="tier tier-g">黃金</span>初賽後二 → 五角複賽取二 → 8 強單淘汰</div>
+          <div class="row"><span class="k">初賽</span><span class="v">10 組 × 4 隊全循環</span></div>
+          <div class="row"><span class="k">複賽</span><span class="v">4 組 × 5 隊五角循環</span></div>
+          <div class="row"><span class="k">決勝</span><span class="v">8 強單淘汰 ＋ 季軍戰</span></div>
+        </div>
+        <div class="card"><div class="ct">休閒組 · 60 隊</div>
+          <div class="tierline"><span class="tier tier-s">白銀</span>初賽前二 → 單淘汰複賽 → 8 強</div>
+          <div class="tierline"><span class="tier tier-b">青銅</span>初賽後二 → 單淘汰複賽 → 8 強</div>
+          <div class="row"><span class="k">初賽</span><span class="v">15 組 × 4 隊全循環</span></div>
+          <div class="row"><span class="k">複賽</span><span class="v">30→15→8 強（含三角循環）</span></div>
+          <div class="row"><span class="k">決勝</span><span class="v">8 強單淘汰 ＋ 季軍戰</span></div>
+        </div>
+        <div class="card"><div class="ct">曜請組 · 8 隊</div>
+          <div class="row"><span class="k">賽制</span><span class="v">8 隊全循環（28 場）</span></div>
+          <div class="row"><span class="k">排名</span><span class="v">依勝場，同分比失分率</span></div>
+          <div class="row"><span class="k">獎項</span><span class="v">冠 / 亞 / 季軍</span></div>
+          <div class="row"><span class="k">計分</span><span class="v">獨立，不計團體分</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">02</span><span class="t">積分與天梯 SCORING</span><span class="ln"></span></div>
+      <div class="cards">
+        <div class="card"><div class="ct">階級底分</div>
+          <div class="row"><span class="k">白金</span><span class="v">300</span></div>
+          <div class="row"><span class="k">黃金</span><span class="v">200</span></div>
+          <div class="row"><span class="k">白銀</span><span class="v">100</span></div>
+          <div class="row"><span class="k">青銅</span><span class="v">0</span></div>
+        </div>
+        <div class="card"><div class="ct">名次積分</div>
+          <div class="row"><span class="k">冠軍 / 亞軍</span><span class="v">100 / 80</span></div>
+          <div class="row"><span class="k">三 / 四名</span><span class="v">60 / 60</span></div>
+          <div class="row"><span class="k">八強止步</span><span class="v">40</span></div>
+          <div class="row"><span class="k">複賽止步</span><span class="v">休閒 20 / 0</span></div>
+        </div>
+        <div class="card"><div class="ct">隊伍總分</div>
+          <div class="row"><span class="k">公式</span><span class="v">階級底分 ＋ 名次分</span></div>
+          <div class="row"><span class="k">範例</span><span class="v">白金第三 = 360</span></div>
+          <div class="row"><span class="k">球團冠軍</span><span class="v">旗下隊伍積分加總最高</span></div>
+          <div class="row"><span class="k">天梯榜</span><span class="v">個人歷屆總積分排名</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">03</span><span class="t">當日時程 TIMELINE</span><span class="ln"></span></div>
+      <div class="timeline">
+        <div class="tl-item"><div class="tm">08:30</div><div class="ds">開放進場 · 球團分區就位（無現場報到）</div></div>
+        <div class="tl-item"><div class="tm">09:00</div><div class="ds">正式開始 · MAGI 系統啟動</div></div>
+        <div class="tl-item"><div class="tm">09:20</div><div class="ds">分組賽（上午，10 面場地並行）</div></div>
+        <div class="tl-item"><div class="tm">下午</div><div class="ds">階級複賽 → 淘汰賽</div></div>
+        <div class="tl-item"><div class="tm">傍晚</div><div class="ds">冠軍戰 · 季軍戰 · 頒獎</div></div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">04</span><span class="t">獎項 AWARDS</span><span class="ln"></span></div>
+      <div class="cards">
+        <div class="card"><div class="ct">競技組獎金</div>
+          <div class="row"><span class="k">白金 冠/亞/季</span><span class="v">3,000 / 2,500 / 2,000</span></div>
+          <div class="row"><span class="k">黃金 冠/亞/季</span><span class="v">2,000 / 1,500 / 1,000</span></div>
+          <div class="row"><span class="k">暴走加碼</span><span class="v">挑進白金每組 ＋500</span></div>
+          <div class="row"><span class="k">附帶</span><span class="v">獎盃</span></div>
+        </div>
+        <div class="card"><div class="ct">休閒 / 曜請組</div>
+          <div class="row"><span class="k">白銀 冠亞季</span><span class="v">獎盃 ＋ 獎品</span></div>
+          <div class="row"><span class="k">青銅 冠亞季</span><span class="v">獎盃 ＋ 獎品</span></div>
+          <div class="row"><span class="k">曜請 冠亞季</span><span class="v">獎盃 ＋ 獎品</span></div>
+        </div>
+        <div class="card"><div class="ct">球團總冠軍</div>
+          <div class="row"><span class="k">依據</span><span class="v">球團積分加總最高</span></div>
+          <div class="row"><span class="k">獎品</span><span class="v">勝利 MASTER ACE 五桶</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">05</span><span class="t">報名資格限制 · TARGET LOCK</span><span class="ln"></span></div>
+      <div style="font-size:12px;color:var(--dim);margin-bottom:14px">為維持各組競賽強度，下列對象不得報名休閒組（須報競技組）：</div>
+      <div class="lock"><span class="ic">⛔</span><span>歷屆曜日盃 <b>白金組參賽者</b> / 黃金組前三 / 白銀組前三</span></div>
+      <div class="lock"><span class="ic">⛔</span><span>歷屆<b>羽魄盃</b> 1000 級 / 750 級前三</span></div>
+      <div class="lock"><span class="ic">⛔</span><span>歷屆<b>活力盃</b>競技組、高階組、進階組前三</span></div>
+      <div class="lock"><span class="ic">⛔</span><span>歷屆<b>高虹盃</b> KB1000 級 / KB750 級前三</span></div>
+      <div class="lock"><span class="ic">⛔</span><span>現任或曾任<b>羽球教練</b>（持證無執教經驗者除外）</span></div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">06</span><span class="t">規則重點 PROTOCOL</span><span class="ln"></span></div>
+      <div class="rules">
+        <div class="rule">採 <b>21 分制、單局決勝</b>；競賽規章以 <b>BWF 世界羽聯</b>公告為準。</div>
+        <div class="rule"><b>無現場報到</b>：08:30 起開放進場，球員直接前往球團休息分區，依賽程自行至場邊準備。</div>
+        <div class="rule"><b>遲到判定</b>：該場排定開賽逾 5 分鐘、唱名三次未到，視同棄權；大會不另提醒。</div>
+        <div class="rule"><b>同分判定</b>：勝場 → 失分率（互咬得失分比）→ 直接對戰勝隊。</div>
+        <div class="rule"><b>申訴</b>：由競賽組（歐肯）與裁判組（Kai Chang）兩位受理。</div>
+        <div class="rule"><b>報名費</b> 每組 $1,380；<b>指定用球</b> 勝利 Master ACE。</div>
+      </div>
+    </section>
+
+    <section class="blk">
+      <div class="sh"><span class="idx">07</span><span class="t">賽事組織 STAFF</span><span class="ln"></span></div>
+      <div class="org">
+        <div class="ogrp"><div class="gn">總召</div><div class="gl"><span class="lead">阿定</span></div></div>
+        <div class="ogrp"><div class="gn">裁判組</div><div class="gl"><span class="lead">組長 Kai Chang</span> · 20 員</div></div>
+        <div class="ogrp"><div class="gn">競賽組</div><div class="gl"><span class="lead">組長 歐肯</span> · 小豐、弼翔、小盛、大頭</div></div>
+        <div class="ogrp"><div class="gn">執行組</div><div class="gl"><span class="lead">組長 節省</span> · 亞爾、威威、小馬、成成</div></div>
+        <div class="ogrp"><div class="gn">攝影組</div><div class="gl">桑衫學、皓淳、趙輝、黑熊</div></div>
+        <div class="ogrp"><div class="gn">公關組</div><div class="gl">阿定（總召）、阿東</div></div>
+      </div>
+    </section>
+
+    <footer>
+      SOLAR CUP TWO · 曜日盃 TWO · NERV 競技部 × 曜日羽球團 · MAGI SYSTEM<br>
+      <span class="demo">◆ 看板隊名／比分為模擬資料，賽制與獎勵以正式規章為準</span>
+    </footer>
+  </div>
+  <div id="tip"><div class="k"></div><div class="v"></div></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   Solar Cup Two — 首頁 3D 電路晶片背景
+   ============================================================ */
+(function(){
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if(window.THREE){ try{ initChip(); }catch(e){ console.error('chip fail',e); document.getElementById('scene').style.display='none'; } }
+  if(window.THREE){ try{ initPhoton(); }catch(e){ console.error('photon fail',e); const c=document.getElementById('photon');if(c)c.style.display='none'; } }
+
+  function initChip(){
+    const THREE=window.THREE;
+    const canvas=document.getElementById('scene');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.setSize(innerWidth,innerHeight);
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,0.1,120);
+    const mobV=innerWidth<640;
+    // 手機：鏡頭拉近壓低 + 視角加寬，場線延伸出螢幕外（站在場上的貼近感）
+    if(mobV){camera.fov=58;camera.updateProjectionMatrix();camera.position.set(0,2.6,8.2);}
+    else{camera.position.set(0,2.4,10);}
+    camera.lookAt(0,0,0);
+
+    function glowTex(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+      const gr=g.createRadialGradient(32,32,0,32,32,32);
+      gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.22,'rgba(190,230,255,.75)');
+      gr.addColorStop(.42,'rgba(120,200,255,.2)');gr.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+    const GLOW=glowTex();
+    const chip=new THREE.Group(); scene.add(chip);
+    if(mobV)chip.scale.setScalar(1.18); // 手機：場地放大，框線延伸出螢幕
+
+    const layers=[-1.8,0,1.8], layerCol=[0x19c37d,0x22d3ee,0xa855f7];
+    // 羽球場線型（真實比例 13.4m × 6.1m，縮放至長 7）
+    function courtGeo(){
+      const s=7/13.4;                    // 縮放比
+      const L=6.7*s, W=3.05*s;           // 半長、半寬（雙打外框）
+      const SW=(3.05-0.46)*s;            // 單打邊線（內縮 0.46m）
+      const FS=1.98*s;                   // 前發球線（距網 1.98m）
+      const BD=(6.7-0.76)*s;             // 雙打後發球線（距底線 0.76m）
+      const v=[];
+      const seg=(x1,z1,x2,z2)=>v.push(x1,0,z1,x2,0,z2);
+      // 雙打外框
+      seg(-L,-W, L,-W); seg(-L, W, L, W); seg(-L,-W,-L, W); seg( L,-W, L, W);
+      // 單打邊線（兩條長邊）
+      seg(-L,-SW, L,-SW); seg(-L, SW, L, SW);
+      // 網（中央線）
+      seg(0,-W, 0, W);
+      // 前發球線（網兩側）
+      seg(-FS,-W,-FS, W); seg( FS,-W, FS, W);
+      // 雙打後發球線（兩側）
+      seg(-BD,-W,-BD, W); seg( BD,-W, BD, W);
+      // 中線（前發球線 → 底線，分左右發球區）
+      seg( FS,0, L,0); seg(-FS,0,-L,0);
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+      return g;
+    }
+    const COURT=courtGeo();
+    layers.forEach((ly,i)=>{
+      const court=new THREE.LineSegments(COURT,
+        new THREE.LineBasicMaterial({color:layerCol[i],transparent:true,opacity:0.42}));
+      court.position.y=ly; chip.add(court);
+      // 網柱亮點（中央線兩端）
+      [-3.05*7/13.4,3.05*7/13.4].forEach(z=>{
+        const post=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:layerCol[i],transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+        post.scale.setScalar(0.26); post.position.set(0,ly,z); chip.add(post);
+      });
+    });
+
+    const NODE_DATA=[
+      {k:'DATE',v:'2026.08.15'},{k:'VENUE',v:'大安運動中心'},{k:'TEAMS',v:'100 ＋ 曜請 8'},
+      {k:'競技組',v:'40 · 白金/黃金'},{k:'休閒組',v:'60 · 白銀/青銅'},{k:'曜請組',v:'8 全循環'},
+      {k:'COURTS',v:'10 面並行'},{k:'START',v:'09:00 開賽'},{k:'BALL',v:'勝利 Master ACE'},
+      {k:'FEE',v:'每組 $1,380'},{k:'JUDGE',v:'MAGI 三賢者'},{k:'TROPHY',v:'MASTER ACE 五桶'}
+    ];
+    const nodes=[], infoNodes=[];
+    const nodeGeo=new THREE.SphereGeometry(0.11,12,12);
+    function addNode(x,y,z,info){
+      const col=info?0x9bf6ff:[0x19c37d,0x22d3ee,0xc77dff][Math.floor(Math.random()*3)];
+      const mesh=new THREE.Mesh(info?nodeGeo:new THREE.SphereGeometry(0.06,8,8),new THREE.MeshBasicMaterial({color:col}));
+      mesh.position.set(x,y,z); mesh.userData={info,base:info?0.11:0.06};
+      chip.add(mesh); nodes.push(mesh);
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+      const glowScale=info?(0.42+Math.random()*0.32):(0.2+Math.random()*0.26);
+      sp.scale.setScalar(glowScale); mesh.add(sp); mesh.userData.sprite=sp;
+      if(info) infoNodes.push(mesh);
+    }
+    NODE_DATA.forEach((d,i)=>{const ly=layers[i%3];const ang=i*2.39+0.5;const rad=1.7+(i%3)*0.55;
+      addNode(Math.cos(ang)*rad,ly+(Math.random()-0.5)*0.4,Math.sin(ang)*rad,d);});
+    for(let i=0;i<23;i++){const ly=layers[i%3];const ang=Math.random()*Math.PI*2;const rad=0.8+Math.random()*2.7;
+      addNode(Math.cos(ang)*rad,ly+(Math.random()-0.5)*0.5,Math.sin(ang)*rad,null);}
+
+    const tracePos=[],traceCol=[],edges=[];
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const d=nodes[i].position.distanceTo(nodes[j].position);
+      if(d<2.0 && Math.random()<0.32){const a=nodes[i].position,b=nodes[j].position;
+        tracePos.push(a.x,a.y,a.z,b.x,b.y,b.z); traceCol.push(0.1,0.76,0.49,0.1,0.76,0.49); edges.push(nodes[i],nodes[j]);}
+    }
+    const tg=new THREE.BufferGeometry();
+    tg.setAttribute('position',new THREE.Float32BufferAttribute(tracePos,3));
+    tg.setAttribute('color',new THREE.Float32BufferAttribute(traceCol,3));
+    chip.add(new THREE.LineSegments(tg,new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0.3,blending:THREE.AdditiveBlending,depthWrite:false})));
+
+    const core=new THREE.Mesh(new THREE.IcosahedronGeometry(0.62,1),new THREE.MeshBasicMaterial({color:0x22d3ee,wireframe:true,transparent:true,opacity:0.85}));
+    chip.add(core);
+    const cg=new THREE.Sprite(new THREE.SpriteMaterial({map:GLOW,color:0x22d3ee,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    cg.scale.setScalar(2.6); core.add(cg);
+
+    const PULSE=reduce?20:70, pPos=new Float32Array(PULSE*3), pulses=[];
+    for(let i=0;i<PULSE;i++)pulses.push({e:(Math.random()*edges.length/2|0)*2,t:Math.random(),spd:0.4+Math.random()*0.9});
+    const pg=new THREE.BufferGeometry(); pg.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+    const pulsePts=new THREE.Points(pg,new THREE.PointsMaterial({size:0.13,map:GLOW,color:0xffffff,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    chip.add(pulsePts);
+
+    const starN=reduce?120:400, sPos=new Float32Array(starN*3);
+    for(let i=0;i<starN;i++){const r=20+Math.random()*40,a=Math.random()*Math.PI*2,b=Math.acos(2*Math.random()-1);
+      sPos[i*3]=r*Math.sin(b)*Math.cos(a);sPos[i*3+1]=r*Math.sin(b)*Math.sin(a);sPos[i*3+2]=r*Math.cos(b);}
+    const stars=new THREE.Points(new THREE.BufferGeometry().setAttribute('position',new THREE.BufferAttribute(sPos,3)),
+      new THREE.PointsMaterial({size:0.12,color:0x6f8fb5,transparent:true,opacity:0.6}));
+    scene.add(stars);
+
+    let targY=0.5,targX=0.22,rotY=0.5,rotX=0.22,mx=0,my=0,drag=false,lx=0,ly2=0;
+    const ndc=new THREE.Vector2(-2,-2), ray=new THREE.Raycaster(), tip=document.getElementById('tip');
+    let hovered=null;
+    addEventListener('pointermove',e=>{
+      mx=(e.clientX/innerWidth-0.5); my=(e.clientY/innerHeight-0.5);
+      ndc.x=(e.clientX/innerWidth)*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;
+      if(drag){targY+=(e.clientX-lx)*0.006;targX+=(e.clientY-ly2)*0.006;targX=Math.max(-0.6,Math.min(0.9,targX));lx=e.clientX;ly2=e.clientY;}
+      if(hovered){let tx=e.clientX+16,ty=e.clientY+16;if(tx>innerWidth-160)tx=e.clientX-150;tip.style.left=tx+'px';tip.style.top=ty+'px';}
+    });
+    canvas.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly2=e.clientY;});
+    addEventListener('pointerup',()=>drag=false);
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+    let t=0;
+    function animate(){
+      requestAnimationFrame(animate);
+      t+=0.016;
+      if(!drag && !reduce) targY+=0.0016;
+      rotY+=((targY+mx*0.4)-rotY)*0.06; rotX+=((targX+my*0.25)-rotX)*0.06;
+      chip.rotation.y=rotY; chip.rotation.x=rotX;
+      core.rotation.y+=0.01; core.rotation.x+=0.006; core.scale.setScalar(1+0.06*Math.sin(t*2));
+      stars.rotation.y+=0.0003;
+      if(!reduce && edges.length){for(let i=0;i<PULSE;i++){const p=pulses[i];p.t+=p.spd*0.016;
+        if(p.t>=1){p.t=0;p.e=(Math.random()*edges.length/2|0)*2;}
+        const a=edges[p.e].position,b=edges[p.e+1].position;
+        pPos[i*3]=a.x+(b.x-a.x)*p.t;pPos[i*3+1]=a.y+(b.y-a.y)*p.t;pPos[i*3+2]=a.z+(b.z-a.z)*p.t;}
+        pg.attributes.position.needsUpdate=true;}
+      ray.setFromCamera(ndc,camera);
+      const hit=ray.intersectObjects(infoNodes,false), top=hit.length?hit[0].object:null;
+      if(top!==hovered){
+        if(hovered){hovered.userData.sprite.scale.setScalar(hovered.userData.baseGlow);hovered.scale.setScalar(1);}
+        hovered=top;
+        if(hovered){const d=hovered.userData.info;hovered.userData.baseGlow=hovered.userData.sprite.scale.x;
+          hovered.userData.sprite.scale.setScalar(1.4);hovered.scale.setScalar(1.5);
+          tip.querySelector('.k').textContent=d.k;tip.querySelector('.v').textContent=d.v;tip.style.opacity=1;canvas.style.cursor='pointer';}
+        else{tip.style.opacity=0;canvas.style.cursor='grab';}
+      }
+      renderer.render(scene,camera);
+    }
+    animate();
+  }
+
+  /* 背景光子流（青，最底層裝飾）*/
+  function initPhoton(){
+    const mobile=innerWidth<640,canvas=document.getElementById('photon');
+    let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+    renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.setSize(innerWidth,innerHeight);
+    const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);camera.position.z=18;
+    function glow(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+      const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.4,'rgba(120,220,255,.6)');gr.addColorStop(1,'rgba(0,0,0,0)');
+      g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+    const TEX=glow(),N=mobile?55:120,pos=new Float32Array(N*3),spd=[];
+    for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=(Math.random()-.5)*30;pos[i*3+2]=(Math.random()-.5)*30;spd.push(.01+Math.random()*.04);}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:mobile?.5:.4,map:TEX,color:0x33d6ee,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.6}));
+    scene.add(pts);
+    let mx=0,my=0;addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;},{passive:true});
+    addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+    function loop(){requestAnimationFrame(loop);
+      for(let i=0;i<N;i++){pos[i*3+2]+=spd[i]*.5;if(pos[i*3+2]>16)pos[i*3+2]=-16;}
+      geo.attributes.position.needsUpdate=true;pts.rotation.y+=.0005;
+      camera.position.x+=((mx*4)-camera.position.x)*.04;camera.position.y+=((-my*3)-camera.position.y)*.04;camera.lookAt(0,0,0);
+      renderer.render(scene,camera);}
+    loop();
+  }
+})();
+</script>
+</body>
+</html>

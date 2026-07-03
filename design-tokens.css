@@ -1,0 +1,118 @@
+/* ============================================================
+   SOLAR CUP TWO · DESIGN TOKENS  v1 · 2026-07-02
+   全站視覺規範（以 bracket-tree 美術為基準）
+   六頁共用：改這裡，六頁同步。
+   載入順序：放在各頁內嵌 <style> 之後，覆蓋頁內 fallback。
+   ============================================================ */
+:root{
+  /* ---- 核心色（NERV 電路基調）---- */
+  --void:#03060d;                      /* 宇宙底色 */
+  --field:#22d3ee;                     /* 主青（AT Field）*/
+  --field2:#1de9b6;                    /* 副青綠 */
+  --accent:#c77dff;                    /* 亮紫 */
+  --deep:#a855f7;                      /* 深紫 */
+  --core:#eafcff;                      /* 亮白核心字 */
+  --ink:#dbeafe;                       /* 一般文字 */
+  --dim:#5b7089;                       /* 次要文字 */
+  --line:rgba(29,233,182,.16);         /* 分隔線／邊框 */
+  --teal:#1de9b6;
+  --magenta:#ff3cac;
+
+  /* ---- 階級四色（唯一真相：藍黃紅綠）---- */
+  --plat:#4d9fff;                      /* 白金 */
+  --gold:#ffcf33;                      /* 黃金 */
+  --silver:#ff4d6a;                    /* 白銀 */
+  --bronze:#34e07a;                    /* 青銅 */
+
+  /* ---- 首頁別名（solar-cup-two 舊命名橋接）---- */
+  --bg:var(--void);
+  --cyan:var(--field);
+  --bright:var(--accent);
+  --violet:var(--deep);
+  --trace:#19c37d;
+  --blue:#38bdf8;
+  --amber:#ffc24b;
+  --green:#4ade80;
+  --grid:rgba(120,200,200,.14);
+  --pcb:rgba(29,233,182,.5);
+
+  /* ---- 字體 ---- */
+  --font-display:'Orbitron',sans-serif;         /* 標題／數字 */
+  --font-mono:'Share Tech Mono',monospace;      /* 內文／HUD */
+
+  /* ---- 標題階級（三級，全站同步）---- */
+  --fs-h1-hero:clamp(52px,12vw,144px);            /* 首頁專用大標 */
+  --fs-h1:clamp(26px,6vw,48px);                 /* 功能頁主標（統一）*/
+  --fs-h2:clamp(18px,4vw,28px);                 /* 區塊次標 */
+
+  /* ---- 間距（4 的倍數）---- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
+
+  /* ---- 圓角 ---- */
+  --r-sm:4px; --r-md:6px; --r-lg:8px;
+
+  /* ---- 發光效果 ---- */
+  --glow-field:0 0 14px rgba(34,211,238,.35);        /* 一般青光 */
+  --glow-strong:0 0 26px rgba(34,211,238,.45);       /* 強青光（hover）*/
+  --glow-text:0 0 22px rgba(34,211,238,.4);          /* 標題文字光 */
+}
+
+/* ---- 戰績卡共用規範（跨頁元件：bracket-tree / invitational 共用同一組值）----
+   資料格式規範（renderRecCard spec，P0-2 資料統合後由共用層渲染）：
+   { name, affiliation, tags[], stats:[{v,k}×3], log:[{stage,opp,oppColor,score,result:'w|l|p'}], foot }
+   主色變數統一為 --rc（卡片階級/隊伍色，由 JS setProperty 注入）*/
+:root{
+  --rec-w:min(460px,94vw);       /* 戰績卡寬 */
+  --rec-wm-op:.22;               /* 徽記水印預設濃度 */
+  --rec-wm-spin:48s;             /* 水印旋轉週期 */
+  --rec-mask:rgba(2,4,9,.82);    /* 遮罩底 */
+}
+
+/* ---- 全站統一元件基調（低侵入，只影響共通 class）---- */
+/* 標題層級：首頁最大，功能頁一致 */
+.h1-page{font-family:var(--font-display);font-weight:900;color:var(--core);text-shadow:var(--glow-text)}
+
+/* ---- 共用導覽列（七頁同一條，當前頁 .on 高亮，手機 checkbox 漢堡摺疊）---- */
+.sc2-nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 18px;
+  background:rgba(3,6,13,.86);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.sc2-logo{font-family:var(--font-display);font-weight:900;font-size:14px;color:var(--core);text-decoration:none;letter-spacing:.04em;white-space:nowrap}
+.sc2-logo b{color:var(--field)}
+.sc2-links{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
+.sc2-links a{font-size:10.5px;padding:6px 11px;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--dim);text-decoration:none;transition:.2s;white-space:nowrap;
+  clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+.sc2-links a:hover{border-color:var(--field);color:var(--core)}
+.sc2-links a.on{border-color:var(--field);color:var(--core);background:color-mix(in srgb,var(--field) 10%,transparent);box-shadow:var(--glow-field)}
+.sc2-nav-t{display:none}
+.sc2-nav-btn{display:none;margin-left:auto;cursor:pointer;flex-direction:column;gap:4px;padding:8px 6px}
+.sc2-nav-btn span{display:block;width:20px;height:2px;background:var(--field);transition:.2s;box-shadow:0 0 6px rgba(34,211,238,.4)}
+@media(max-width:760px){
+  .sc2-nav-btn{display:flex}
+  .sc2-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;gap:0;margin:0;
+    background:rgba(3,6,13,.97);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:6px 14px 10px}
+  .sc2-links a{clip-path:none;border:none;border-bottom:1px solid rgba(255,255,255,.05);padding:13px 6px;font-size:12.5px}
+  .sc2-links a:last-child{border-bottom:none}
+  .sc2-links a.on{background:none;box-shadow:none;color:var(--field);font-weight:700}
+  .sc2-nav-t:checked~.sc2-links{display:flex}
+  .sc2-nav-t:checked~.sc2-nav-btn span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .sc2-nav-t:checked~.sc2-nav-btn span:nth-child(2){opacity:0}
+  .sc2-nav-t:checked~.sc2-nav-btn span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+}
+
+/* ---- 互動回饋規範（以 bracket-tree 語言為準）----
+   hover 三要素：發光(box-shadow glow) + 位移(translateY -2~-3px) + 通電掃光(.sc2-sweep)
+   modal 統一開場：遮罩 sc2FadeIn .2s、卡片 sc2CardIn .26s ---- */
+@keyframes sc2FadeIn{from{opacity:0}to{opacity:1}}
+@keyframes sc2CardIn{from{opacity:0;transform:translateY(12px) scale(.965)}to{opacity:1;transform:translateY(0) scale(1)}}
+.sc2-sweep{position:relative;overflow:hidden}
+.sc2-sweep::after{content:"";position:absolute;top:0;left:-80%;width:55%;height:100%;z-index:1;pointer-events:none;
+  background:linear-gradient(105deg,transparent,color-mix(in srgb,var(--sweep-c,var(--field)) 14%,transparent),transparent);
+  transform:skewX(-18deg);transition:left .5s ease}
+.sc2-sweep:hover::after{left:120%}
+
+
+/* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAMAAAAshD+zAAAA/1BMVEUAAAD9xAr////////+0g///////wD50lL////7yin335z/vj78zCX86Fr7yi//vgD////9qQL412/6yzb/qlX71FL//3/6z0f6zTj/fgD80TX8zyf/////f3+/vzL////12or70UC/fz//tkj///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFXHCAAAAAQHRSTlMA/vYJ/mIBYqDOHQTmF68EIAMxkANQApRrAqEQlQIEVEzCBAfCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6fTbjgAAEkhJREFUeNrtXQt7qrrSjp2YCCQgIOCltj3fd/7/bzwzuUBQsK5VK7geZu223nDndSZzn8jYQgsttNBCCy200EILLbTQQg+iOhH/KjSR46/dP8o2xnQDLPsXmZcx2K+4qhDiy2MB6LNNsCLiq9WKI/NEj3kCXhFfniS1W3jCQK4s8Uh65onzLiEpfTFBBeE5J7JkdxYsVnzVEjIvrz+y3L02fi10kLBSRcemih1EqVYBcSUdrEI2aaT0S+nQHSsIA0duRUdZxRFf9YmXcYWw6DV4T0H+OrwTOUQdDq7idHVJUgZyykvclK9CKJQhq1AGZY93/Bgz1gNcMHgpoWwpBY027thHe4I4fE30KoLZE0qkmB1IYVRODnlaoA1AY1Dx1esJZl8ouTTLRrsNJd0ltmXWY0lDUX0NjZmwKtxeqWeJYd4K2XY4m/vnQ6x6gnmo523ezhotc2/Nq9hhQeadmP4P7jb/as1kXzAhz3bz1Ctil1iPAxq+4hdC6aICtHcpdK5kIJho7tSXeQKypJ6ZbrGuMOjqqKK4s8+I5dRhIz2DDMo8ujqLLa5VVEoZS5XudWy90rmJZCERETolkb2PnlWZKsQh7FY6M7CWrbT6BDchfiCNSsuqsGgLUjfo0bQ+2zwIFbtaOVnEkCbX3if+j9ojK3LUJeccnAyipCI3hUZoxdE5mcIEEFEroSWIGSlIebnLAHY6M7w4anKkBTu2L9mzEzFPHo2SPLm4KA99loLNRnX2TFa7rg9r7yy8nu1DdkFlofAK9PUntKpmY9MBApcEt5kVKWDeweKrqOo5myu5by9IvfbYBfaRtxtzBlsu8BNTH3n2OHGDYna+fpcIXbbZ+CTdlmu8QIm+hzlGuEezgQtmE51n4YaqXH7kIjQYpwhcvujibWbiah5Y+JGLk/j4+NAn1vD70FVCfwghPnQWCMB+JhpFBJvFm3BSKKs7KR24hKcz8VK0F0Ayv43cE1VV1dwLblXtHcnI5lSMsM5EnwhUi7ioKN0XYBOvnHN+NzbjhJoruIyrfWrdzaKegxkXOTuqNosXrX5AXFovtTpGSs5h032gHyXBZ5jhh+AwILQGDqRmU0evqMXjI7nCmT6LC735V5xLKIxIEKFChTmtm0KpA4piIBswCn8LzihgUCYBmE+mV0RGbAv9w5+C8+5NbayLSSZNVO8Sbbou8gWrR4HTTLfZ23wabF2iNWaPBdd6qxz9sAlcaBBBeUO7GC7/qbbcJZduJgJ+Pro6dLoqsgiszi4qAFfG+hvrjgolT+AiKp/CEROs4xK5uUBJLejX4XoLRw+mbJqmjNRqFF9K6b1co4GJpo1bD92ny1NjC4pjxMeQpbLNaUHRqPEASFJyL4NQKiZwVcLwC2OBmLzesSUfC7MjsyzJjAcCleKr8c8BwqC8msIahGkEJW/sNR4htMPH2XNO1Cb3deMCVQaxYDxFIixMLjTqhpo4Is8u1kdZy/jGNTxq02kRTJFwaPMIPNI3lCRqQLEblGo4jqLDjSZbiZ8imXL25ZwSWF6NrhOd6uHV1cBG0Sn0eArz7EQhubUFZkNp8nOHWbDvSlZX6EZNPqn/zG7LqZIpgvLMtlMtGckG8fSWUNUXpbwwm74zDVUp5xMFrTmUqrAucz2Wx4tFfadOusj22W3JpJqoagAM/Ymbgdy3H3t++7I6Z18x1BMpFHmAW7lzBQf4RuMOptx9kIFvm0aTRHS05RT45rSh7XOHMhjKufOgNlKQun0+ug/60Lvl5/2mIceBb0VqkOPVwb8pFWNVfHh2rqEWllUu0b9j8TUL7rC/YeDUUulahYVJ0HTNHk90voyD5AISwsYH4urse9keksujTQw5meXPFsyuuUmj6A3ybXWXicr7fURd9A2dtlHw1E5h0Xb/0O7XQ3wLkg+3A6chHwzR5XX3/yifyrpQfRRikG93BisJ2/PhVFEYLxZPrNb1zFM6hg05J+4AN1xcxn1XhAbzeYK564Waciy5EP8AHFqZtNf1BpOI5WqsEHeXWzgilnR51Hekn2nlAms2trx7WiizIeNv+V4Ekv/UAvlHJ02oyEbinb82Be5tW9i3Y4tfsAUuPKX+3ZEF3pNxFGNhLgXwvhmsfHZng7fi1Hl9zmFQp9xR1x4JBM3n4tVW28vxTFMXtf0i9Yg10GL3V1sOseWti8cnSFyacMQ3letBBnzfco7mSw0mJ4znjH7QVOmv3MRzB+E0uh7S5vE3Ze3hPEPkTbaR/WKKXiI0BxjOaXYjnvuOdWI4/1W07ypYlE7TJ3VmX61XJEba2G5/7MPuSaBl0SV/shlolQGUJXNOiIZqpGvtxohqMpYzA/CtboWqpqmKH4A66S1rxmwxcuEkRlXSiMfNKzDSfMKNPFHe0gTRqFKoqApD2QKfJBppt0jYaI3ZpnIzyjJM1DNrawWUTk9udcXi6oY+e3EajZRsn7TIbTo9naQQ0lZ5dOcpDUdmwA4XakUgN4obl6Aw584fjybpwu9slOxGiYeLbRUJmR/TgTONFPTm6QayuaxNP8AUc4NZJ4pyzLVv64+VHR0QuTnCgMFe3bwAVcpx0hGDsJ3i+8bRqJGx41xclatvujGDyuo0NfGw9qHkd8s1Yzop0R1tODyVfxYV/ool6HQ3itEf9MZ+w7YqbOCZwhb0OohKjZbuMfC4otZUmHZ+Iuz94nb0qPg5PAsN1akKODeBQhFBnlmi1aNqVnH8IbgmpoZwW5H2I1uTnLpB436+YGBsUZ2zH7ck2hnKLuEnp5ovOPsEVZss+b8ftiSWQveSaxgTnNhEhJJY9gpx8LA24MJJxIQt3OgjUhNiyR7UwN30GrijeOLZAkSHylI8GBzVHam/eerTiihaRieifiQ40CeWHmEGU2YfLDZml/p3HwLOdCzGXyDmMMyDHrQqqVs01/mPwWn6jKA6Tqkne4HdmYySMl7/D01BQ0ZNN4rzlRbnOYDTNqfPTdT203EX3008l/m5wIWOmsh22P85LnNRU7YnwszlfIawUT4t5H5fHiOl/gBZhJHefl/prjOYy7lMwV/0qTtnpbobW3tyXbGa37QxurlBtXd3SrJMHO4eyMWY5gDUla93kl837k1N4Uh4W01LRovd11W85FoAZnOsRlj75UfnZ/7JEDxcbd35nM3QqxSkPitw7/EFvqsxPJthPvrkYjjEDzn86cETvc6dGZ2HgutS/HJdgfnjq+givxXxqwmyrOtn4RHM6Cgb0c0pdVNTXlg5zSkV4SlYKdAsGg/LVV2S10xsze7ES3kk9vHyfKq1TpKTpjkRbofG8lChKmPYpB0AirM8SRINO3MGEXc+6rzIxClQpSo4eoLSRUc6GiqvEV1b2scAuzYBEsgjpYRYa8J5ZGbRDsn8jjajo65QPJs41rKS6IOlyri/9pyv9pS6yPWYmpdLFaXlXu5lUcTSlkuyM5slARWnWKNWfjg17HH1VaGuV8EO89gjJ0yTH0a+sz7mEk6HeKRz72Q8kKKzYD1jgXHASc/+jMv+lEd4Kieh6529V9w/9jMfu5AOToVoOhEg7s7K6Ock9q9xIrAQxUXx3jyaUx1o1Z7deXECZDq7wwNH8w5B7yx6G5lRJ+4gB07anjr9+md3FlC/Brh+Sxdus12NLkznW0saKOy15eBrPtiL0K7fw0cuR1hX5qj1Ra/BPXqlU6oTWyBpBbO4HPtASx/2M1SvdMw/HKBNgqm0+bpqzFDR19GU/o0FT19HKG2OvToe97IqNDnJtbxEl5rzDCAuKlkej1ocXglcqPsOObjjfAKjht7xC3+dhhBZlu12Z7Dnm6DbzIOzGkyuHITY6STLxYt/awgEtmDqI69+ZRfaFkOMeET9gty5Ha6czcT+Hv45tvmIDgrGavZvUs0mPILt91VozRZaaKGFFlpo3k6WofbvP4HpDsB9ap9ho8/OlHHzXuQfsg3WjjZvhjbv7m//2YBoBAfYeoycs5nvWsKbgtU773wKfMAFsXjLu227BEPgpH4suPWbA7PxN9xf86xD2qONuXLzNkJ/tY5dF+Y/A9ym9+wfg9Onkz5pohOS1gxvmK/mwcCdnjDVY22escmKQpZlSbVX8Rvgtvgf3XF/vwP3PoLtnQ2cP6TMNBen4mRG5z2YE180ldNNn1vO2lPxmwd2CNvl0y+z1/zPJgT3Hmyo9xac15kW/8ZuxI7UZUfi3vagCPuVKtTTklB2gh4LWzk4Pz0s6A3AwfptQ3fc3wBc8Pp1C87R1ornmsEGQjWluvZFc6K/OzUgc6U7BdTdn5pS0ckWhfzPqnhUbGiXDwQG9aXZd+5vAC6wDwE4Yyy82K7Bss9zD6qqkuZbG1K538vKHiUZAfipSipV2ocO9pyxqIohtrOsj+pUCTg3sLO+4xy0FzlDsulbR2l2F7MqIzWFk5P7vqIGbxX2mDNTfYjab816XNOiXf7m7Rrc23fgoLWMhnOOh9CaLZ0nJG7Nx+njI6EZDLNsfx4F6RFpOHgAW8g8gTjbSZ/0QWm0QFva5Vn52q6N0Hlt0ZHjKXRMs9etCawTUP/eturvDnfbOT6ZP40dzC3pAAv7yNGWXw/mkKDoQZO6ATgG7VLxt/G/bpiC7VsrhxYcvdw8tGXQB+fqPKQlU5u//bKDzBG131oG+u9FsH3iviPugeAuBPMmOLAfBblijnPGj968reGCc17G7OQT0O+IYDXUHUdj4+ZVvnkgcxq0frS2fPsDcGTFN9tuH64H3rsPzli1lWYGV0o8I7VZEed414WZuY6W3WO1pV239Z+df+wVyrajnrZcv5N9f3dkLwqiCS+WwqVtiVP72EgkPQH0K7acC8Cl5iM4PJZzoYdJqsP5/qPaEtwW69OaXYDjHpztry2RXcocdsrpa5EjEOZMm3baSzx+zw1J37oD5+O7nhG/E1zLOWvPoqMZODSbLjJWrnba0qid2p9N9KBoct2Z4DHODXoo4BXmWxhN3ABnZmdo4qKxOJUd90VnU9mmOICz+Q6xh/V4A/ts7dXG7Ll3t+fGxfKdQQtuzQxaw/7tILh2pW3zsGT/7wdXqWva6hDnoeh7D7v7mSkIxXLt+XYlltbmdxv3Bri2qZ1GA+Ouc+psT/cLfEv2UN+y5VzPEsBtU2DBXXGOXYmlb/1yoxO0dqs3nI70zYB+SEg/NiogJQ/EuQ3Au2EC8mo7ZufejUy+u+355kLAt3d7/x36HkrX12a/19IgckMlzljrYKiGvo7ocfEcoPpgQ4mDdRuJDoIbyzJ0kpnQvDLvOAfmWxo4WWhNX2Nt/EvnvdgOeG6+3PTBTX5W1b+NgdusN+8bkyB7/693nD+/B4dgvqQM55JwU8nCtqjHhS66ZnXcZHp/bPaUQ/mdnOJFAAAeXLiPPkOxHKa/cunz38h+XfBve/nY1jwYfPa4Oe9fO2ite77GTmuv5Xe7/jeM27zlTPvXX6AQMvTgzfsLLbTQQncXJeFvLhp+SCCZDkxxMEfy5RRun/Orb5z6Z0gEv59F2w350C6A22ytS9K6HhsbDm3RHVkHrKKwYr01dUmq7JkX0UtaZ6xJ0/QoGTToWjbAGkmHeKYqLX4H3UhJm1J0G+dbUlZsy/DfG7ggFVxmDOi5LoEOFOQaz9J44jYgpNB+04JrVtGxEqBKSHkMas/yWEX7SJkg51n1dbD+JLgblLBtwSHjNtapBnqky8Gu21R6CI4+n6CwVZmJrYhFSn4pOkRd4aNR+httqCaO2/YJbPSzcZk9/7sDhwvebBxyZHH76VrEl+A+UcL9R5aAkommSChWKpUU8USlyECaM6ro/w1mPZ/tYn6iDrefn58Uyrg/5pYFsLahywU4F7+u322cHhY+PBow4KAF13sJozONzqxQTYT/qACp9vlJSJPu2vo1rGk1dOdz+1vHOBierN+25qYTyy6mtSvvuOL5dcW5dW959uu2IVIl8k6iMEaEMP2Vc8ZNANPKpbnlFApYcEDiabUEgjM7fEvlALN8lE9oQ1N6wSd1dhje2h+75wK1DwYcosG9p7ipqaoKKr4ncLC1SsQuxdyAX7IELkaFN1efsnmFtdMbhqNWW2xbdK4E5spba7stA8ny4GjTFZBS5VigRlGqfPJRkNCKk71Fn6OrH2xNVLs1fO935W/X/ip/OVzohJgG/NEoxPRjAeuqmGro/9eDt4P7eXLgenmrLRi0oOECPYB/pLuo/7auLQpo+NPlG+pk6WtfaKGFFlpooYUWWmihhRZaaKGFFlpooYUWWmgq+h9GZuhBFemhCgAAAABJRU5ErkJggg==") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+@keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+@media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}

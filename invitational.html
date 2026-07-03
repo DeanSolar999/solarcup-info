@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 曜請全循環</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--rec-w:min(460px,94vw);--rec-wm-op:.22;--rec-wm-spin:48s;--rec-mask:rgba(2,4,9,.82);--void:#03060d;--field:#22d3ee;--field2:#1de9b6;--accent:#c77dff;--core:#eafcff;--ink:#dbeafe;--dim:#5b7089;
+    --line:rgba(29,233,182,.16);--amber:#ffc24b;--ag:rgba(255,194,75,.35)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--void);color:var(--ink);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;
+    background-image:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(255,194,75,.07),transparent 60%)}
+  #bg3d{position:fixed;inset:0;z-index:0;display:block}
+  .scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);opacity:.5;mix-blend-mode:multiply}
+  .wrap{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:30px 18px 80px}
+
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:10px}
+  .brand{font-family:'Orbitron',sans-serif;font-weight:900;font-size:18px;color:var(--core)}
+  .brand .t{color:var(--amber)}
+  .navlinks{display:flex;gap:7px;flex-wrap:wrap}
+  .navlinks a{font-size:10.5px;padding:7px 12px;border:1px solid var(--line);border-radius:4px;color:var(--dim);text-decoration:none;transition:.2s;
+    clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
+  .navlinks a:hover{border-color:var(--field);color:var(--core)}
+  .navlinks a.on{border-color:var(--amber);color:var(--core);background:rgba(255,194,75,.1)}
+
+  header{margin-bottom:20px}
+  header h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1);color:var(--core);text-shadow:0 0 24px var(--ag)}
+  header h1 .a{color:var(--amber)}
+  header .sub{font-size:10px;letter-spacing:.22em;color:var(--amber);margin-top:6px}
+  header .meta{margin-top:10px;font-size:11px;color:var(--dim)}
+  header .meta b{color:var(--core);font-family:'Orbitron',sans-serif}
+
+  /* 進度拉桿 */
+  .progbar{display:flex;align-items:center;gap:12px;margin:16px 0 22px;padding:12px 16px;
+    border:1px solid var(--line);border-radius:6px;background:rgba(6,11,20,.6);flex-wrap:wrap}
+  .progbar .lab{font-size:9.5px;letter-spacing:.14em;color:var(--dim)}
+  .progbar input{flex:1;min-width:180px;max-width:380px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:linear-gradient(90deg,var(--amber),rgba(255,255,255,.1));outline:none}
+  .progbar input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
+    background:var(--amber);box-shadow:0 0 12px var(--ag);cursor:pointer}
+  .progbar input::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--amber);border:none;box-shadow:0 0 12px var(--ag);cursor:pointer}
+  .progbar .st{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--amber)}
+
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;align-items:start}
+  @media(max-width:860px){.grid2{grid-template-columns:1fr}}
+
+  .panel{border:1px solid var(--line);border-radius:8px;background:rgba(6,11,20,.62);padding:16px;position:relative;overflow:hidden}
+  .panel::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;
+    background-image:linear-gradient(rgba(255,194,75,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,194,75,.05) 1px,transparent 1px);
+    background-size:26px 26px}
+  .ph{position:relative;font-size:10px;letter-spacing:.16em;color:var(--amber);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}
+  .ph .pn{color:var(--dim);letter-spacing:.04em;margin-left:8px}
+
+  /* 八角關係圖 */
+  .octo svg{width:100%;height:auto;display:block;overflow:visible}
+  .octo .hint{text-align:center;font-size:8.5px;color:var(--dim);letter-spacing:.06em;margin-top:6px;line-height:1.5}
+  .olink{cursor:pointer;transition:.15s}.olink.dim{opacity:.07}
+  .onode{cursor:pointer;transition:.2s}.onode:hover{filter:drop-shadow(0 0 9px rgba(255,194,75,.65))}.onode.dim{opacity:.24;transition:.2s}
+  .oscore{opacity:0;transition:.15s;pointer-events:none}.oscore.show{opacity:1}
+
+  /* 積分榜 */
+  .stand .row{display:flex;align-items:center;gap:9px;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.05);font-size:12.5px;position:relative}
+  .stand .rk{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;min-width:22px;text-align:center;color:var(--dim)}
+  .stand .medal{font-size:13px;min-width:20px;text-align:center}
+  .stand .nm{flex:1;color:var(--ink);font-weight:700}
+  .stand .wl{font-size:10px;color:var(--dim);white-space:nowrap}
+  .stand .rt{font-size:9px;color:var(--dim);min-width:74px;text-align:right}
+  .stand .row.p1{background:linear-gradient(90deg,rgba(255,215,0,.12),transparent)}
+  .stand .row.p1 .rk{color:#ffd76a}
+  .stand .row.p2{background:linear-gradient(90deg,rgba(200,210,225,.09),transparent)}
+  .stand .row.p2 .rk{color:#c8d2e1}
+  .stand .row.p3{background:linear-gradient(90deg,rgba(205,127,80,.1),transparent)}
+  .stand .row.p3 .rk{color:#e0906a}
+
+  /* 賽程表 */
+  .sched{margin-top:20px}
+  .round{margin-bottom:14px}
+  .rh{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+  .rh b{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--core)}
+  .rh .tm{font-size:9.5px;color:var(--amber);letter-spacing:.1em}
+  .rh .tag{font-size:8px;padding:2px 7px;border-radius:2px;letter-spacing:.1em}
+  .rh .tag.done{color:var(--field2);border:1px solid var(--field2)}
+  .rh .tag.live{color:var(--amber);border:1px solid var(--amber);animation:blink 1.4s infinite}
+  .rh .tag.wait{color:var(--dim);border:1px solid rgba(255,255,255,.12)}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+  .mrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px}
+  .m{display:flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid rgba(255,255,255,.07);border-radius:5px;font-size:11.5px;background:rgba(6,11,20,.5)}
+  .m.done{border-color:rgba(255,194,75,.28)}
+  .m.wait{opacity:.48}
+  .m .ct{font-size:8px;color:var(--dim);min-width:24px}
+  .m .t{flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m .t.r{text-align:left}
+  .m .t.w{color:var(--amber);font-weight:700}
+  .m .sc{min-width:46px;text-align:center;font-family:'Orbitron',sans-serif;font-size:11.5px;color:var(--dim)}
+  .m .sc b{color:var(--core)}
+  .m .sc .vs{font-size:8px;letter-spacing:.05em}
+
+  .note{margin-top:18px;font-size:9.5px;color:var(--dim);letter-spacing:.06em;line-height:1.7}
+
+  /* 隊伍戰績卡 */
+  .rmask{position:fixed;inset:0;z-index:60;background:var(--rec-mask);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+  .rmask.show{display:flex;animation:sc2FadeIn .2s ease-out}
+  .rmask.show .rcard{animation:sc2CardIn .26s ease-out}
+  .rcard{width:var(--rec-w);max-height:92vh;overflow-y:auto;background:rgba(4,8,15,.97);border-radius:8px;border:1px solid var(--rc);box-shadow:0 0 50px var(--rg);position:relative}
+  .rcard .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
+  .rcard .wm svg{width:120%;height:auto;opacity:1;filter:drop-shadow(0 0 16px color-mix(in srgb,var(--rc) 65%,transparent));animation:sc2RecSpin var(--rec-wm-spin) linear infinite}
+  @keyframes sc2RecSpin{to{transform:rotate(360deg)}}
+  .rcard::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 88% 66% at 50% 40%,rgba(3,6,13,.66),rgba(3,6,13,.46) 60%,rgba(3,6,13,.78))}
+  .rin{position:relative;z-index:2}
+  .rx{position:absolute;top:12px;right:14px;z-index:3;cursor:pointer;color:var(--dim);font-size:16px}
+  .rhead{display:flex;align-items:center;gap:16px;padding:20px 22px 16px;border-bottom:1px solid var(--line)}
+  .rhead .emb{width:84px;height:84px;flex-shrink:0}
+  .rhead .emb svg{width:100%;height:100%}
+  .rhead .tn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:24px;color:var(--core)}
+  .rhead .ts{font-size:11px;color:var(--rc);margin-top:5px;letter-spacing:.1em}
+  .rhead .pl{font-size:11px;color:var(--ink);margin-top:6px;letter-spacing:.04em}
+  .rhead .pl::before{content:"◈ ";color:var(--rc);font-size:9px}
+  .rhead .tags{margin-top:9px;display:flex;gap:8px;align-items:center;font-size:9.5px;color:#8fa2ba}
+  .rhead .tag{padding:3px 10px;border:1px solid var(--amber);color:var(--amber);border-radius:3px;font-weight:700}
+  .rstats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+  .rstats .c{padding:16px 8px;text-align:center;border-right:1px solid var(--line)}
+  .rstats .c:last-child{border-right:none}
+  .rstats .v{font-family:'Orbitron',sans-serif;font-weight:900;font-size:24px;color:var(--rc)}
+  .rstats .k{font-size:9.5px;letter-spacing:.16em;color:#8fa2ba;margin-top:5px}
+  .rlog{padding:14px 22px 6px}
+  .rlog .lh{font-size:9.5px;letter-spacing:.16em;color:var(--rc);margin-bottom:8px}
+  .rlog .lr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12.5px}
+  .rlog .lr .st{font-size:9px;color:#8fa2ba;min-width:52px}
+  .rlog .lr .op{flex:1;color:var(--core)}
+  .rlog .lr .sc{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--core);white-space:nowrap}
+  .rlog .lr .bdg{font-size:9px;padding:2.5px 9px;border-radius:2px;font-weight:700;min-width:34px;text-align:center}
+  .rlog .lr .bdg.w{color:#2ee6c8;border:1px solid #2ee6c8}
+  .rlog .lr .bdg.l{color:#ff4d6a;border:1px solid #ff4d6a}
+  .rlog .lr .bdg.p{color:var(--dim);border:1px solid rgba(255,255,255,.14)}
+  .rlog .lr.pend{opacity:.68}
+  .rfoot{padding:12px 22px 14px;font-size:11.5px;color:#9fb0c8;border-top:1px solid var(--line)}
+  .rfoot b{color:var(--rc);font-family:'Orbitron',sans-serif}
+  .rop{display:flex;align-items:center;gap:10px;padding:10px 22px 18px;font-size:9.5px;color:var(--dim)}
+  .rop input{flex:1;accent-color:var(--rc);height:3px}
+  .rop .pv{font-family:'Orbitron',sans-serif;color:var(--rc);min-width:36px;text-align:right}
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAMAAAAshD+zAAAA/1BMVEUAAAD9xAr////////+0g///////wD50lL////7yin335z/vj78zCX86Fr7yi//vgD////9qQL412/6yzb/qlX71FL//3/6z0f6zTj/fgD80TX8zyf/////f3+/vzL////12or70UC/fz//tkj///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACFXHCAAAAAQHRSTlMA/vYJ/mIBYqDOHQTmF68EIAMxkANQApRrAqEQlQIEVEzCBAfCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6fTbjgAAEkhJREFUeNrtXQt7qrrSjp2YCCQgIOCltj3fd/7/bzwzuUBQsK5VK7geZu223nDndSZzn8jYQgsttNBCCy200EILLbTQQg+iOhH/KjSR46/dP8o2xnQDLPsXmZcx2K+4qhDiy2MB6LNNsCLiq9WKI/NEj3kCXhFfniS1W3jCQK4s8Uh65onzLiEpfTFBBeE5J7JkdxYsVnzVEjIvrz+y3L02fi10kLBSRcemih1EqVYBcSUdrEI2aaT0S+nQHSsIA0duRUdZxRFf9YmXcYWw6DV4T0H+OrwTOUQdDq7idHVJUgZyykvclK9CKJQhq1AGZY93/Bgz1gNcMHgpoWwpBY027thHe4I4fE30KoLZE0qkmB1IYVRODnlaoA1AY1Dx1esJZl8ouTTLRrsNJd0ltmXWY0lDUX0NjZmwKtxeqWeJYd4K2XY4m/vnQ6x6gnmo523ezhotc2/Nq9hhQeadmP4P7jb/as1kXzAhz3bz1Ctil1iPAxq+4hdC6aICtHcpdK5kIJho7tSXeQKypJ6ZbrGuMOjqqKK4s8+I5dRhIz2DDMo8ujqLLa5VVEoZS5XudWy90rmJZCERETolkb2PnlWZKsQh7FY6M7CWrbT6BDchfiCNSsuqsGgLUjfo0bQ+2zwIFbtaOVnEkCbX3if+j9ojK3LUJeccnAyipCI3hUZoxdE5mcIEEFEroSWIGSlIebnLAHY6M7w4anKkBTu2L9mzEzFPHo2SPLm4KA99loLNRnX2TFa7rg9r7yy8nu1DdkFlofAK9PUntKpmY9MBApcEt5kVKWDeweKrqOo5myu5by9IvfbYBfaRtxtzBlsu8BNTH3n2OHGDYna+fpcIXbbZ+CTdlmu8QIm+hzlGuEezgQtmE51n4YaqXH7kIjQYpwhcvujibWbiah5Y+JGLk/j4+NAn1vD70FVCfwghPnQWCMB+JhpFBJvFm3BSKKs7KR24hKcz8VK0F0Ayv43cE1VV1dwLblXtHcnI5lSMsM5EnwhUi7ioKN0XYBOvnHN+NzbjhJoruIyrfWrdzaKegxkXOTuqNosXrX5AXFovtTpGSs5h032gHyXBZ5jhh+AwILQGDqRmU0evqMXjI7nCmT6LC735V5xLKIxIEKFChTmtm0KpA4piIBswCn8LzihgUCYBmE+mV0RGbAv9w5+C8+5NbayLSSZNVO8Sbbou8gWrR4HTTLfZ23wabF2iNWaPBdd6qxz9sAlcaBBBeUO7GC7/qbbcJZduJgJ+Pro6dLoqsgiszi4qAFfG+hvrjgolT+AiKp/CEROs4xK5uUBJLejX4XoLRw+mbJqmjNRqFF9K6b1co4GJpo1bD92ny1NjC4pjxMeQpbLNaUHRqPEASFJyL4NQKiZwVcLwC2OBmLzesSUfC7MjsyzJjAcCleKr8c8BwqC8msIahGkEJW/sNR4htMPH2XNO1Cb3deMCVQaxYDxFIixMLjTqhpo4Is8u1kdZy/jGNTxq02kRTJFwaPMIPNI3lCRqQLEblGo4jqLDjSZbiZ8imXL25ZwSWF6NrhOd6uHV1cBG0Sn0eArz7EQhubUFZkNp8nOHWbDvSlZX6EZNPqn/zG7LqZIpgvLMtlMtGckG8fSWUNUXpbwwm74zDVUp5xMFrTmUqrAucz2Wx4tFfadOusj22W3JpJqoagAM/Ymbgdy3H3t++7I6Z18x1BMpFHmAW7lzBQf4RuMOptx9kIFvm0aTRHS05RT45rSh7XOHMhjKufOgNlKQun0+ug/60Lvl5/2mIceBb0VqkOPVwb8pFWNVfHh2rqEWllUu0b9j8TUL7rC/YeDUUulahYVJ0HTNHk90voyD5AISwsYH4urse9keksujTQw5meXPFsyuuUmj6A3ybXWXicr7fURd9A2dtlHw1E5h0Xb/0O7XQ3wLkg+3A6chHwzR5XX3/yifyrpQfRRikG93BisJ2/PhVFEYLxZPrNb1zFM6hg05J+4AN1xcxn1XhAbzeYK564Waciy5EP8AHFqZtNf1BpOI5WqsEHeXWzgilnR51Hekn2nlAms2trx7WiizIeNv+V4Ekv/UAvlHJ02oyEbinb82Be5tW9i3Y4tfsAUuPKX+3ZEF3pNxFGNhLgXwvhmsfHZng7fi1Hl9zmFQp9xR1x4JBM3n4tVW28vxTFMXtf0i9Yg10GL3V1sOseWti8cnSFyacMQ3letBBnzfco7mSw0mJ4znjH7QVOmv3MRzB+E0uh7S5vE3Ze3hPEPkTbaR/WKKXiI0BxjOaXYjnvuOdWI4/1W07ypYlE7TJ3VmX61XJEba2G5/7MPuSaBl0SV/shlolQGUJXNOiIZqpGvtxohqMpYzA/CtboWqpqmKH4A66S1rxmwxcuEkRlXSiMfNKzDSfMKNPFHe0gTRqFKoqApD2QKfJBppt0jYaI3ZpnIzyjJM1DNrawWUTk9udcXi6oY+e3EajZRsn7TIbTo9naQQ0lZ5dOcpDUdmwA4XakUgN4obl6Aw584fjybpwu9slOxGiYeLbRUJmR/TgTONFPTm6QayuaxNP8AUc4NZJ4pyzLVv64+VHR0QuTnCgMFe3bwAVcpx0hGDsJ3i+8bRqJGx41xclatvujGDyuo0NfGw9qHkd8s1Yzop0R1tODyVfxYV/ool6HQ3itEf9MZ+w7YqbOCZwhb0OohKjZbuMfC4otZUmHZ+Iuz94nb0qPg5PAsN1akKODeBQhFBnlmi1aNqVnH8IbgmpoZwW5H2I1uTnLpB436+YGBsUZ2zH7ck2hnKLuEnp5ovOPsEVZss+b8ftiSWQveSaxgTnNhEhJJY9gpx8LA24MJJxIQt3OgjUhNiyR7UwN30GrijeOLZAkSHylI8GBzVHam/eerTiihaRieifiQ40CeWHmEGU2YfLDZml/p3HwLOdCzGXyDmMMyDHrQqqVs01/mPwWn6jKA6Tqkne4HdmYySMl7/D01BQ0ZNN4rzlRbnOYDTNqfPTdT203EX3008l/m5wIWOmsh22P85LnNRU7YnwszlfIawUT4t5H5fHiOl/gBZhJHefl/prjOYy7lMwV/0qTtnpbobW3tyXbGa37QxurlBtXd3SrJMHO4eyMWY5gDUla93kl837k1N4Uh4W01LRovd11W85FoAZnOsRlj75UfnZ/7JEDxcbd35nM3QqxSkPitw7/EFvqsxPJthPvrkYjjEDzn86cETvc6dGZ2HgutS/HJdgfnjq+givxXxqwmyrOtn4RHM6Cgb0c0pdVNTXlg5zSkV4SlYKdAsGg/LVV2S10xsze7ES3kk9vHyfKq1TpKTpjkRbofG8lChKmPYpB0AirM8SRINO3MGEXc+6rzIxClQpSo4eoLSRUc6GiqvEV1b2scAuzYBEsgjpYRYa8J5ZGbRDsn8jjajo65QPJs41rKS6IOlyri/9pyv9pS6yPWYmpdLFaXlXu5lUcTSlkuyM5slARWnWKNWfjg17HH1VaGuV8EO89gjJ0yTH0a+sz7mEk6HeKRz72Q8kKKzYD1jgXHASc/+jMv+lEd4Kieh6529V9w/9jMfu5AOToVoOhEg7s7K6Ock9q9xIrAQxUXx3jyaUx1o1Z7deXECZDq7wwNH8w5B7yx6G5lRJ+4gB07anjr9+md3FlC/Brh+Sxdus12NLkznW0saKOy15eBrPtiL0K7fw0cuR1hX5qj1Ra/BPXqlU6oTWyBpBbO4HPtASx/2M1SvdMw/HKBNgqm0+bpqzFDR19GU/o0FT19HKG2OvToe97IqNDnJtbxEl5rzDCAuKlkej1ocXglcqPsOObjjfAKjht7xC3+dhhBZlu12Z7Dnm6DbzIOzGkyuHITY6STLxYt/awgEtmDqI69+ZRfaFkOMeET9gty5Ha6czcT+Hv45tvmIDgrGavZvUs0mPILt91VozRZaaKGFFlpo3k6WofbvP4HpDsB9ap9ho8/OlHHzXuQfsg3WjjZvhjbv7m//2YBoBAfYeoycs5nvWsKbgtU773wKfMAFsXjLu227BEPgpH4suPWbA7PxN9xf86xD2qONuXLzNkJ/tY5dF+Y/A9ym9+wfg9Onkz5pohOS1gxvmK/mwcCdnjDVY22escmKQpZlSbVX8Rvgtvgf3XF/vwP3PoLtnQ2cP6TMNBen4mRG5z2YE180ldNNn1vO2lPxmwd2CNvl0y+z1/zPJgT3Hmyo9xac15kW/8ZuxI7UZUfi3vagCPuVKtTTklB2gh4LWzk4Pz0s6A3AwfptQ3fc3wBc8Pp1C87R1ornmsEGQjWluvZFc6K/OzUgc6U7BdTdn5pS0ckWhfzPqnhUbGiXDwQG9aXZd+5vAC6wDwE4Yyy82K7Bss9zD6qqkuZbG1K538vKHiUZAfipSipV2ocO9pyxqIohtrOsj+pUCTg3sLO+4xy0FzlDsulbR2l2F7MqIzWFk5P7vqIGbxX2mDNTfYjab816XNOiXf7m7Rrc23fgoLWMhnOOh9CaLZ0nJG7Nx+njI6EZDLNsfx4F6RFpOHgAW8g8gTjbSZ/0QWm0QFva5Vn52q6N0Hlt0ZHjKXRMs9etCawTUP/eturvDnfbOT6ZP40dzC3pAAv7yNGWXw/mkKDoQZO6ATgG7VLxt/G/bpiC7VsrhxYcvdw8tGXQB+fqPKQlU5u//bKDzBG131oG+u9FsH3iviPugeAuBPMmOLAfBblijnPGj968reGCc17G7OQT0O+IYDXUHUdj4+ZVvnkgcxq0frS2fPsDcGTFN9tuH64H3rsPzli1lWYGV0o8I7VZEed414WZuY6W3WO1pV239Z+df+wVyrajnrZcv5N9f3dkLwqiCS+WwqVtiVP72EgkPQH0K7acC8Cl5iM4PJZzoYdJqsP5/qPaEtwW69OaXYDjHpztry2RXcocdsrpa5EjEOZMm3baSzx+zw1J37oD5+O7nhG/E1zLOWvPoqMZODSbLjJWrnba0qid2p9N9KBoct2Z4DHODXoo4BXmWxhN3ABnZmdo4qKxOJUd90VnU9mmOICz+Q6xh/V4A/ts7dXG7Ll3t+fGxfKdQQtuzQxaw/7tILh2pW3zsGT/7wdXqWva6hDnoeh7D7v7mSkIxXLt+XYlltbmdxv3Bri2qZ1GA+Ouc+psT/cLfEv2UN+y5VzPEsBtU2DBXXGOXYmlb/1yoxO0dqs3nI70zYB+SEg/NiogJQ/EuQ3Au2EC8mo7ZufejUy+u+355kLAt3d7/x36HkrX12a/19IgckMlzljrYKiGvo7ocfEcoPpgQ4mDdRuJDoIbyzJ0kpnQvDLvOAfmWxo4WWhNX2Nt/EvnvdgOeG6+3PTBTX5W1b+NgdusN+8bkyB7/693nD+/B4dgvqQM55JwU8nCtqjHhS66ZnXcZHp/bPaUQ/mdnOJFAAAeXLiPPkOxHKa/cunz38h+XfBve/nY1jwYfPa4Oe9fO2ite77GTmuv5Xe7/jeM27zlTPvXX6AQMvTgzfsLLbTQQncXJeFvLhp+SCCZDkxxMEfy5RRun/Orb5z6Z0gEv59F2w350C6A22ytS9K6HhsbDm3RHVkHrKKwYr01dUmq7JkX0UtaZ6xJ0/QoGTToWjbAGkmHeKYqLX4H3UhJm1J0G+dbUlZsy/DfG7ggFVxmDOi5LoEOFOQaz9J44jYgpNB+04JrVtGxEqBKSHkMas/yWEX7SJkg51n1dbD+JLgblLBtwSHjNtapBnqky8Gu21R6CI4+n6CwVZmJrYhFSn4pOkRd4aNR+httqCaO2/YJbPSzcZk9/7sDhwvebBxyZHH76VrEl+A+UcL9R5aAkommSChWKpUU8USlyECaM6ro/w1mPZ/tYn6iDrefn58Uyrg/5pYFsLahywU4F7+u322cHhY+PBow4KAF13sJozONzqxQTYT/qACp9vlJSJPu2vo1rGk1dOdz+1vHOBierN+25qYTyy6mtSvvuOL5dcW5dW959uu2IVIl8k6iMEaEMP2Vc8ZNANPKpbnlFApYcEDiabUEgjM7fEvlALN8lE9oQ1N6wSd1dhje2h+75wK1DwYcosG9p7ipqaoKKr4ncLC1SsQuxdyAX7IELkaFN1efsnmFtdMbhqNWW2xbdK4E5spba7stA8ny4GjTFZBS5VigRlGqfPJRkNCKk71Fn6OrH2xNVLs1fO935W/X/ip/OVzohJgG/NEoxPRjAeuqmGro/9eDt4P7eXLgenmrLRi0oOECPYB/pLuo/7auLQpo+NPlG+pk6WtfaKGFFlpooYUWWmihhRZaaKGFFlpooYUWWmgq+h9GZuhBFemhCgAAAABJRU5ErkJggg==") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html" class="on">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<canvas id="bg3d"></canvas>
+<div class="scanlines"></div>
+<div class="wrap">
+    <header>
+    <h1>曜請<span class="a">全循環</span></h1>
+    <div class="sub">INVITATIONAL · FULL ROUND ROBIN · 8 TEAMS</div>
+    <div class="meta">◆ DEMO DATA ｜ <b>8</b> 隊全循環 <b>28</b> 場 · <b>7</b> 輪 ｜ 依勝場取 <b>冠 · 亞 · 季</b> ｜ 獨立賽程 · 不分流 · 不計團體積分</div>
+  </header>
+
+  <div class="progbar">
+    <span class="lab">賽程進度</span>
+    <input type="range" id="prog" min="0" max="28" step="1" value="16">
+    <span class="st" id="progSt">第 4 輪結束</span>
+  </div>
+
+  <div class="grid2">
+    <div class="panel octo">
+      <div class="ph">八角對戰網<span class="pn">28 線全循環 · 亮線＝已完賽（勝方色）· 點頂點看該隊對戰</span></div>
+      <div id="octo"></div>
+      <div class="hint">▸ 點頂點看該隊 7 場比分 · 再點同一頂點開啟戰績檔案 · 點空白處還原</div>
+    </div>
+    <div class="panel">
+      <div class="ph">積分榜<span class="pn">勝場 → 互咬失分率</span></div>
+      <div class="stand" id="stand"></div>
+      <div class="note">同分判定依大會簡章第九章：勝場 → 同分隊互咬失分率（得分÷失分）→ 直接對戰 → 現場裁定。</div>
+    </div>
+  </div>
+
+  <div class="panel sched">
+    <div class="ph">循環賽程表<span class="pn">7 輪 × 4 場 · 場地與時間為預排佔位 · 比分完賽後填入</span></div>
+    <div id="rounds"></div>
+  </div>
+</div>
+
+<div class="rmask" id="rmask"><div class="rcard" id="rcard"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="tournament-data.js"></script>
+<script>
+/* 背景 3D 光子流（琥珀基調） */
+(function(){
+  if(!window.THREE)return;
+  const mobile=innerWidth<640,canvas=document.getElementById('bg3d');
+  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.setSize(innerWidth,innerHeight);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);camera.position.z=18;
+  function glow(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+    const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(255,220,150,.7)');gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+  const TEX=glow(),N=mobile?60:130,pos=new Float32Array(N*3),spd=[],colArr=new Float32Array(N*3);
+  const cols=[[1,.76,.29],[.13,.83,.92],[.78,.49,1]];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=(Math.random()-.5)*30;pos[i*3+2]=(Math.random()-.5)*30;spd.push(.01+Math.random()*.04);
+    const c=cols[i%3];colArr[i*3]=c[0];colArr[i*3+1]=c[1];colArr[i*3+2]=c[2];}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:mobile?.5:.42,map:TEX,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.9}));
+  scene.add(pts);
+  let mx=0,my=0;addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;},{passive:true});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  function loop(){requestAnimationFrame(loop);
+    for(let i=0;i<N;i++){pos[i*3+2]+=spd[i]*.48;if(pos[i*3+2]>16)pos[i*3+2]=-16;}
+    geo.attributes.position.needsUpdate=true;pts.rotation.y+=.0006;
+    camera.position.x+=((mx*4)-camera.position.x)*.04;camera.position.y+=((-my*3)-camera.position.y)*.04;camera.lookAt(0,0,0);
+    renderer.render(scene,camera);}
+  loop();
+})();
+</script>
+<script>
+(function(){
+  // ---- 曜請 8 隊（受邀外部隊伍 · 佔位資料，正式名單確定後替換）----
+  const TEAMS=[
+    {id:0,label:'曜請 01',c:'#ffc24b'},{id:1,label:'曜請 02',c:'#ff8a3c'},
+    {id:2,label:'曜請 03',c:'#22d3ee'},{id:3,label:'曜請 04',c:'#2ee6c8'},
+    {id:4,label:'曜請 05',c:'#a855f7'},{id:5,label:'曜請 06',c:'#ff3ca6'},
+    {id:6,label:'曜請 07',c:'#a3e635'},{id:7,label:'曜請 08',c:'#6b6bff'},
+  ];
+  // ---- 固定種子亂數 ----
+  let _sd=20260815;
+  function rnd(){_sd=(_sd*9301+49297)%233280;return _sd/233280;}
+  // ---- 圓桌法排 7 輪賽程（8 隊 round robin）----
+  function schedule(){
+    const ids=[0,1,2,3,4,5,6,7],rounds=[];
+    for(let r=0;r<7;r++){
+      const rd=[];
+      for(let k=0;k<4;k++){const a=ids[k],b=ids[7-k];rd.push([a,b]);}
+      rounds.push(rd);
+      ids.splice(1,0,ids.pop()); // 固定 0，其餘輪轉
+    }
+    return rounds;
+  }
+  const ROUNDS=schedule();
+  const RTIME=['09:00','09:40','10:20','11:00','13:00','13:40','14:20'];
+  const COURTS=[7,8,9,10];
+  // ---- 預先生成 28 場勝負（固定種子）----
+  const MATCH={};
+  ROUNDS.forEach((rd,r)=>rd.forEach((pr,k)=>{
+    const aWin=rnd()<0.5,lose=11+Math.floor(rnd()*9);
+    MATCH[r+'_'+k]={a:pr[0],b:pr[1],sa:aWin?21:lose,sb:aWin?lose:21,w:aWin?pr[0]:pr[1],r,k,time:RTIME[r],court:COURTS[k]};
+  }));
+
+  // ---- 依進度計算戰績 ----
+  function calc(prog){
+    const st=TEAMS.map(t=>({...t,w:0,l:0,gf:0,ga:0,ms:[]}));
+    Object.values(MATCH).forEach(m=>{
+      if(m.r*4+m.k>=prog)return;
+      const A=st[m.a],B=st[m.b];
+      A.gf+=m.sa;A.ga+=m.sb;B.gf+=m.sb;B.ga+=m.sa;
+      if(m.w===m.a){A.w++;B.l++;}else{B.w++;A.l++;}
+      A.ms.push(m);B.ms.push(m);
+    });
+    // 勝場 → 互咬失分率
+    const byW={};st.forEach(t=>{(byW[t.w]=byW[t.w]||[]).push(t);});
+    const rank=[];
+    Object.keys(byW).map(Number).sort((a,b)=>b-a).forEach(w=>{
+      const g=byW[w];
+      if(g.length>1){const set=new Set(g.map(t=>t.id));
+        g.forEach(t=>{let gf=0,ga=0;t.ms.forEach(m=>{if(set.has(m.a)&&set.has(m.b)){if(m.a===t.id){gf+=m.sa;ga+=m.sb;}else{gf+=m.sb;ga+=m.sa;}}});
+          t._r=ga>0?gf/ga:99;});
+        g.sort((x,y)=>y._r-x._r);}
+      g.forEach(t=>rank.push(t));
+    });
+    return {st,rank};
+  }
+
+  // ---- 八角對戰網 ----
+  const octoEl=document.getElementById('octo');
+  function drawOcto(prog){
+    const cx=260,cy=240,R=185,nr=24;
+    const V=TEAMS.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/8;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
+    function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;return{x1:a.x+ux*nr,y1:a.y+uy*nr,x2:b.x-ux*nr,y2:b.y-uy*nr};}
+    let links='',photons='',scores='',nodes='';
+    Object.values(MATCH).forEach(m=>{
+      const done=m.r*4+m.k<prog,A=V[m.a],B=V[m.b],e=edge(A,B);
+      const wc=done?TEAMS[m.w].c:'rgba(120,140,170,.14)';
+      links+=`<line class="olink" data-a="${m.a}" data-b="${m.b}" data-k="${m.r}_${m.k}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="${done?1.8:1}" opacity="${done?.6:.9}"/>`;
+      if(done){
+        const li=m.w===m.a?m.b:m.a,le=edge(V[li],V[m.w]),dur=(2.4+((m.r+m.k)%3)*0.5).toFixed(1);
+        photons+=`<circle r="2" fill="${TEAMS[m.w].c}" pointer-events="none"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${le.x1.toFixed(1)},${le.y1.toFixed(1)} L${le.x2.toFixed(1)},${le.y2.toFixed(1)}"/><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.85;1" dur="${dur}s" repeatCount="indefinite"/></circle>`;
+        const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,leftIsA=A.x<=B.x;
+        const ls=leftIsA?m.sa:m.sb,rs=leftIsA?m.sb:m.sa,lw=(leftIsA?m.a:m.b)===m.w;
+        scores+=`<g class="oscore" data-k="${m.r}_${m.k}"><rect x="${(mx-26).toFixed(1)}" y="${(my-10).toFixed(1)}" width="52" height="20" rx="3" fill="#03060d" stroke="${TEAMS[m.w].c}" stroke-width="1"/>
+          <text x="${(mx-5).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="end" font-family="Orbitron" font-weight="${lw?'900':'500'}" font-size="10" fill="${lw?TEAMS[m.w].c:'#5b7089'}">${ls}</text>
+          <text x="${mx.toFixed(1)}" y="${(my+3).toFixed(1)}" text-anchor="middle" font-size="8" fill="#5b7089">:</text>
+          <text x="${(mx+5).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron" font-weight="${!lw?'900':'500'}" font-size="10" fill="${!lw?TEAMS[m.w].c:'#5b7089'}">${rs}</text></g>`;
+      }
+    });
+    TEAMS.forEach((t,i)=>{const v=V[i];
+      const labY=v.y+(v.y<cy?-(nr+13):(nr+13)),labW=Math.max(56,t.label.length*10+18);
+      nodes+=`<g class="onode" data-i="${i}">
+        <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nr}" fill="rgba(3,6,13,.92)" stroke="${t.c}" stroke-width="2.4"/>
+        <text x="${v.x.toFixed(1)}" y="${(v.y+5).toFixed(1)}" text-anchor="middle" font-family="Orbitron" font-weight="900" font-size="13" fill="${t.c}">${String(i+1).padStart(2,'0')}</text>
+        <rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-10).toFixed(1)}" width="${labW}" height="20" rx="3" fill="rgba(3,6,13,.92)" stroke="rgba(255,255,255,.14)" stroke-width="1"/>
+        <text x="${v.x.toFixed(1)}" y="${(labY+4).toFixed(1)}" text-anchor="middle" font-family="Orbitron" font-weight="700" font-size="10" fill="#dbeafe">${t.label}</text></g>`;
+    });
+    octoEl.innerHTML=`<svg viewBox="0 -14 520 522"><g>${links}</g><g>${photons}</g><g>${scores}</g><g>${nodes}</g></svg>`;
+    // 互動：點頂點亮該隊
+    const svg=octoEl.querySelector('svg');
+    const L=[...svg.querySelectorAll('.olink')],S=[...svg.querySelectorAll('.oscore')],Nd=[...svg.querySelectorAll('.onode')];
+    let act=null;
+    function clr(){L.forEach(l=>l.classList.remove('dim'));S.forEach(s=>s.classList.remove('show'));Nd.forEach(n=>n.classList.remove('dim'));act=null;}
+    Nd.forEach(n=>n.addEventListener('click',e=>{e.stopPropagation();const i=n.dataset.i;
+      if(act===i){openRec(+i);return;}clr();act=i;
+      L.forEach(l=>{if(l.dataset.a===i||l.dataset.b===i){const s=S.find(x=>x.dataset.k===l.dataset.k);if(s)s.classList.add('show');}else l.classList.add('dim');});
+      Nd.forEach(x=>{if(x.dataset.i!==i){/* 保留對手可見 */}});
+    }));
+    svg.addEventListener('click',clr);
+  }
+
+  // ---- 積分榜 ----
+  const standEl=document.getElementById('stand');
+  function drawStand(prog){
+    const {rank}=calc(prog);
+    const medals=['🥇','🥈','🥉'];
+    standEl.innerHTML=rank.map((t,i)=>{
+      const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
+      const ratio=t._r!=null&&t._r<90?('失分率 '+t._r.toFixed(2)):'';
+      return `<div class="row ${cls}"><span class="rk">${i+1}</span><span class="medal">${i<3&&prog>=28?medals[i]:''}</span>
+        <span class="nm" style="color:${t.c}">${t.label}</span>
+        <span class="wl">${t.w} 勝 ${t.l} 敗</span><span class="rt">${ratio}</span></div>`;
+    }).join('');
+  }
+
+  // ---- 賽程表 ----
+  const roundsEl=document.getElementById('rounds');
+  function drawRounds(prog){
+    let html='';
+    ROUNDS.forEach((rd,r)=>{
+      const dc=rd.filter((pr,k)=>r*4+k<prog).length;
+      const state=dc===4?'done':(dc>0?'live':'wait');
+      const tag=state==='done'?'<span class="tag done">✓ 完賽</span>':state==='live'?`<span class="tag live">● LIVE ${dc}/4</span>`:'<span class="tag wait">待賽</span>';
+      html+=`<div class="round"><div class="rh"><b>第 ${r+1} 輪</b><span class="tm">${RTIME[r]}</span>${tag}</div><div class="mrow">`;
+      rd.forEach((pr,k)=>{
+        const m=MATCH[r+'_'+k],done=r*4+k<prog;
+        const aw=done&&m.w===m.a,bw=done&&m.w===m.b;
+        html+=`<div class="m ${done?'done':'wait'}">
+          <span class="ct">場${m.court}</span>
+          <span class="t ${aw?'w':''}" style="${aw?'color:'+TEAMS[m.a].c:''}">${TEAMS[m.a].label}</span>
+          <span class="sc">${done?`<b>${m.sa}</b><span style="font-size:8px">:</span><b>${m.sb}</b>`:'<span class="vs">vs</span>'}</span>
+          <span class="t r ${bw?'w':''}" style="${bw?'color:'+TEAMS[m.b].c:''}">${TEAMS[m.b].label}</span>
+        </div>`;
+      });
+      html+='</div></div>';
+    });
+    roundsEl.innerHTML=html;
+  }
+
+  // ---- 隊伍戰績卡 ----
+  const rmask=document.getElementById('rmask'),rcard=document.getElementById('rcard');
+  let curRec=null;
+  function octoEmb(c){ // 曜請八角徽記(同心八角+焊點)
+    function oct(r){let s='';for(let i=0;i<8;i++){const a=-Math.PI/2+i*Math.PI/4+Math.PI/8;s+=(i?'L':'M')+(100+Math.cos(a)*r).toFixed(1)+','+(100+Math.sin(a)*r).toFixed(1);}return s+'Z';}
+    let dots='';for(let i=0;i<8;i++){const a=-Math.PI/2+i*Math.PI/4+Math.PI/8;dots+=`<circle cx="${(100+Math.cos(a)*78).toFixed(1)}" cy="${(100+Math.sin(a)*78).toFixed(1)}" r="4.5" fill="${c}"/>`;}
+    return `<svg viewBox="0 0 200 200"><path d="${oct(78)}" fill="none" stroke="${c}" stroke-width="3.5"/><path d="${oct(52)}" fill="rgba(255,255,255,.02)" stroke="${c}" stroke-width="2.4"/><path d="${oct(26)}" fill="${c}" fill-opacity=".12" stroke="${c}" stroke-width="2"/><circle cx="100" cy="100" r="7" fill="${c}"/>${dots}</svg>`;
+  }
+  function openRec(i){
+    curRec=i;
+    const p=+progEl.value,t=TEAMS[i],{rank}=calc(p);
+    const me=rank.find(x=>x.id===i),pos=rank.indexOf(me)+1;
+    rcard.style.setProperty('--rc',t.c);rcard.style.setProperty('--rg','color-mix(in srgb,'+t.c+' 30%,transparent)');
+    // 該隊 7 場(按輪序)
+    const mine=Object.values(MATCH).filter(m=>m.a===i||m.b===i).sort((x,y)=>x.r-y.r);
+    const logs=mine.map(m=>{
+      const done=m.r*4+m.k<p,opp=TEAMS[m.a===i?m.b:m.a];
+      const my=m.a===i?m.sa:m.sb,op=m.a===i?m.sb:m.sa,win=done&&m.w===i;
+      return `<div class="lr ${done?'':'pend'}"><span class="st">第 ${m.r+1} 輪 ${m.time}</span>
+        <span class="op">vs <b style="color:${opp.c}">${opp.label}</b></span>
+        <span class="sc">${done?my+' : '+op:'—'}</span>
+        <span class="bdg ${done?(win?'w':'l'):'p'}">${done?(win?'勝':'負'):'待賽'}</span></div>`;
+    }).join('');
+    const medals=['🥇 冠軍','🥈 亞軍','🥉 季軍'];
+    const foot=p>=28
+      ?(pos<=3?`最終名次：<b>${medals[pos-1]}</b> · ${me.w} 勝 ${me.l} 敗`:`最終名次：<b>第 ${pos} 名</b> · ${me.w} 勝 ${me.l} 敗`)
+      :`目前排名：<b>第 ${pos} 名</b> · 已賽 ${me.w+me.l} / 7 場 · 賽果陸續更新`;
+    rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${octoEmb(t.c)}</div>
+      <span class="rx" id="rx">✕</span><div class="rin">
+      <div class="rhead"><div class="emb">${octoEmb(t.c)}</div>
+        <div><div class="tn">${t.label}</div><div class="ts">INVITATIONAL · 受邀隊伍</div>
+        <div class="pl">隊員：${(window.SolarCupData&&SolarCupData.demoPlayers?SolarCupData.demoPlayers('INV'+i):['—','—']).join(' · ')}</div>
+        <div class="tags"><span class="tag">曜請</span><span>全循環 · 編號 ${String(i+1).padStart(2,'0')}</span></div></div></div>
+      <div class="rstats">
+        <div class="c"><div class="v">${me.w}</div><div class="k">勝</div></div>
+        <div class="c"><div class="v">${me.l}</div><div class="k">敗</div></div>
+        <div class="c"><div class="v">${pos}</div><div class="k">${p>=28?'最終名次':'目前排名'}</div></div></div>
+      <div class="rlog"><div class="lh">對戰紀錄 · MATCH LOG</div>${logs}</div>
+      <div class="rfoot">${foot}</div>
+      <div class="rop"><span>背景徽記濃度</span><input type="range" id="rwmR" min="0" max="100" value="22"><span class="pv" id="rwmV">22%</span></div></div>`;
+    rmask.classList.add('show');
+    document.getElementById('rx').onclick=()=>{rmask.classList.remove('show');curRec=null;};
+    const wm=document.getElementById('rwm'),rr=document.getElementById('rwmR'),rv=document.getElementById('rwmV');
+    wm.style.opacity='0.22';
+    rr.addEventListener('input',()=>{wm.style.opacity=String(+rr.value/100);rv.textContent=rr.value+'%';});
+  }
+  rmask.addEventListener('click',e=>{if(e.target===rmask){rmask.classList.remove('show');curRec=null;}});
+
+  // ---- 進度連動 ----
+  const progEl=document.getElementById('prog'),progSt=document.getElementById('progSt');
+  function progLbl(p){if(p===0)return '尚未開打';if(p>=28)return '全部完賽 · 冠亞季確定';
+    const r=Math.floor((p-1)/4)+1;return `已完成 ${p} / 28 場 · 第 ${r} 輪${p%4===0?'結束':'進行中'}`;}
+  function render(){const p=+progEl.value;progSt.textContent=progLbl(p);drawOcto(p);drawStand(p);drawRounds(p);
+    if(curRec!=null&&rmask.classList.contains('show'))openRec(curRec);}
+  progEl.addEventListener('input',render);
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 戰績查詢</title>
+<meta property="og:title" content="曜日盃 TWO · 戰績查詢">
+<meta property="og:description" content="108 隊戰績卡查詢 · 輸入隊名或球團即時搜尋">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--void:#03060d;--field:#22d3ee;--field2:#1de9b6;--accent:#c77dff;--core:#eafcff;--ink:#dbeafe;--dim:#5b7089;
+    --line:rgba(29,233,182,.16);--amber:#ffc24b}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--void);color:var(--ink);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;
+    background-image:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(34,211,238,.06),transparent 60%)}
+  #bg3d{position:fixed;inset:0;z-index:0;display:block}
+  .scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);opacity:.5;mix-blend-mode:multiply}
+  .wrap{position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:26px 18px 90px}
+
+  header{margin:14px 0 18px}
+  header h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1);color:var(--core);text-shadow:0 0 22px rgba(34,211,238,.4)}
+  header h1 .a{color:var(--field)}
+  header .sub{font-size:10px;letter-spacing:.2em;color:var(--field);margin-top:6px}
+  header .meta{margin-top:9px;font-size:11px;color:var(--dim)}
+  header .meta b{color:var(--core);font-family:'Orbitron',sans-serif}
+
+  /* 搜尋列（主角）*/
+  .search{position:relative;margin:18px 0 16px}
+  .search .box{display:flex;align-items:center;gap:12px;padding:15px 18px;border:1.5px solid var(--line);border-radius:8px;
+    background:rgba(6,11,20,.7);transition:.2s}
+  .search .box:focus-within{border-color:var(--field);box-shadow:0 0 24px rgba(34,211,238,.22)}
+  .search .ic{width:18px;height:18px;flex-shrink:0;opacity:.7}
+  .search input{flex:1;background:none;border:none;outline:none;color:var(--core);font-family:'Share Tech Mono',monospace;font-size:15px}
+  .search input::placeholder{color:var(--dim)}
+  .search .cnt{font-size:10px;color:var(--field);white-space:nowrap;font-family:'Orbitron',sans-serif}
+  .search .clr{cursor:pointer;color:var(--dim);font-size:15px;padding:2px 6px;display:none}
+  .search .clr.show{display:block}
+
+  /* 分頁籤 */
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+  .tab{font-size:11px;padding:7px 13px;border:1px solid var(--line);border-radius:4px;color:var(--dim);cursor:pointer;transition:.18s;white-space:nowrap;
+    clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px)}
+  .tab:hover{border-color:var(--field);color:var(--ink)}
+  .tab.on{color:var(--core);font-weight:700}
+  .tab .n{font-size:9px;opacity:.7;margin-left:4px}
+
+  /* 隊伍卡片牆 */
+  .wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:11px}
+  .tcard{--sweep-c:var(--tcol);position:relative;border:1px solid var(--line);border-radius:7px;background:rgba(6,11,20,.62);padding:13px 14px;cursor:pointer;
+    transition:.2s;overflow:hidden}
+  .tcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tcol)}
+  .tcard:hover{border-color:var(--tcol);box-shadow:0 0 20px color-mix(in srgb,var(--tcol) 25%,transparent);transform:translateY(-2px)}
+  .tcard .top{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .tcard .emb{width:34px;height:34px;flex-shrink:0}
+  .tcard .emb svg{width:100%;height:100%}
+  .tcard .nm{font-family:'Orbitron',sans-serif;font-weight:700;font-size:15px;color:var(--core);line-height:1.1}
+  .tcard .cl{font-size:9.5px;color:var(--dim);margin-top:2px}
+  .tcard .mid{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tcard .tag{font-size:8.5px;padding:2px 8px;border-radius:2px;border:1px solid var(--tcol);color:var(--tcol);font-weight:700}
+  .tcard .trk{font-size:8.5px;color:var(--dim);padding:2px 6px;border:1px solid rgba(255,255,255,.1);border-radius:2px}
+  .tcard .wl{margin-left:auto;font-family:'Orbitron',sans-serif;font-size:11px;color:var(--ink)}
+  .tcard .wl b{color:var(--field2)}
+  .tcard .go{position:absolute;right:11px;bottom:9px;font-size:8.5px;color:var(--dim);opacity:0;transition:.2s}
+  .tcard:hover .go{opacity:1;color:var(--tcol)}
+  .empty{text-align:center;color:var(--dim);font-size:12px;padding:50px 0;letter-spacing:.06em}
+  .empty b{color:var(--field)}
+
+  /* 戰績卡 modal（沿用全站規範）*/
+  .rmask{position:fixed;inset:0;z-index:60;background:var(--rec-mask,rgba(2,4,9,.82));backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+  .rmask.show{display:flex;animation:sc2FadeIn .2s ease-out}
+  .rmask.show .rcard{animation:sc2CardIn .26s ease-out}
+  @keyframes sc2FadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes sc2CardIn{from{opacity:0;transform:translateY(12px) scale(.965)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .rcard{width:var(--rec-w,min(460px,94vw));max-height:92vh;overflow-y:auto;background:rgba(4,8,15,.97);border-radius:8px;border:1px solid var(--rc);box-shadow:0 0 50px var(--rg);position:relative}
+  .rcard .wm{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0;overflow:hidden}
+  .rcard .wm svg{width:120%;height:auto;filter:drop-shadow(0 0 16px color-mix(in srgb,var(--rc) 65%,transparent));animation:sc2RecSpin var(--rec-wm-spin,48s) linear infinite}
+  @keyframes sc2RecSpin{to{transform:rotate(360deg)}}
+  .rcard::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 88% 66% at 50% 40%,rgba(3,6,13,.66),rgba(3,6,13,.46) 60%,rgba(3,6,13,.78))}
+  .rin{position:relative;z-index:2}
+  .rx{position:absolute;top:12px;right:14px;z-index:3;cursor:pointer;color:var(--dim);font-size:16px}
+  .rhead{display:flex;align-items:center;gap:16px;padding:20px 22px 16px;border-bottom:1px solid var(--line)}
+  .rhead .emb{width:84px;height:84px;flex-shrink:0}
+  .rhead .emb svg{width:100%;height:100%}
+  .rhead .tn{font-family:'Orbitron',sans-serif;font-weight:900;font-size:24px;color:var(--core)}
+  .rhead .ts{font-size:11px;color:var(--rc);margin-top:5px;letter-spacing:.08em}
+  .rhead .pl{font-size:11px;color:var(--ink);margin-top:6px;letter-spacing:.04em}
+  .rhead .pl::before{content:"◈ ";color:var(--rc);font-size:9px}
+  .rhead .tags{margin-top:9px;display:flex;gap:7px;align-items:center;font-size:9.5px;color:var(--dim);flex-wrap:wrap}
+  .rhead .tag{padding:3px 10px;border:1px solid var(--rc);color:var(--rc);border-radius:3px;font-weight:700}
+  .rstats{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+  .rstats .c{padding:15px 8px;text-align:center;border-right:1px solid var(--line)}
+  .rstats .c:last-child{border-right:none}
+  .rstats .v{font-family:'Orbitron',sans-serif;font-weight:900;font-size:23px;color:var(--rc)}
+  .rstats .k{font-size:9px;letter-spacing:.14em;color:var(--dim);margin-top:5px}
+  .rlog{padding:14px 22px 6px}
+  .rlog .lh{font-size:9.5px;letter-spacing:.14em;color:var(--rc);margin-bottom:8px}
+  .rlog .lr{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  .rlog .lr .st{font-size:9px;color:var(--dim);min-width:58px}
+  .rlog .lr .op{flex:1;color:var(--ink)}
+  .rlog .lr .sc{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--core);white-space:nowrap}
+  .rlog .lr .bdg{font-size:9px;padding:2.5px 9px;border-radius:2px;font-weight:700;min-width:34px;text-align:center}
+  .rlog .lr .bdg.w{color:#2ee6c8;border:1px solid #2ee6c8}
+  .rlog .lr .bdg.l{color:#ff4d6a;border:1px solid #ff4d6a}
+  .rfoot{padding:12px 22px 16px;font-size:11px;color:var(--dim);border-top:1px solid var(--line)}
+  .rfoot b{color:var(--rc);font-family:'Orbitron',sans-serif}
+  .rop{display:flex;align-items:center;gap:10px;padding:10px 22px 18px;font-size:9.5px;color:var(--dim)}
+  .rop input{flex:1;accent-color:var(--rc);height:3px}
+  .rop .pv{font-family:'Orbitron',sans-serif;color:var(--rc);min-width:36px;text-align:right}
+
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,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") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<canvas id="bg3d"></canvas>
+<div class="scanlines"></div>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html" class="on">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<div class="wrap">
+  <header>
+    <h1>戰績<span class="a">查詢</span></h1>
+    <div class="sub">TEAM RECORD SEARCH · 108 TEAMS</div>
+    <div class="meta">◆ DEMO DATA ｜ 共 <b>108</b> 隊 ｜ 輸入隊名或球團即時搜尋 · 或點分頁籤瀏覽 ｜ 點隊伍看完整戰績卡</div>
+  </header>
+
+  <div class="search">
+    <div class="box">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+      <input id="q" type="text" placeholder="輸入隊名、球團或階級…（例：狸貓拳、白金、C-01）" autocomplete="off">
+      <span class="clr" id="clr">✕</span>
+      <span class="cnt" id="cnt"></span>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="wall" id="wall"></div>
+  <div class="empty" id="empty" style="display:none">找不到符合的隊伍 · 換個關鍵字試試</div>
+</div>
+
+<div class="rmask" id="rmask"><div class="rcard" id="rcard"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="tournament-data.js"></script>
+<script>
+/* 背景光子流（青） */
+(function(){
+  if(!window.THREE)return;
+  const mobile=innerWidth<640,canvas=document.getElementById('bg3d');
+  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.setSize(innerWidth,innerHeight);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,100);camera.position.z=18;
+  function glow(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+    const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.4,'rgba(120,220,255,.6)');gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+  const TEX=glow(),N=mobile?55:120,pos=new Float32Array(N*3),spd=[];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=(Math.random()-.5)*30;pos[i*3+2]=(Math.random()-.5)*30;spd.push(.01+Math.random()*.04);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:mobile?.5:.4,map:TEX,color:0x33d6ee,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.85}));
+  scene.add(pts);
+  let mx=0,my=0;addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;},{passive:true});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  function loop(){requestAnimationFrame(loop);
+    for(let i=0;i<N;i++){pos[i*3+2]+=spd[i]*.5;if(pos[i*3+2]>16)pos[i*3+2]=-16;}
+    geo.attributes.position.needsUpdate=true;pts.rotation.y+=.0005;
+    camera.position.x+=((mx*4)-camera.position.x)*.04;camera.position.y+=((-my*3)-camera.position.y)*.04;camera.lookAt(0,0,0);
+    renderer.render(scene,camera);}
+  loop();
+})();
+</script>
+<script>
+(function(){
+  const D=window.SolarCupData;
+  if(!D){document.getElementById('wall').innerHTML='<div class="empty">資料層未載入 · 請確認 tournament-data.js</div>';return;}
+  const {teams}=D.buildAllTeams();
+
+  // 徽記
+  function emb(t){
+    if(t.tier==='invite'){ // 曜請八角
+      let s='';for(let i=0;i<8;i++){const a=-Math.PI/2+i*Math.PI/4+Math.PI/8;s+=`<circle cx="${(100+Math.cos(a)*72).toFixed(1)}" cy="${(100+Math.sin(a)*72).toFixed(1)}" r="7" fill="${t.clubColor}"/>`;}
+      return `<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="84" fill="rgba(3,6,13,.6)" stroke="${t.clubColor}" stroke-width="6"/>${s}<circle cx="100" cy="100" r="12" fill="${t.clubColor}"/></svg>`;
+    }
+    const club=D.CLUB_BY_KEY[t.clubKey];
+    return D.embChip(club);
+  }
+
+  // 分頁籤：動態依實際球團 + 曜請
+  const CLUBS=D.CLUB_DATA.map(c=>c.name); // 十團（含自由）
+  const TABS=[{key:'all',name:'全部'}].concat(D.CLUB_DATA.map(c=>({key:c.key,name:c.name}))).concat([{key:'invite',name:'曜請'}]);
+  let curTab='all',curQ='';
+
+  const tabsEl=document.getElementById('tabs');
+  function countFor(tab){
+    if(tab==='all')return teams.length;
+    if(tab==='invite')return teams.filter(t=>t.tier==='invite').length;
+    return teams.filter(t=>t.clubKey===tab).length;
+  }
+  tabsEl.innerHTML=TABS.map(t=>`<div class="tab${t.key==='all'?' on':''}" data-k="${t.key}">${t.name}<span class="n">${countFor(t.key)}</span></div>`).join('');
+  tabsEl.querySelectorAll('.tab').forEach(el=>el.addEventListener('click',()=>{
+    tabsEl.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');
+    curTab=el.dataset.k;render();
+  }));
+
+  // 篩選 + 渲染
+  const wallEl=document.getElementById('wall'),emptyEl=document.getElementById('empty'),cntEl=document.getElementById('cnt');
+  function filtered(){
+    let list=teams;
+    if(curTab==='invite')list=list.filter(t=>t.tier==='invite');
+    else if(curTab!=='all')list=list.filter(t=>t.clubKey===curTab);
+    if(curQ){const q=curQ.toLowerCase();
+      list=list.filter(t=>t.label.toLowerCase().includes(q)||t.club.toLowerCase().includes(q)||t.tierName.includes(q)||t.group.toLowerCase().includes(q)||t.track.includes(q));}
+    return list;
+  }
+  function render(){
+    const list=filtered();
+    cntEl.textContent=`${list.length} 隊`;
+    if(!list.length){wallEl.innerHTML='';emptyEl.style.display='block';return;}
+    emptyEl.style.display='none';
+    wallEl.innerHTML=list.map((t,i)=>`<div class="tcard sc2-sweep" data-i="${teams.indexOf(t)}" style="--tcol:${t.tierColor}">
+      <div class="top"><div class="emb">${emb(t)}</div>
+        <div><div class="nm">${t.label}</div><div class="cl">${t.club} · ${t.group}</div></div></div>
+      <div class="mid"><span class="tag">${t.tierName}</span><span class="trk">${t.track}</span>
+        <span class="wl"><b>${t.w}</b>勝 ${t.l}敗</span></div>
+      <div class="go">▸ 戰績卡</div></div>`).join('');
+    wallEl.querySelectorAll('.tcard').forEach(el=>el.addEventListener('click',()=>openRec(+el.dataset.i)));
+  }
+
+  // 搜尋
+  const qEl=document.getElementById('q'),clrEl=document.getElementById('clr');
+  qEl.addEventListener('input',()=>{curQ=qEl.value.trim();clrEl.classList.toggle('show',!!curQ);render();});
+  clrEl.addEventListener('click',()=>{qEl.value='';curQ='';clrEl.classList.remove('show');render();qEl.focus();});
+
+  // 戰績卡 modal
+  const rmask=document.getElementById('rmask'),rcard=document.getElementById('rcard');
+  function openRec(i){
+    const t=teams[i];
+    rcard.style.setProperty('--rc',t.tierColor);
+    rcard.style.setProperty('--rg','color-mix(in srgb,'+t.tierColor+' 30%,transparent)');
+    const logs=t.matches.map(m=>{
+      const isA=m.a.tid===t.tid,opp=isA?m.b:m.a,my=isA?m.sa:m.sb,op=isA?m.sb:m.sa,win=m.winner.tid===t.tid;
+      const stg=t.tier==='invite'?('第 '+m.round+' 輪'):(t.group+' 初賽');
+      return `<div class="lr"><span class="st">${stg}</span>
+        <span class="op">vs <b style="color:${opp.clubObj.c}">${opp.label}</b></span>
+        <span class="sc">${my} : ${op}</span>
+        <span class="bdg ${win?'w':'l'}">${win?'勝':'負'}</span></div>`;
+    }).join('');
+    const rankTxt=t.tier==='invite'?`曜請排名 第 ${t.rank} 名`:`初賽分流 → ${t.tierName}（第 ${t.rank} 名晉級）`;
+    rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${emb(t)}</div>
+      <span class="rx" id="rx">✕</span><div class="rin">
+      <div class="rhead"><div class="emb">${emb(t)}</div>
+        <div><div class="tn">${t.label}</div><div class="ts">${t.club} 球團 · ${t.track}賽道</div>
+        <div class="pl">隊員：${t.players?t.players.join(' · '):'—'}</div>
+        <div class="tags"><span class="tag">${t.tierName}</span><span>編號 ${t.group}</span></div></div></div>
+      <div class="rstats">
+        <div class="c"><div class="v">${t.w}</div><div class="k">勝</div></div>
+        <div class="c"><div class="v">${t.l}</div><div class="k">敗</div></div>
+        <div class="c"><div class="v">${t.base+ (t.tier==='invite'?0:(2-Math.min(t.rank,2))*0)}</div><div class="k">階級底分</div></div></div>
+      <div class="rlog"><div class="lh">對戰紀錄 · MATCH LOG</div>${logs||'<div style="color:var(--dim);font-size:11px;padding:8px 0">暫無比賽紀錄</div>'}</div>
+      <div class="rfoot">${rankTxt} · ${t.w} 勝 ${t.l} 敗 · 得失分 ${t.gf}/${t.ga}</div>
+      <div class="rop"><span>背景徽記濃度</span><input type="range" id="rwmR" min="0" max="100" value="22"><span class="pv" id="rwmV">22%</span></div></div>`;
+    rmask.classList.add('show');
+    document.getElementById('rx').onclick=()=>rmask.classList.remove('show');
+    const wm=document.getElementById('rwm'),rr=document.getElementById('rwmR'),rv=document.getElementById('rwmV');
+    rr.addEventListener('input',()=>{wm.style.opacity=String(+rr.value/100);rv.textContent=rr.value+'%';});
+  }
+  rmask.addEventListener('click',e=>{if(e.target===rmask)rmask.classList.remove('show');});
+
+  render();
+})();
+</script>
+</body>
+</html>

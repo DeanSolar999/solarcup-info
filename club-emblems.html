@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 球團徽記</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--void:#03060d;--field:#22d3ee;--accent:#c77dff;--core:#eafcff;--ink:#dbeafe;--dim:#5b7089;--line:rgba(29,233,182,.16)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--void);color:var(--ink);font-family:'Share Tech Mono',monospace;min-height:100vh;
+    background-image:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(34,211,238,.08),transparent 60%)}
+  #grid{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.3;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:52px 52px;-webkit-mask-image:radial-gradient(ellipse 85% 85% at 50% 20%,#000 30%,transparent 88%);
+    mask-image:radial-gradient(ellipse 85% 85% at 50% 20%,#000 30%,transparent 88%)}
+  .shell{position:relative;z-index:2;max-width:1160px;margin:0 auto;padding:30px 20px 70px}
+  header{margin-bottom:26px}
+  .eye{font-size:10px;letter-spacing:.3em;color:var(--field);display:flex;align-items:center;gap:8px}
+  .eye .pip{width:7px;height:7px;background:var(--field);box-shadow:0 0 10px var(--field);
+    clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);animation:pip 1.3s infinite}
+  @keyframes pip{0%,100%{opacity:1}50%{opacity:.3}}
+  h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1);color:var(--core);
+    letter-spacing:.02em;margin-top:8px;text-shadow:0 0 26px rgba(34,211,238,.4)}
+  h1 .f{background:linear-gradient(120deg,var(--field),var(--accent));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .zh{font-family:'Orbitron',sans-serif;font-weight:700;font-size:clamp(12px,2.4vw,16px);letter-spacing:.22em;color:var(--accent);margin-top:6px}
+  .intro{font-size:11px;color:var(--dim);letter-spacing:.06em;line-height:1.9;margin-top:14px;max-width:740px}
+  .intro b{color:var(--field)}
+
+  .egrid{margin-top:28px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+  .ecard{border:1px solid var(--line);background:rgba(8,14,24,.6);padding:18px;display:flex;gap:16px;align-items:center;
+    position:relative;transition:.25s;overflow:hidden}
+  .ecard::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,color-mix(in srgb,var(--c) 13%,transparent),transparent 62%);pointer-events:none}
+  .ecard{transition:.22s}
+  .ecard:hover{border-color:color-mix(in srgb,var(--c) 50%,transparent);box-shadow:0 0 26px color-mix(in srgb,var(--c) 22%,transparent);transform:translateY(-3px)}
+  .efull{width:132px;height:132px;flex-shrink:0;filter:drop-shadow(0 0 7px color-mix(in srgb,var(--c) 55%,transparent))}
+  .efull svg{width:100%;height:100%;overflow:visible}
+  .einfo{flex:1;min-width:0;position:relative;z-index:1}
+  .ename{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:var(--core);display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .ename .unit{font-family:'Share Tech Mono';font-size:9px;letter-spacing:.14em;color:var(--c-txt)}
+  .edesc{font-size:10.5px;color:var(--dim);line-height:1.7;margin:8px 0 12px}
+  .emeta{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .chip{font-size:9px;letter-spacing:.1em;color:var(--c-txt);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);
+    padding:3px 8px;border-radius:2px;background:color-mix(in srgb,var(--c) 10%,transparent)}
+  .emini{width:42px;height:42px;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--c) 60%,transparent))}
+  .emini svg{width:100%;height:100%;overflow:visible}
+  .mlab{font-size:8px;letter-spacing:.12em;color:var(--dim);text-align:center;margin-top:2px}
+
+  footer{margin-top:30px;text-align:center;font-size:9px;letter-spacing:.14em;color:var(--dim);line-height:2}
+  footer .demo{color:var(--accent)}
+  @media(max-width:520px){.ecard{flex-direction:column;text-align:center}.efull{width:150px;height:150px}.emeta{justify-content:center}}
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,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") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html" class="on">球團徽記</a></div></nav>
+<div id="grid"></div>
+<div class="shell">
+  <header>
+    <div class="eye"><span class="pip"></span>NERV BADMINTON DIVISION · EMBLEM REGISTRY</div>
+    <h1>EMBLEM <span class="f">SYSTEM</span></h1>
+    <div class="zh">球團徽記系統 · 電路化幾何母題</div>
+    <div class="intro">十團採 <b>NERV 機構印記</b>骨架、<b>電路化幾何母題</b>為核 — 多層嵌套、旋轉對稱、焊點與接腳線構成星盤般的紋章。每團一個獨特幾何母體（三角／菱／方／六角／同心圓／星／螺旋／十字／開口環）。左為<b>完整徽記</b>，右下為<b>極簡標記</b>（密集節點用，抽取主結構）。</div>
+  </header>
+  <div class="egrid" id="egrid"></div>
+  <footer>SOLAR CUP TWO · 球團徽記系統 · NERV 競技部<br>
+    <span class="demo">◆ 徽記設計稿 · 幾何母題、配色可依確認調整</span></footer>
+</div>
+
+<script>
+(function(){
+  const CLUBS=[
+    {key:'huanle',name:'歡樂',unit:'UNIT-01',c:'#ff8a3c',motif:'單三角',desc:'三角嵌套分形 — 多層正三角嵌套、頂點焊點與放射接腳'},
+    {key:'yuzhou',name:'小羽宙',unit:'UNIT-02',c:'#22d3ee',motif:'雙三角',desc:'六芒交疊 — 正倒三角雙層交疊、六向接腳的星盤'},
+    {key:'poli',name:'魄力',unit:'UNIT-03',c:'#ff3ca6',motif:'菱形',desc:'菱格陣列 — 菱形多層嵌套、四象限分割與節點'},
+    {key:'dachuan',name:'大船',unit:'UNIT-04',c:'#6b6bff',motif:'方形',desc:'方中方 — 逐層旋轉 45° 的方形嵌套、角點焊盤'},
+    {key:'limao',name:'狸貓拳',unit:'UNIT-05',c:'#2ee6c8',motif:'六角',desc:'蜂巢六角 — 中心六角與六向蜂巢、多層電路'},
+    {key:'dangdang',name:'蕩蕩',unit:'UNIT-06',c:'#a3e635',motif:'雙圓摩爾',desc:'雙圓摩爾干涉 — 兩組錯位同心圓交疊出的干涉波紋'},
+    {key:'yuguang',name:'羽光',unit:'UNIT-07',c:'#a855f7',motif:'多臂螺旋',desc:'四臂對數螺旋 — 旋臂沿線焊點，向心收束'},
+    {key:'solarA',name:'曜日A',unit:'UNIT-08',c:'#ffb3d1',motif:'尖星羅盤',desc:'純尖星羅盤 — 八主芒交錯副芒的羅盤玫瑰（曜日之陽）'},
+    {key:'solarB',name:'曜日B',unit:'UNIT-09',c:'#ff9ec4',motif:'同心日冠',desc:'同心日冠環 — 多層圓環與十六道放射日冠火焰（曜日之冕）'},
+    {key:'free',name:'自由',unit:'FREE',c:'#8a95a5',motif:'開口環',desc:'斷裂破環 — 多段缺口弧與飛散幾何碎片（不計團體）'},
+  ];
+
+  // ---- 幾何 helper ----
+  function ngon(cx,cy,r,n,rot){const p=[];for(let i=0;i<n;i++){const a=(rot||0)+i*2*Math.PI/n;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return p;}
+  function pstr(pts){return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');}
+  function E(C){
+    return {
+      poly:(pts,w,op)=>`<polygon points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="${w||1.5}" stroke-linejoin="round" opacity="${op||1}"/>`,
+      fpoly:(pts,op)=>`<polygon points="${pstr(pts)}" fill="${C}" opacity="${op||1}"/>`,
+      circ:(x,y,r,w,op)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="none" stroke="${C}" stroke-width="${w||1.4}" opacity="${op||1}"/>`,
+      dot:(x,y,r)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r||1.7}" fill="${C}"/>`,
+      line:(x1,y1,x2,y2,w,op)=>`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${C}" stroke-width="${w||1.3}" stroke-linecap="round" opacity="${op||1}"/>`,
+    };
+  }
+  const CX=100,CY=100;
+
+  // ---- 完整版：高度複雜 ----
+  function center(key,C){
+    const e=E(C);let s='';
+    switch(key){
+      case 'huanle':{ // 三角嵌套分形
+        [54,40,26,13].forEach((r,i)=>{s+=e.poly(ngon(CX,CY,r,3,-Math.PI/2),i<2?1.4:2);});
+        const outer=ngon(CX,CY,54,3,-Math.PI/2);outer.forEach(p=>{s+=e.dot(p[0],p[1],2.3);s+=e.line(CX,CY,p[0],p[1],.8,.4);});
+        // 反三角細層
+        s+=e.poly(ngon(CX,CY,44,3,Math.PI/2),.9,.5);
+        s+=e.fpoly(ngon(CX,CY,9,3,-Math.PI/2));
+        ngon(CX,CY,40,3,Math.PI/2).forEach(p=>s+=e.dot(p[0],p[1],1.5));
+        break;}
+      case 'yuzhou':{ // 六芒交疊雙層
+        [ [50,-Math.PI/2],[50,Math.PI/2],[36,-Math.PI/2],[36,Math.PI/2] ].forEach((t,i)=>{s+=e.poly(ngon(CX,CY,t[0],3,t[1]),i<2?1.6:1);});
+        const hex=ngon(CX,CY,50,6,-Math.PI/2);hex.forEach((p,i)=>{s+=e.dot(p[0],p[1],2.2);if(i%2===0)s+=e.line(CX,CY,p[0],p[1],.8,.45);});
+        s+=e.circ(CX,CY,20,1.2,.7);s+=e.circ(CX,CY,10,1.4);s+=e.fpoly(ngon(CX,CY,5,6,0));
+        break;}
+      case 'poli':{ // 菱格陣列
+        const dia=(r)=>[[CX,CY-r],[CX+r,CY],[CX,CY+r],[CX-r,CY]];
+        [52,38,24,11].forEach((r,i)=>s+=e.poly(dia(r),i<2?1.5:2));
+        // 四象限小菱
+        [[CX,CY-30],[CX+30,CY],[CX,CY+30],[CX-30,CY]].forEach(c=>{s+=e.poly([[c[0],c[1]-9],[c[0]+9,c[1]],[c[0],c[1]+9],[c[0]-9,c[1]]],1);s+=e.dot(c[0],c[1],1.8);});
+        dia(52).forEach(p=>s+=e.dot(p[0],p[1],2.3));
+        s+=e.fpoly(dia(7));
+        break;}
+      case 'dachuan':{ // 方中方
+        [[50,0],[42,Math.PI/4],[32,0],[22,Math.PI/4],[12,0]].forEach((t,i)=>s+=e.poly(ngon(CX,CY,t[0],4,t[1]),i<2?1.5:1.2));
+        ngon(CX,CY,50,4,0).forEach(p=>{s+=e.dot(p[0],p[1],2.3);s+=e.line(CX,CY,p[0],p[1],.7,.35);});
+        ngon(CX,CY,42,4,Math.PI/4).forEach(p=>s+=e.dot(p[0],p[1],1.6));
+        s+=e.fpoly(ngon(CX,CY,7,4,Math.PI/4));
+        break;}
+      case 'limao':{ // 蜂巢六角
+        s+=e.poly(ngon(CX,CY,20,6,0),1.8);
+        ngon(CX,CY,36,6,0).forEach(c=>{s+=e.poly(ngon(c[0],c[1],15,6,0),1.2);s+=e.dot(c[0],c[1],1.6);s+=e.line(CX,CY,c[0],c[1],.7,.4);});
+        s+=e.poly(ngon(CX,CY,54,6,0),1,.55);
+        ngon(CX,CY,54,6,0).forEach(p=>s+=e.dot(p[0],p[1],2.1));
+        s+=e.fpoly(ngon(CX,CY,7,6,0));
+        break;}
+      case 'dangdang':{ // 雙圓摩爾干涉
+        // 兩組圓心錯開的同心圓，交疊產生摩爾紋
+        const off=13;
+        [52,43,34,25,16].forEach((r,i)=>{s+=e.circ(CX-off,CY,r,i%2?.8:1.3,i%2?.5:.9);});
+        [52,43,34,25,16].forEach((r,i)=>{s+=e.circ(CX+off,CY,r,i%2?.8:1.3,i%2?.5:.9);});
+        // 外框環 + 交點焊點
+        s+=e.circ(CX,CY,54,1.2,.55);
+        [[CX,CY-30],[CX,CY+30],[CX-off,CY],[CX+off,CY]].forEach(p=>s+=e.dot(p[0],p[1],2));
+        s+=e.circ(CX,CY,5,0,1);s+=e.dot(CX,CY,2.6);
+        break;}
+      case 'yuguang':{ // 多臂螺旋（原曜日A）
+        for(let arm=0;arm<4;arm++){let pts=[];for(let t=0;t<=30;t++){const r=6+t*1.55;const a=arm*Math.PI/2+t*0.34;pts.push([CX+Math.cos(a)*r,CY+Math.sin(a)*r]);}
+          s+=`<polyline points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="1.6" stroke-linecap="round" opacity="${.55+arm*0.1}"/>`;
+          [8,18,28].forEach(ti=>{const r=6+ti*1.55,a=arm*Math.PI/2+ti*0.34;s+=e.dot(CX+Math.cos(a)*r,CY+Math.sin(a)*r,1.7);});}
+        s+=e.circ(CX,CY,52,.9,.4);s+=e.circ(CX,CY,10,1.4);s+=e.dot(CX,CY,3.5);
+        break;}
+      case 'solarA':{ // 純尖星羅盤（原羽光）
+        for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const tip=[CX+Math.cos(a)*54,CY+Math.sin(a)*54];
+          const bl=[CX+Math.cos(a-0.1)*15,CY+Math.sin(a-0.1)*15],br=[CX+Math.cos(a+0.1)*15,CY+Math.sin(a+0.1)*15];
+          s+=(i%2? e.poly([tip,bl,[CX,CY],br]) : e.fpoly([tip,bl,[CX,CY],br],.92));
+          s+=e.dot(tip[0],tip[1],1.8);}
+        for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.PI/8-Math.PI/2;s+=e.line(CX,CY,CX+Math.cos(a)*30,CY+Math.sin(a)*30,1);}
+        s+=e.circ(CX,CY,11,1.4);s+=e.fpoly(ngon(CX,CY,6,8,-Math.PI/2));
+        break;}
+      case 'solarB':{ // 同心日冠環（多層圓環 + 放射日冠）
+        [50,38,26].forEach((r,i)=>s+=e.circ(CX,CY,r,i?1:1.5,i?.6:1));
+        // 放射日冠：16 道火焰芒，交錯長短
+        for(let i=0;i<16;i++){const a=i*Math.PI/8-Math.PI/2;const rout=i%2?62:53;
+          const tip=[CX+Math.cos(a)*rout,CY+Math.sin(a)*rout];
+          const bl=[CX+Math.cos(a-0.085)*50,CY+Math.sin(a-0.085)*50],br=[CX+Math.cos(a+0.085)*50,CY+Math.sin(a+0.085)*50];
+          s+=(i%2? e.poly([tip,bl,br],1) : e.fpoly([tip,bl,br],.9));}
+        // 環上焊點
+        for(let i=0;i<8;i++){const a=i*Math.PI/4;s+=e.dot(CX+Math.cos(a)*38,CY+Math.sin(a)*38,1.7);}
+        s+=e.circ(CX,CY,15,1.2,.7);s+=e.fpoly(ngon(CX,CY,10,12,0));
+        break;}
+      case 'free':{ // 斷裂破環
+        // 三層弧，各層有缺口且錯位
+        const arc=(r,start,sweep,w)=>{const x1=CX+Math.cos(start)*r,y1=CY+Math.sin(start)*r,x2=CX+Math.cos(start+sweep)*r,y2=CY+Math.sin(start+sweep)*r;
+          const large=sweep>Math.PI?1:0;return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${C}" stroke-width="${w}" stroke-linecap="round"/>`;};
+        s+=arc(52,-1.9,4.4,1.6)+arc(40,0.6,4.0,1.3)+arc(28,2.4,3.8,1.6);
+        // 飛散碎片
+        [[150,58,3,'tri'],[158,84,4,'dia'],[46,150,3.4,'sq'],[70,158,3,'tri']].forEach(f=>{
+          if(f[3]==='dia')s+=e.poly([[f[0],f[1]-f[2]],[f[0]+f[2],f[1]],[f[0],f[1]+f[2]],[f[0]-f[2],f[1]]],1.2);
+          else if(f[3]==='sq')s+=e.poly(ngon(f[0],f[1],f[2],4,Math.PI/4),1.2);
+          else s+=e.poly(ngon(f[0],f[1],f[2],3,-Math.PI/2),1.2);
+          s+=e.dot(f[0],f[1],1.2);});
+        [-1.9,2.6,0.6].forEach(a=>s+=e.dot(CX+Math.cos(a)*52,CY+Math.sin(a)*52,2));
+        s+=e.dot(CX,CY,3);
+        break;}
+    }
+    return s;
+  }
+
+  // ---- 極簡版：抽主結構 ----
+  function centerMini(key,C){
+    const e=E(C);
+    switch(key){
+      case 'huanle':return e.poly(ngon(CX,CY,52,3,-Math.PI/2),6)+e.fpoly(ngon(CX,CY,14,3,-Math.PI/2));
+      case 'yuzhou':return e.poly(ngon(CX,CY,52,3,-Math.PI/2),5)+e.poly(ngon(CX,CY,52,3,Math.PI/2),5);
+      case 'poli':return e.poly([[CX,CY-54],[CX+54,CY],[CX,CY+54],[CX-54,CY]],6)+e.fpoly([[CX,CY-16],[CX+16,CY],[CX,CY+16],[CX-16,CY]]);
+      case 'dachuan':return e.poly(ngon(CX,CY,50,4,0),6)+e.poly(ngon(CX,CY,30,4,Math.PI/4),4);
+      case 'limao':return e.poly(ngon(CX,CY,52,6,0),6)+e.poly(ngon(CX,CY,26,6,0),4);
+      case 'dangdang':return e.circ(CX-13,CY,46,5)+e.circ(CX-13,CY,26,4)+e.circ(CX+13,CY,46,5)+e.circ(CX+13,CY,26,4);
+      case 'yuguang':{let s='';for(let arm=0;arm<3;arm++){let pts=[];for(let t=0;t<=22;t++){const r=6+t*2.1,a=arm*2*Math.PI/3+t*0.4;pts.push([CX+Math.cos(a)*r,CY+Math.sin(a)*r]);}s+=`<polyline points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="5" stroke-linecap="round"/>`;}return s;}
+      case 'solarA':{let s='';for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const tip=[CX+Math.cos(a)*56,CY+Math.sin(a)*56],bl=[CX+Math.cos(a-0.13)*16,CY+Math.sin(a-0.13)*16],br=[CX+Math.cos(a+0.13)*16,CY+Math.sin(a+0.13)*16];s+=(i%2?e.poly([tip,bl,[CX,CY],br],4):e.fpoly([tip,bl,[CX,CY],br]));}return s+e.fpoly(ngon(CX,CY,8,8,-Math.PI/2));}
+      case 'solarB':{let s=e.circ(CX,CY,44,5)+e.circ(CX,CY,26,4);for(let i=0;i<12;i++){const a=i*Math.PI/6-Math.PI/2;const tip=[CX+Math.cos(a)*60,CY+Math.sin(a)*60],bl=[CX+Math.cos(a-0.1)*44,CY+Math.sin(a-0.1)*44],br=[CX+Math.cos(a+0.1)*44,CY+Math.sin(a+0.1)*44];s+=e.fpoly([tip,bl,br]);}return s+e.fpoly(ngon(CX,CY,10,12,0));}
+      case 'free':{const arc=(r,st,sw,w)=>{const x1=CX+Math.cos(st)*r,y1=CY+Math.sin(st)*r,x2=CX+Math.cos(st+sw)*r,y2=CY+Math.sin(st+sw)*r,lg=sw>Math.PI?1:0;return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${C}" stroke-width="${w}" stroke-linecap="round"/>`;};
+        return arc(50,-1.6,4.8,6)+e.dot(CX+Math.cos(-1.6)*50,CY+Math.sin(-1.6)*50,4)+e.dot(CX+Math.cos(3.2)*50,CY+Math.sin(3.2)*50,4);}
+    }
+    return '';
+  }
+
+  function fullEmblem(cl){
+    const C=cl.c,ring=`SOLAR CUP TWO ✦ ${cl.name} ✦ ${cl.unit} ✦ NERV ✦ `;
+    return `<svg viewBox="0 0 200 200">
+      <defs><path id="tp-${cl.key}" d="M100,196 A96,96 0 1,1 100.01,196" fill="none"/></defs>
+      <circle cx="100" cy="100" r="90" fill="none" stroke="${C}" stroke-width="1.4" opacity=".9"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="${C}" stroke-width=".7" opacity=".5"/>
+      <circle cx="100" cy="100" r="70" fill="none" stroke="${C}" stroke-width="3.5" stroke-dasharray="1 7" opacity=".45"/>
+      <text font-family="Share Tech Mono, monospace" font-size="8.5" letter-spacing="2" fill="${C}" opacity=".85">
+        <textPath href="#tp-${cl.key}" startOffset="0">${ring}${ring}</textPath></text>
+      <line x1="16" y1="100" x2="28" y2="100" stroke="${C}" stroke-width="1.4"/>
+      <line x1="172" y1="100" x2="184" y2="100" stroke="${C}" stroke-width="1.4"/>
+      ${center(cl.key,C)}
+      <rect x="74" y="176" width="52" height="14" fill="rgba(3,6,13,.7)" stroke="${C}" stroke-width="1" opacity=".85"/>
+      <text x="100" y="186" text-anchor="middle" font-family="Orbitron, sans-serif" font-weight="700" font-size="7.5" letter-spacing="1.5" fill="${C}">${cl.unit}</text>
+    </svg>`;
+  }
+  function miniEmblem(cl){
+    return `<svg viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="86" fill="rgba(3,6,13,.65)" stroke="${cl.c}" stroke-width="5"/>
+      ${centerMini(cl.key,cl.c)}</svg>`;
+  }
+
+  const grid=document.getElementById('egrid');
+  CLUBS.forEach(cl=>{
+    const card=document.createElement('div');card.className='ecard';
+    card.style.setProperty('--c',cl.c);card.style.setProperty('--c-txt',cl.c);
+    card.innerHTML=`
+      <div class="efull">${fullEmblem(cl)}</div>
+      <div class="einfo">
+        <div class="ename">${cl.name}<span class="unit">${cl.unit} · ${cl.motif}</span></div>
+        <div class="edesc">${cl.desc}</div>
+        <div class="emeta">
+          <span class="chip">${cl.c.toUpperCase()}</span>
+          <div><div class="emini">${miniEmblem(cl)}</div><div class="mlab">極簡</div></div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+})();
+</script>
+</body>
+</html>

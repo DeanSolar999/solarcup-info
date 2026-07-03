@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23ffcf33'%3E%3Cpolygon points='97.0,50.0 86.0,57.0 75.0,50.0 86.0,43.0'/%3E%3Cpolygon points='90.7,73.5 77.7,74.1 71.7,62.5 84.7,61.9'/%3E%3Cpolygon points='73.5,90.7 61.9,84.7 62.5,71.7 74.1,77.7'/%3E%3Cpolygon points='50.0,97.0 43.0,86.0 50.0,75.0 57.0,86.0'/%3E%3Cpolygon points='26.5,90.7 25.9,77.7 37.5,71.7 38.1,84.7'/%3E%3Cpolygon points='9.3,73.5 15.3,61.9 28.3,62.5 22.3,74.1'/%3E%3Cpolygon points='3.0,50.0 14.0,43.0 25.0,50.0 14.0,57.0'/%3E%3Cpolygon points='9.3,26.5 22.3,25.9 28.3,37.5 15.3,38.1'/%3E%3Cpolygon points='26.5,9.3 38.1,15.3 37.5,28.3 25.9,22.3'/%3E%3Cpolygon points='50.0,3.0 57.0,14.0 50.0,25.0 43.0,14.0'/%3E%3Cpolygon points='73.5,9.3 74.1,22.3 62.5,28.3 61.9,15.3'/%3E%3Cpolygon points='90.7,26.5 84.7,38.1 71.7,37.5 77.7,25.9'/%3E%3C/g%3E%3Cg fill='%23ffcf33' opacity='.92'%3E%3Cpolygon points='80.9,58.3 72.3,61.4 66.4,54.4 75.0,51.3'/%3E%3Cpolygon points='72.6,72.6 63.6,71.0 62.0,62.0 71.0,63.6'/%3E%3Cpolygon points='58.3,80.9 51.3,75.0 54.4,66.4 61.4,72.3'/%3E%3Cpolygon points='41.7,80.9 38.6,72.3 45.6,66.4 48.7,75.0'/%3E%3Cpolygon points='27.4,72.6 29.0,63.6 38.0,62.0 36.4,71.0'/%3E%3Cpolygon points='19.1,58.3 25.0,51.3 33.6,54.4 27.7,61.4'/%3E%3Cpolygon points='19.1,41.7 27.7,38.6 33.6,45.6 25.0,48.7'/%3E%3Cpolygon points='27.4,27.4 36.4,29.0 38.0,38.0 29.0,36.4'/%3E%3Cpolygon points='41.7,19.1 48.7,25.0 45.6,33.6 38.6,27.7'/%3E%3Cpolygon points='58.3,19.1 61.4,27.7 54.4,33.6 51.3,25.0'/%3E%3Cpolygon points='72.6,27.4 71.0,36.4 62.0,38.0 63.6,29.0'/%3E%3Cpolygon points='80.9,41.7 75.0,48.7 66.4,45.6 72.3,38.6'/%3E%3C/g%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 初賽分流</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--void:#03060d;--field:#22d3ee;--core:#eafcff;--ink:#dbeafe;--dim:#5b7089;--line:rgba(34,211,238,.14);
+    --plat:#4d9fff;--gold:#ffcf33;--silver:#ff4d6a;--bronze:#34e07a}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{background:var(--void);color:var(--ink);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden;
+    background-image:radial-gradient(ellipse 70% 50% at 50% 0%,rgba(34,211,238,.08),transparent 60%)}
+  #bg3d{position:fixed;inset:0;z-index:0;display:block}
+  /* ---- 全域賽博 HUD 層 ---- */
+  .scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 3px);opacity:.5;mix-blend-mode:multiply}
+  .crt{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse 120% 100% at 50% 50%,transparent 62%,rgba(2,4,9,.55) 100%)}
+  .hudcorner{position:fixed;z-index:3;width:60px;height:60px;pointer-events:none;opacity:.75}
+  .hudcorner svg{width:100%;height:100%;overflow:visible}
+  .hud-tl{top:8px;left:8px}.hud-tr{top:8px;right:8px;transform:scaleX(-1)}
+  .hud-bl{bottom:8px;left:8px;transform:scaleY(-1)}.hud-br{bottom:8px;right:8px;transform:scale(-1)}
+  /* ---- 標題 glitch ---- */
+  @keyframes glitchA{0%,86%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}88%{clip-path:inset(12% 0 58% 0);transform:translate(-3px,1px)}91%{clip-path:inset(58% 0 8% 0);transform:translate(3px,-1px)}94%{clip-path:inset(30% 0 42% 0);transform:translate(-2px,0)}}
+  header h1{position:relative}
+  header h1 .gl{position:absolute;inset:0;pointer-events:none}
+  header h1 .gl.a{color:#22d3ee;animation:glitchA 5.2s infinite steps(1);opacity:.85}
+  header h1 .gl.b{color:#ff3ca6;animation:glitchA 5.2s infinite steps(1) .12s;opacity:.7}
+  /* ---- PCB 走線裝飾（區塊焊點）---- */
+  .lane-head{position:relative}
+  .lane-head::before{content:"";position:absolute;left:-2px;bottom:-3px;width:5px;height:5px;border-radius:50%;
+    background:var(--field);box-shadow:0 0 8px var(--field)}
+  .pools-head{position:relative}
+  .pools-head::before{content:"";position:absolute;left:-2px;bottom:-3px;width:5px;height:5px;border-radius:50%;
+    background:var(--field);box-shadow:0 0 8px var(--field)}
+  .wrap{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:34px 20px 80px}
+
+  /* 頂欄 */
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+  .brand{font-family:'Orbitron',sans-serif;font-weight:900;font-size:19px;color:var(--core);letter-spacing:.03em}
+  .brand .t{color:var(--field)}
+  .navlinks{display:flex;gap:8px}
+  .navlinks a{font-size:11px;padding:8px 14px;border:1px solid var(--line);border-radius:4px;color:var(--dim);text-decoration:none;transition:.2s;position:relative;
+    clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px)}
+  .navlinks a:hover,.navlinks a.on{border-color:var(--field);color:var(--core);background:color-mix(in srgb,var(--field) 8%,transparent);box-shadow:0 0 14px rgba(34,211,238,.25)}
+
+  header{margin-bottom:22px}
+  header h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:var(--fs-h1);color:var(--core);text-shadow:0 0 26px rgba(34,211,238,.4)}
+  header .sub{font-size:10px;letter-spacing:.2em;color:var(--field);margin-top:6px}
+  header .demo{font-size:10px;letter-spacing:.08em;color:var(--gold);margin-top:8px}
+
+  /* 總進度軸 */
+  .timeline{display:flex;align-items:center;gap:14px;margin:18px 0 26px;flex-wrap:wrap;
+    padding:14px 18px;border:1px solid var(--line);border-radius:6px;background:rgba(6,11,20,.55)}
+  .timeline .tlab{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+  .timeline .steps{display:flex;flex:1;gap:0;min-width:260px}
+  .timeline .stp{flex:1;text-align:center;position:relative;font-size:10px;padding:6px 0;color:var(--dim);cursor:pointer}
+  .timeline .stp::before{content:"";position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,.08);z-index:0;transform:translateY(-50%)}
+  .timeline .stp .dot{position:relative;z-index:1;display:inline-block;width:11px;height:11px;border-radius:50%;background:#1a2430;border:2px solid var(--dim);margin-bottom:4px}
+  .timeline .stp.on .dot{background:var(--field);border-color:var(--field);box-shadow:0 0 12px var(--field)}
+  .timeline .stp.on{color:var(--core);font-weight:700}
+  .timeline .stp .lb{display:block}
+
+  /* 賽程模擬拉桿 */
+  .simbar{display:flex;align-items:center;gap:12px;margin:-8px 0 24px;padding:12px 16px;flex-wrap:wrap;
+    border:1px solid rgba(255,194,75,.25);border-radius:6px;background:rgba(6,11,20,.6)}
+  .simbar .simlab{font-size:9.5px;letter-spacing:.16em;color:#ffc24b}
+  .simbar input{flex:1;min-width:180px;max-width:420px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+    background:linear-gradient(90deg,#ffc24b,rgba(255,255,255,.1));outline:none}
+  .simbar input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;
+    background:#ffc24b;box-shadow:0 0 12px rgba(255,194,75,.5);cursor:pointer}
+  .simbar input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#ffc24b;border:none;box-shadow:0 0 12px rgba(255,194,75,.5);cursor:pointer}
+  .simbar .simst{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:#ffc24b}
+
+  /* 賽道區 */
+  .lane-sec{margin-bottom:30px;position:relative;border-radius:8px;padding:2px 0}
+  .lane-sec.comp{background:radial-gradient(ellipse 80% 40% at 20% 0%,rgba(77,159,255,.06),transparent 60%)}
+  .lane-sec.cas{background:radial-gradient(ellipse 80% 40% at 20% 0%,rgba(255,77,106,.05),transparent 60%)}
+  .lane-head{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:.12em;
+    border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:18px}
+  .lane-head .lh-t{font-family:'Orbitron',sans-serif;font-weight:900;font-size:15px;color:var(--core)}
+  .lane-head .lh-n{color:var(--dim)}
+  .lane-head .lh-tag{margin-left:auto;font-size:9px;padding:3px 9px;border-radius:3px}
+  .tag-comp{color:var(--plat);border:1px solid var(--plat)}
+  .tag-cas{color:var(--silver);border:1px solid var(--silver)}
+
+  /* 四角組節點網格 */
+  .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  /* 賽道區頭部：加檢視切換 */
+  .lane-head .lh-view{margin-left:12px;display:flex;gap:5px}
+  .lane-head .vbtn{font-size:9px;padding:4px 9px;border:1px solid var(--line);border-radius:3px;color:var(--dim);cursor:pointer;transition:.18s;letter-spacing:.06em}
+  .lane-head .vbtn.on{border-color:var(--field);color:var(--core);background:color-mix(in srgb,var(--field) 12%,transparent)}
+  /* 3D 卡牌輪盤 */
+  .carousel{position:relative;height:500px;perspective:1600px;perspective-origin:50% 46%;overflow:hidden;
+    -webkit-user-select:none;user-select:none;cursor:grab;touch-action:pan-y}
+  .carousel:active{cursor:grabbing}
+  .cstage{position:absolute;inset:0;transform-style:preserve-3d}
+  .ccard{position:absolute;top:50%;left:50%;width:330px;height:460px;margin:-230px 0 0 -165px;
+    transform-style:preserve-3d;will-change:transform,opacity;transition:transform .05s linear;
+    border:1px solid var(--cc);border-radius:10px;background:rgba(6,11,20,.9);cursor:pointer;overflow:hidden;
+    box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  .ccard::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.4;
+    background-image:linear-gradient(color-mix(in srgb,var(--cc) 10%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--cc) 10%,transparent) 1px,transparent 1px);
+    background-size:24px 24px}
+  .ccard.center{box-shadow:0 0 40px var(--cg),0 12px 44px rgba(0,0,0,.6)}
+  /* IC 晶片腳位（左右 pins）*/
+  .ccard .pins{position:absolute;top:14%;bottom:14%;width:5px;z-index:2;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between}
+  .ccard .pins.l{left:-1px}.ccard .pins.r{right:-1px}
+  .ccard .pins i{display:block;width:100%;height:7px;background:color-mix(in srgb,var(--cc) 55%,#0a1220);border-radius:1px;opacity:.8}
+  .ccard.center .pins i{background:var(--cc);box-shadow:0 0 6px var(--cg)}
+  /* 晶片頂部型號刻印 */
+  .ccard .chipid{position:absolute;top:4px;right:10px;z-index:2;font-size:6.5px;letter-spacing:.2em;color:color-mix(in srgb,var(--cc) 60%,transparent);pointer-events:none;font-family:'Share Tech Mono'}
+  /* 中間卡 3D tilt（由 JS 寫入 --tx --ty）*/
+  .ccard.center .cc-in{transform:perspective(900px) rotateX(var(--ty,0deg)) rotateY(var(--tx,0deg));transition:transform .12s ease-out;transform-style:preserve-3d}
+  .ccard .cc-in{position:relative;z-index:1;padding:14px 16px 16px}
+  .ccard .cc-head{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:6px}
+  .ccard .gid-badge{display:inline-flex;align-items:baseline;gap:5px;padding:5px 13px 5px 11px;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--cc) 26%,transparent),color-mix(in srgb,var(--cc) 8%,transparent));
+    border:1.5px solid var(--cc);clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px);
+    box-shadow:0 0 14px color-mix(in srgb,var(--cc) 25%,transparent)}
+  .ccard .gid-badge b{font-family:'Orbitron',sans-serif;font-weight:900;font-size:21px;color:var(--core);letter-spacing:.02em;text-shadow:0 0 10px var(--cg)}
+  .ccard .gid-badge i{font-style:normal;font-size:11px;color:var(--cc);font-weight:700}
+  .lockpill{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:8;display:none;align-items:center;gap:6px;
+    font-size:10px;letter-spacing:.1em;color:#ffcf33;background:rgba(6,11,20,.92);border:1px solid #ffcf33;border-radius:3px;padding:5px 12px;
+    box-shadow:0 0 16px rgba(255,207,51,.3)}
+  .carousel.locked .lockpill{display:inline-flex}
+  .carousel.locked{cursor:default}
+  .carousel.locked .carr{opacity:.25;pointer-events:none}
+  .ccard .cc-st{font-size:10px;letter-spacing:.1em;font-weight:700}
+  .ccard .quadbig{width:100%;height:auto;display:block;overflow:visible;margin:2px 0 6px}
+  .ccard .cc-stand{border-top:1px solid var(--line);padding-top:6px}
+  .ms-row{display:flex;align-items:center;gap:8px;padding:3.5px 0;font-size:11px}
+  .ms-row .ms-rk{font-family:'Orbitron',sans-serif;font-weight:900;font-size:11px;min-width:14px;text-align:center}
+  .ms-row .ms-nm{flex:1;color:var(--dim);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ms-row.up .ms-nm{color:var(--core);font-weight:700}
+  .ms-row .ms-tag{font-size:8px;font-weight:700;padding:1.5px 6px;border-radius:2px;border:1px solid}
+  .ccard .cc-more{text-align:center;font-size:9px;letter-spacing:.08em;color:var(--dim);margin-top:7px}
+  /* 賽程字卡 */
+  .sc-body{margin:2px 0 8px}
+  .sc-round{display:flex;align-items:center;gap:8px;margin:10px 0 4px;padding-left:2px}
+  .sc-round b{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:var(--core);text-shadow:0 0 8px rgba(34,211,238,.5);letter-spacing:.04em}
+  .sc-round span{font-size:9px;letter-spacing:.12em;color:var(--field)}
+  .sc-round i{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+  .sc-round:first-child{margin-top:2px}
+  .sc-row{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:4px;font-size:12.5px;margin-bottom:2px}
+  .sc-row.done{background:rgba(255,255,255,.028)}
+  .sc-row.wait{opacity:.5}
+  .sc-court{font-size:9px;color:var(--dim);min-width:30px;font-family:'Share Tech Mono'}
+  .sc-team{flex:1;text-align:right;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+  .sc-team.r{text-align:left}
+  .sc-team.win{font-weight:700}
+  .sc-score{min-width:52px;text-align:center;font-family:'Orbitron',sans-serif;font-size:13px;color:var(--dim)}
+  .sc-score b{font-weight:700;color:var(--dim)}
+  .sc-score b.w{color:var(--core)}
+  .sc-score i{font-style:normal;margin:0 1px;color:var(--dim);font-size:9px}
+  .sc-score .sc-vs{font-size:8px;color:var(--dim);letter-spacing:.05em}
+  .sc-flag{min-width:30px;text-align:center;font-size:9px;color:var(--dim)}
+  .sc-row.done .sc-flag{color:var(--field)}
+  .sc-flow{border-top:1px solid var(--line);padding-top:7px;margin-top:2px}
+  .sc-flow-h{font-size:9.5px;letter-spacing:.1em;color:var(--field);margin-bottom:6px}
+  .sc-flow-tags{display:flex;flex-wrap:wrap;gap:4px}
+  .sc-fl{font-size:9.5px;padding:2.5px 7px;border-radius:2px;border:1px solid;font-weight:700}
+  .cnav{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:5}
+  .cnav .cdot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);cursor:pointer;transition:.2s}
+  .cnav .cdot.on{background:var(--field);box-shadow:0 0 8px var(--field);width:16px;border-radius:3px}
+  .carr{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:30px;height:30px;border-radius:50%;
+    border:1px solid var(--line);background:rgba(6,11,20,.7);color:var(--ink);cursor:pointer;font-size:14px;line-height:28px;text-align:center}
+  .carr:hover{border-color:var(--field);color:var(--core)}
+  .carr.prev{left:6px}.carr.next{right:6px}
+  .qcell{position:relative;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:10px 8px 8px;
+    background:rgba(6,11,20,.5);transition:.2s;overflow:hidden}
+  .qcell:hover{border-color:var(--cc);box-shadow:0 0 20px var(--cg);transform:translateY(-2px)}
+  .qcell .gid{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;color:var(--core);text-align:center;margin-bottom:2px}
+  .qcell .gst{font-size:8px;letter-spacing:.1em;text-align:center;margin-bottom:4px}
+  .qcell svg.quad{width:100%;height:auto;display:block;overflow:visible}
+
+  /* 四階級池 */
+  .pools{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:10px}
+  .pool{position:relative;border:1px solid var(--pc);border-radius:6px;overflow:hidden;text-decoration:none;
+    padding:16px 14px 14px;background:rgba(6,11,20,.6);transition:.24s;display:block}
+  .pool:hover{box-shadow:0 0 26px var(--pg),inset 0 0 22px color-mix(in srgb,var(--pc) 10%,transparent);transform:translateY(-3px)}
+  .pool:hover .pfill{opacity:.38}
+  .pool:hover .pnm{text-shadow:0 0 14px var(--pc)}
+  .pool::after{content:"";position:absolute;top:0;left:-80%;width:55%;height:100%;z-index:1;pointer-events:none;
+    background:linear-gradient(105deg,transparent,color-mix(in srgb,var(--pc) 14%,transparent),transparent);
+    transform:skewX(-18deg);transition:left .5s ease}
+  .pool:hover::after{left:120%}
+  .pool .pfill{position:absolute;left:0;bottom:0;width:100%;z-index:0;transition:height .6s cubic-bezier(.2,.8,.2,1);
+    background:
+      linear-gradient(0deg,var(--pc),color-mix(in srgb,var(--pc) 35%,transparent)),
+      repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 8px),
+      repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 1px,transparent 1px 8px);
+    opacity:.24;-webkit-mask-image:radial-gradient(120% 100% at 50% 100%,#000 60%,transparent);mask-image:radial-gradient(120% 100% at 50% 100%,#000 60%,transparent)}
+  .pool .pfill::after{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--pc);
+    box-shadow:0 0 8px var(--pc),0 0 16px var(--pc);opacity:.9;animation:liquid 3.4s ease-in-out infinite}
+  @keyframes liquid{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+  .pool .pin{position:relative;z-index:1}
+  .pool .pnm{font-family:'Orbitron',sans-serif;font-weight:900;font-size:17px;color:var(--core)}
+  .pool .pen{font-size:8px;letter-spacing:.16em;color:var(--pc);margin-top:3px}
+  .pool .pcnt{font-family:'Orbitron',sans-serif;font-weight:700;font-size:26px;color:var(--pc);margin-top:12px}
+  .pool .pcnt small{font-size:11px;color:var(--dim)}
+  .pool .pbase{font-size:9px;color:var(--dim);margin-top:4px}
+  .pool .pgo{font-size:9px;letter-spacing:.1em;color:var(--pc);margin-top:10px}
+  .pools-head{font-size:11px;letter-spacing:.12em;color:var(--field);border-bottom:1px solid var(--line);padding-bottom:8px;margin:8px 0 16px}
+  .gateway{height:64px;margin-bottom:-6px}
+  .gateway .gwsvg{width:100%;height:100%;display:block;overflow:visible}
+
+  /* 四角循環進程卡（modal / sheet）*/
+  .qmask{position:fixed;inset:0;z-index:60;background:rgba(2,4,9,.78);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px}
+  .qmask.show{display:flex;animation:sc2FadeIn .2s ease-out}
+  .qmask.show .qcard{animation:sc2CardIn .26s ease-out}
+  .qcard{width:min(460px,96vw);max-height:92vh;overflow-y:auto;background:rgba(4,8,15,.96);border-radius:8px;
+    border:1px solid var(--cc);box-shadow:0 0 50px var(--cg);position:relative}
+  .qcard::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.45;
+    background-image:linear-gradient(color-mix(in srgb,var(--cc) 9%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--cc) 9%,transparent) 1px,transparent 1px);
+    background-size:26px 26px}
+  .qcin{position:relative;z-index:1}
+  .qx{position:absolute;top:12px;right:14px;z-index:3;cursor:pointer;color:var(--dim);font-size:16px}
+  .qhead{padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+  .qhead .ql{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:var(--core)}
+  .qhead .qs{font-size:9.5px;letter-spacing:.06em;color:var(--cc);margin-top:5px;font-weight:700}
+  .qpent{padding:6px 4px 0}
+  .qpent svg{width:100%;height:auto;display:block;overflow:visible}
+  .qhint{text-align:center;font-size:8.5px;letter-spacing:.06em;color:var(--dim);padding:4px 8px 10px;line-height:1.5}
+  .qstand{padding:4px 18px 20px;border-top:1px solid var(--line)}
+  .qstand .sh{font-size:8.5px;letter-spacing:.14em;color:var(--cc);margin:12px 0 8px}
+  .srow{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+  .srow .rk{font-family:'Orbitron',sans-serif;font-weight:900;font-size:13px;color:var(--dim);min-width:16px;text-align:center}
+  .srow .rchip{width:20px;height:20px;flex-shrink:0}
+  .srow .rchip svg{width:100%;height:100%;overflow:visible}
+  .srow .rnm{flex:1;color:var(--ink);min-width:0}
+  .srow .rwl{font-size:9.5px;color:var(--dim);white-space:nowrap}
+  .srow .rrt{font-size:8.5px;color:var(--dim);white-space:nowrap;margin-left:4px}
+  .srow .radv{font-size:8.5px;font-weight:700;min-width:44px;text-align:center;padding:2px 4px;border-radius:2px}
+  .srow.up{background:linear-gradient(90deg,color-mix(in srgb,var(--upc) 12%,transparent),transparent)}
+  .srow.up .rk{color:var(--upc)}.srow.up .rnm{color:var(--core);font-weight:700}
+  .srow.up .radv{color:var(--upc);background:color-mix(in srgb,var(--upc) 15%,transparent)}
+  .srow.dn .radv{color:var(--dnc);background:color-mix(in srgb,var(--dnc) 12%,transparent)}
+  .glink{cursor:pointer;transition:.15s}.glink.dim{opacity:.12}
+  .gnode{cursor:pointer}.gnode.dim{opacity:.26;transition:.2s}
+  .scoreLbl{opacity:0;transition:.15s;pointer-events:none}.scoreLbl.show{opacity:1}
+
+  @media(max-width:640px){
+    .pools{grid-template-columns:repeat(2,1fr)}
+    .qgrid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+    .carousel{height:625px;perspective:1100px}
+    .ccard{height:572px;margin-top:-286px}
+    .ccard .gid-badge b{font-size:26px}
+    .ccard .gid-badge i{font-size:13px}
+    .ccard .cc-st{font-size:11.5px}
+    .sc-row{font-size:14.5px;padding:7px 8px;gap:7px}
+    .sc-team{font-size:14px}
+    .sc-score{font-size:15.5px;min-width:60px}
+    .sc-court{font-size:10.5px;min-width:34px}
+    .sc-round{margin:12px 0 5px}
+    .sc-round b{font-size:17px}
+    .sc-round span{font-size:10px}
+    .sc-flag{font-size:10.5px;min-width:34px}
+    .sc-fl{font-size:11px;padding:3px 8px}
+    .sc-flow-h{font-size:11px}
+    .ccard .cc-more{font-size:10px;margin-top:9px}
+    .ccard .cc-in{padding:16px 16px 18px}
+    .carr{width:26px;height:26px;line-height:24px;font-size:12px}
+    .carr.prev{left:2px}.carr.next{right:2px}
+    .lane-head{flex-wrap:wrap;gap:8px}
+    .lane-head .lh-n{font-size:9px;width:100%;order:3}
+    .lane-head .lh-view{margin-left:auto}
+  }
+  /* 官方LOGO角落水印(完整含文字·原圖;主控在design-tokens.css) */
+  body::after{content:"";position:fixed;right:14px;bottom:12px;width:72px;height:72px;z-index:40;pointer-events:none;
+    background:url("data:image/png;base64,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") center/contain no-repeat;
+    opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
+  @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
+  @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+</style>
+<link rel="stylesheet" href="design-tokens.css">
+</head>
+<body>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html" class="on">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<canvas id="bg3d"></canvas>
+<div class="scanlines"></div>
+<div class="crt"></div>
+<div class="hudcorner hud-tl"><svg viewBox="0 0 60 60"><path d="M2,26 L2,8 Q2,2 8,2 L26,2" fill="none" stroke="#22d3ee" stroke-width="2"/><path d="M2,40 L2,32" fill="none" stroke="#22d3ee" stroke-width="2" opacity=".4"/><circle cx="2" cy="26" r="2.4" fill="#22d3ee"/></svg></div>
+<div class="hudcorner hud-tr"><svg viewBox="0 0 60 60"><path d="M2,26 L2,8 Q2,2 8,2 L26,2" fill="none" stroke="#22d3ee" stroke-width="2"/><path d="M2,40 L2,32" fill="none" stroke="#22d3ee" stroke-width="2" opacity=".4"/><circle cx="2" cy="26" r="2.4" fill="#22d3ee"/></svg></div>
+<div class="hudcorner hud-bl"><svg viewBox="0 0 60 60"><path d="M2,26 L2,8 Q2,2 8,2 L26,2" fill="none" stroke="#22d3ee" stroke-width="2"/><path d="M2,40 L2,32" fill="none" stroke="#22d3ee" stroke-width="2" opacity=".4"/><circle cx="2" cy="26" r="2.4" fill="#22d3ee"/></svg></div>
+<div class="hudcorner hud-br"><svg viewBox="0 0 60 60"><path d="M2,26 L2,8 Q2,2 8,2 L26,2" fill="none" stroke="#22d3ee" stroke-width="2"/><path d="M2,40 L2,32" fill="none" stroke="#22d3ee" stroke-width="2" opacity=".4"/><circle cx="2" cy="26" r="2.4" fill="#22d3ee"/></svg></div>
+<div class="wrap">
+
+  <header>
+    <h1>初賽分流<span class="gl a" aria-hidden="true">初賽分流</span><span class="gl b" aria-hidden="true">初賽分流</span></h1>
+    <div class="sub">QUALIFYING · NERV SORTING PROTOCOL</div>
+    <div class="demo">◆ DEMO DATA · 模擬資料 · 競技 10 組 ＋ 休閒 15 組 · 依失分率分流四階級</div>
+  </header>
+
+  <div class="timeline" id="timeline">
+    <span class="tlab">賽事進程</span>
+    <div class="steps">
+      <div class="stp on" data-s="0"><span class="dot"></span><span class="lb">初賽</span></div>
+      <div class="stp" data-s="1"><span class="dot"></span><span class="lb">分流</span></div>
+      <div class="stp" data-s="2"><span class="dot"></span><span class="lb">複賽</span></div>
+      <div class="stp" data-s="3"><span class="dot"></span><span class="lb">封王</span></div>
+    </div>
+  </div>
+
+  <div class="simbar">
+    <span class="simlab">賽程模擬</span>
+    <input type="range" id="simProg" min="0" max="7" step="1" value="4">
+    <span class="simst" id="simSt">進行中</span>
+  </div>
+
+  <!-- 競技賽道 -->
+  <div class="lane-sec comp">
+    <div class="lane-head"><span class="lh-t">競技賽道</span><span class="lh-n">10 組 × 4 隊 · 前二 → 白金　後二 → 黃金</span><span class="lh-tag tag-comp">COMPETITIVE · 40</span>
+      <span class="lh-view"><span class="vbtn on" data-view="wheel" data-lane="comp">輪盤</span><span class="vbtn" data-view="grid" data-lane="comp">網格</span></span></div>
+    <div class="carousel" id="compWheel"></div>
+    <div class="qgrid" id="compGrid" style="display:none"></div>
+  </div>
+
+  <!-- 休閒賽道 -->
+  <div class="lane-sec cas">
+    <div class="lane-head"><span class="lh-t">休閒賽道</span><span class="lh-n">15 組 × 4 隊 · 前二 → 白銀　後二 → 青銅</span><span class="lh-tag tag-cas">CASUAL · 60</span>
+      <span class="lh-view"><span class="vbtn on" data-view="wheel" data-lane="cas">輪盤</span><span class="vbtn" data-view="grid" data-lane="cas">網格</span></span></div>
+    <div class="carousel" id="casWheel"></div>
+    <div class="qgrid" id="casGrid" style="display:none"></div>
+  </div>
+
+  <!-- 四階級池 -->
+  <div class="pools-head">分流閘口 · 四階級注入 → 點擊進入該階級複賽</div>
+  <div class="gateway" id="gateway">
+    <svg viewBox="0 0 800 90" preserveAspectRatio="none" class="gwsvg">
+      <defs><radialGradient id="gwcore"><stop offset="0" stop-color="#eafcff" stop-opacity=".9"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient></defs>
+      <!-- 中央核心向四池發散 -->
+      <line x1="400" y1="8" x2="100" y2="86" stroke="#4d9fff" stroke-width="1.4" opacity=".5"/>
+      <line x1="400" y1="8" x2="300" y2="86" stroke="#ffcf33" stroke-width="1.4" opacity=".5"/>
+      <line x1="400" y1="8" x2="500" y2="86" stroke="#ff4d6a" stroke-width="1.4" opacity=".5"/>
+      <line x1="400" y1="8" x2="700" y2="86" stroke="#34e07a" stroke-width="1.4" opacity=".5"/>
+      <circle cx="100" cy="86" r="2.5" fill="#4d9fff"><animate attributeName="opacity" values=".3;1;.3" dur="2.4s" repeatCount="indefinite"/></circle>
+      <circle cx="300" cy="86" r="2.5" fill="#ffcf33"><animate attributeName="opacity" values=".3;1;.3" dur="2.6s" repeatCount="indefinite"/></circle>
+      <circle cx="500" cy="86" r="2.5" fill="#ff4d6a"><animate attributeName="opacity" values=".3;1;.3" dur="2.8s" repeatCount="indefinite"/></circle>
+      <circle cx="700" cy="86" r="2.5" fill="#34e07a"><animate attributeName="opacity" values=".3;1;.3" dur="3.0s" repeatCount="indefinite"/></circle>
+      <!-- 分派光子沿四線流動 -->
+      <circle r="2.6" fill="#4d9fff"><animateMotion dur="2.4s" repeatCount="indefinite" path="M400,8 L100,86"/><animate attributeName="opacity" values="0;1;1;0" dur="2.4s" repeatCount="indefinite"/></circle>
+      <circle r="2.6" fill="#ffcf33"><animateMotion dur="2.6s" repeatCount="indefinite" path="M400,8 L300,86"/><animate attributeName="opacity" values="0;1;1;0" dur="2.6s" repeatCount="indefinite"/></circle>
+      <circle r="2.6" fill="#ff4d6a"><animateMotion dur="2.8s" repeatCount="indefinite" path="M400,8 L500,86"/><animate attributeName="opacity" values="0;1;1;0" dur="2.8s" repeatCount="indefinite"/></circle>
+      <circle r="2.6" fill="#34e07a"><animateMotion dur="3.0s" repeatCount="indefinite" path="M400,8 L700,86"/><animate attributeName="opacity" values="0;1;1;0" dur="3.0s" repeatCount="indefinite"/></circle>
+      <circle cx="400" cy="8" r="6" fill="url(#gwcore)"><animate attributeName="r" values="4;8;4" dur="2.2s" repeatCount="indefinite"/></circle>
+      <circle cx="400" cy="8" r="3" fill="#eafcff"/>
+    </svg>
+  </div>
+  <div class="pools" id="pools"></div>
+</div>
+
+<div class="qmask" id="qmask"><div class="qcard" id="qcard"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="tournament-data.js"></script>
+<script>
+/* 自動 fallback：外部 tournament-data.js 若未載入（預覽/單檔情境），改用內嵌備份 */
+if(!window.SolarCupData){
+/* ============================================================
+   SOLAR CUP TWO · 共用資料層 tournament-data.js
+   qualifying.html 與 bracket-tree.html 共用同一份賽事資料
+   一次生成：報名 → 初賽 25 組 → 失分率分流 → 四階級
+   ============================================================ */
+(function(global){
+  'use strict';
+
+  // ---- 球團資料（十團 + 自由為中性灰）----
+  const CLUB_DATA=[
+    {key:'huanle',name:'歡樂',c:'#ff8a3c'},{key:'yuzhou',name:'小羽宙',c:'#22d3ee'},
+    {key:'poli',name:'魄力',c:'#ff3ca6'},{key:'dachuan',name:'大船',c:'#6b6bff'},
+    {key:'limao',name:'狸貓拳',c:'#2ee6c8'},{key:'dangdang',name:'蕩蕩',c:'#a3e635'},
+    {key:'yuguang',name:'羽光',c:'#a855f7'},{key:'solarA',name:'曜日A',c:'#ffb3d1'},
+    {key:'solarB',name:'曜日B',c:'#ff9ec4'},{key:'free',name:'自由',c:'#8a95a5'},
+  ];
+  const CLUB_BY_KEY={};CLUB_DATA.forEach(c=>CLUB_BY_KEY[c.key]=c);
+  // 九球團（有隊伍歸屬）+ 自由（不計團體積分）
+  const NINE=CLUB_DATA.filter(c=>c.key!=='free');
+  const FREE=CLUB_BY_KEY['free'];
+
+  const TIER_META={
+    plat:{name:'白金',en:'PLATINUM',col:'#4d9fff',base:300,lane:'comp'},
+    gold:{name:'黃金',en:'GOLD',col:'#ffcf33',base:200,lane:'comp'},
+    silver:{name:'白銀',en:'SILVER',col:'#ff4d6a',base:100,lane:'casual'},
+    bronze:{name:'青銅',en:'BRONZE',col:'#34e07a',base:0,lane:'casual'},
+  };
+
+  // ---- 亂數（固定種子，資料穩定，兩頁一致）----
+  let _sd=20260815;
+  function rnd(){_sd=(_sd*9301+49297)%233280;return _sd/233280;}
+  function resetSeed(s){_sd=s||20260815;}
+  function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+
+  // ---- 徽記系統（與 bracket-tree 一致）----
+  function ngon(cx,cy,r,n,rot){const p=[];for(let i=0;i<n;i++){const a=(rot||0)+i*2*Math.PI/n;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return p;}
+  function pstr(pts){return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');}
+  function EMB(C){return{
+    poly:(pts,w)=>`<polygon points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="${w||5}" stroke-linejoin="round"/>`,
+    fpoly:(pts)=>`<polygon points="${pstr(pts)}" fill="${C}"/>`,
+    circ:(x,y,r,w)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="${C}" stroke-width="${w||4}"/>`,
+    dot:(x,y,r)=>`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r||4}" fill="${C}"/>`,
+  };}
+  const ECX=100,ECY=100;
+  function embMini(key,C){
+    const e=EMB(C);
+    switch(key){
+      case 'huanle':return e.poly(ngon(ECX,ECY,52,3,-Math.PI/2),6)+e.fpoly(ngon(ECX,ECY,14,3,-Math.PI/2));
+      case 'yuzhou':return e.poly(ngon(ECX,ECY,52,3,-Math.PI/2),5)+e.poly(ngon(ECX,ECY,52,3,Math.PI/2),5);
+      case 'poli':return e.poly([[ECX,ECY-54],[ECX+54,ECY],[ECX,ECY+54],[ECX-54,ECY]],6)+e.fpoly([[ECX,ECY-16],[ECX+16,ECY],[ECX,ECY+16],[ECX-16,ECY]]);
+      case 'dachuan':return e.poly(ngon(ECX,ECY,50,4,0),6)+e.poly(ngon(ECX,ECY,30,4,Math.PI/4),4);
+      case 'limao':return e.poly(ngon(ECX,ECY,52,6,0),6)+e.poly(ngon(ECX,ECY,26,6,0),4);
+      case 'dangdang':return e.circ(ECX-13,ECY,46,5)+e.circ(ECX-13,ECY,26,4)+e.circ(ECX+13,ECY,46,5)+e.circ(ECX+13,ECY,26,4);
+      case 'yuguang':{let s='';for(let arm=0;arm<3;arm++){let pts=[];for(let t=0;t<=22;t++){const r=6+t*2.1,a=arm*2*Math.PI/3+t*0.4;pts.push([ECX+Math.cos(a)*r,ECY+Math.sin(a)*r]);}s+=`<polyline points="${pstr(pts)}" fill="none" stroke="${C}" stroke-width="5" stroke-linecap="round"/>`;}return s;}
+      case 'solarA':{let s='';for(let i=0;i<8;i++){const a=i*Math.PI/4-Math.PI/2;const tip=[ECX+Math.cos(a)*56,ECY+Math.sin(a)*56],bl=[ECX+Math.cos(a-0.13)*16,ECY+Math.sin(a-0.13)*16],br=[ECX+Math.cos(a+0.13)*16,ECY+Math.sin(a+0.13)*16];s+=(i%2?e.poly([tip,bl,[ECX,ECY],br],4):e.fpoly([tip,bl,[ECX,ECY],br]));}return s+e.fpoly(ngon(ECX,ECY,8,8,-Math.PI/2));}
+      case 'solarB':{let s=e.circ(ECX,ECY,44,5)+e.circ(ECX,ECY,26,4);for(let i=0;i<12;i++){const a=i*Math.PI/6-Math.PI/2;const tip=[ECX+Math.cos(a)*60,ECY+Math.sin(a)*60],bl=[ECX+Math.cos(a-0.1)*44,ECY+Math.sin(a-0.1)*44],br=[ECX+Math.cos(a+0.1)*44,ECY+Math.sin(a+0.1)*44];s+=e.fpoly([tip,bl,br]);}return s+e.fpoly(ngon(ECX,ECY,10,12,0));}
+      case 'free':{const arc=(r,st,sw,w)=>{const x1=ECX+Math.cos(st)*r,y1=ECY+Math.sin(st)*r,x2=ECX+Math.cos(st+sw)*r,y2=ECY+Math.sin(st+sw)*r,lg=sw>Math.PI?1:0;return `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)}" fill="none" stroke="${C}" stroke-width="${w}" stroke-linecap="round"/>`;};
+        return arc(50,-1.6,4.8,6)+e.dot(ECX+Math.cos(-1.6)*50,ECY+Math.sin(-1.6)*50,4)+e.dot(ECX+Math.cos(3.2)*50,ECY+Math.sin(3.2)*50,4);}
+    }
+    return '';
+  }
+  function embChip(club){return `<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="rgba(3,6,13,.6)" stroke="${club.c}" stroke-width="6"/>${embMini(club.key,club.c)}</svg>`;}
+
+  // ---- 一場對戰（21 分單局）----
+  let _tid=0;
+  function playMatch(a,b){
+    // 隨機勝負與比分（21 分制、單局）
+    const aWin=rnd()<0.5;const lose=11+Math.floor(rnd()*9); // 敗方 11~19
+    const sa=aWin?21:lose, sb=aWin?lose:21;
+    const winner=aWin?a:b;
+    a.gf+=sa;a.ga+=sb;b.gf+=sb;b.ga+=sa;
+    if(aWin){a.w++;b.l++;}else{b.w++;a.l++;}
+    const m={a,b,sa,sb,winner,sc:sa+'：'+sb};
+    a.matches.push(m);b.matches.push(m);
+    return m;
+  }
+
+  // ---- 失分率同分判定（簡章第九章）----
+  // 1 勝場多者先；2 失分率＝同分隊互咬場次 得分÷失分，大者先；3 直接對戰；4 現場（保持順序）
+  function rankGroup(teams,matches){
+    // 先按勝場分群，同勝場的算「互咬失分率」
+    const byW={};teams.forEach(t=>{(byW[t.w]=byW[t.w]||[]).push(t);});
+    const ranked=[];
+    Object.keys(byW).map(Number).sort((a,b)=>b-a).forEach(w=>{
+      const grp=byW[w];
+      if(grp.length===1){ranked.push(grp[0]);return;}
+      // 互咬失分率：只計 grp 內彼此對戰的得失分
+      const set=new Set(grp);
+      grp.forEach(t=>{let gf=0,ga=0;
+        matches.forEach(m=>{if((m.a===t||m.b===t)&&set.has(m.a)&&set.has(m.b)){
+          if(m.a===t){gf+=m.sa;ga+=m.sb;}else{gf+=m.sb;ga+=m.sa;}}});
+        t._ratio=ga>0?gf/ga:99;t._h2hgf=gf;t._h2hga=ga;});
+      grp.sort((x,y)=>{
+        if(y._ratio!==x._ratio)return y._ratio-x._ratio; // 失分率大者先
+        // 直接對戰（僅兩隊同分同失分率時）
+        if(grp.length===2){const dm=matches.find(m=>(m.a===x&&m.b===y)||(m.a===y&&m.b===x));
+          if(dm)return dm.winner===x?-1:1;}
+        return 0; // 三隊以上皆同→保持（現場裁定）
+      });
+      grp.forEach(t=>ranked.push(t));
+    });
+    return ranked;
+  }
+
+  // ---- 建立一隊 ----
+  function mkTeam(club,lane,label){
+    return {tid:'T'+(++_tid),club,clubObj:club,lane,label,
+      w:0,l:0,gf:0,ga:0,matches:[],
+      seedGroup:null,seedRank:null,tier:null,base:0};
+  }
+
+  // ---- 初賽一組（4 隊全循環 6 場 → 排名）----
+  // 賽程表順序（round-robin 3 輪，每輪 2 場並行）
+  function runGroup(gid,teams,gi){
+    teams.forEach(t=>t.seedGroup=gid);
+    const order=[[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]];
+    const times=['09:00','09:00','09:40','09:40','10:20','10:20'];
+    const rounds=[1,1,2,2,3,3];
+    const c1=(gi%5)*2+1,c2=c1+1;                 // 每組兩面場地（佔位，當天接真實）
+    const courts=[c1,c2,c1,c2,c1,c2];
+    const ms=[];
+    order.forEach((pr,k)=>{
+      const m=playMatch(teams[pr[0]],teams[pr[1]]);
+      m.round=rounds[k];m.time=times[k];m.court=courts[k];m.slot=k;
+      ms.push(m);
+    });
+    const rank=rankGroup(teams,ms);
+    rank.forEach((t,i)=>t.seedRank=i+1);
+    const played=3+Math.floor(rnd()*4);          // demo 模擬進度：3~6 場已完賽
+    return {gid,teams,rank,matches:ms,played,gi,done:played>=6};
+  }
+
+  // ---- 完整賽事樹 ----
+  function buildTournament(seed){
+    resetSeed(seed);_tid=0;
+    // 報名：競技 9團×4 + 自由4 = 40；休閒 9團×6 + 自由6 = 60
+    const comp=[],casual=[];
+    NINE.forEach(c=>{for(let i=1;i<=4;i++)comp.push(mkTeam(c,'comp',c.name+'C'+i));});
+    for(let i=1;i<=4;i++)comp.push(mkTeam(FREE,'comp','自由C'+i));
+    NINE.forEach(c=>{for(let i=1;i<=6;i++)casual.push(mkTeam(c,'casual',c.name+'R'+i));});
+    for(let i=1;i<=6;i++)casual.push(mkTeam(FREE,'casual','自由R'+i));
+
+    // 分組（打散）：競技 10 組×4、休閒 15 組×4
+    const compS=shuffle(comp), casS=shuffle(casual);
+    const compGroups=[],casGroups=[];
+    for(let g=0;g<10;g++)compGroups.push(runGroup('C-'+String(g+1).padStart(2,'0'),compS.slice(g*4,g*4+4),g));
+    for(let g=0;g<15;g++)casGroups.push(runGroup('R-'+String(g+1).padStart(2,'0'),casS.slice(g*4,g*4+4),g));
+
+    // 分流（賽道內，依 seedRank）：前二上階級、後二下階級
+    const tiers={plat:[],gold:[],silver:[],bronze:[]};
+    function assign(t,tier){t.tier=tier;t.base=TIER_META[tier].base;tiers[tier].push(t);}
+    compGroups.forEach(g=>{g.rank.forEach((t,i)=>assign(t,i<2?'plat':'gold'));});
+    casGroups.forEach(g=>{g.rank.forEach((t,i)=>assign(t,i<2?'silver':'bronze'));});
+
+    return {
+      qualGroups:{comp:compGroups,casual:casGroups},
+      tiers,        // {plat:[20],gold:[20],silver:[30],bronze:[30]}
+      clubData:CLUB_DATA,
+    };
+  }
+
+  // ---- 匯出 ----
+  global.SolarCupData={
+    CLUB_DATA,CLUB_BY_KEY,NINE,FREE,TIER_META,
+    ngon,pstr,EMB,embMini,embChip,
+    rankGroup,buildTournament,
+    rnd,resetSeed,
+  };
+})(typeof window!=='undefined'?window:this);
+
+}
+</script>
+<script>
+/* 背景 3D：光子流 + 賽博電路網格地板 */
+(function(){
+  if(!window.THREE)return;
+  const mobile=innerWidth<640,canvas=document.getElementById('bg3d');
+  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});}catch(e){canvas.style.display='none';return;}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.setSize(innerWidth,innerHeight);
+  const scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x03060d,0.028);
+  const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,0.1,120);camera.position.set(0,2.2,18);
+  function glow(){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d');
+    const gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.35,'rgba(150,220,255,.7)');gr.addColorStop(1,'rgba(0,0,0,0)');
+    g.fillStyle=gr;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);}
+  const TEX=glow();
+  // ---- 光子流（保留基底）----
+  const N=mobile?70:150,pos=new Float32Array(N*3),spd=[],colArr=new Float32Array(N*3);
+  const cols=[[0.13,0.83,0.92],[0.11,0.91,0.71],[0.78,0.49,1]];
+  for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*44;pos[i*3+1]=(Math.random()-.5)*26+4;pos[i*3+2]=(Math.random()-.5)*40;spd.push(.01+Math.random()*.04);
+    const c=cols[i%3];colArr[i*3]=c[0];colArr[i*3+1]=c[1];colArr[i*3+2]=c[2];}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('color',new THREE.BufferAttribute(colArr,3));
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:mobile?.5:.42,map:TEX,vertexColors:true,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.9}));
+  scene.add(pts);
+  // ---- 賽博電路網格地板（透視向遠方流動）----
+  const GRID_W=60,GRID_D=80,STEP=2;
+  const gridGeo=new THREE.BufferGeometry();
+  const verts=[];
+  for(let x=-GRID_W/2;x<=GRID_W/2;x+=STEP){verts.push(x,0,-GRID_D,x,0,10);}
+  for(let z=-GRID_D;z<=10;z+=STEP){verts.push(-GRID_W/2,0,z,GRID_W/2,0,z);}
+  gridGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(verts),3));
+  const gridMat=new THREE.LineBasicMaterial({color:0x1690b0,transparent:true,opacity:mobile?.16:.22});
+  const grid=new THREE.LineSegments(gridGeo,gridMat);
+  grid.position.y=-6.5;scene.add(grid);
+  // 第二層網格（紫，錯位視差）
+  const grid2=new THREE.LineSegments(gridGeo.clone(),new THREE.LineBasicMaterial({color:0x7a3cff,transparent:true,opacity:mobile?.06:.09}));
+  grid2.position.y=-6.52;grid2.position.z=1;scene.add(grid2);
+  // ---- 電路走線亮點（沿地板網格線奔跑的訊號）----
+  const RN=mobile?10:22, rpos=new Float32Array(RN*3), rmeta=[];
+  for(let i=0;i<RN;i++){rmeta.push({x:(Math.floor(Math.random()*(GRID_W/STEP))-GRID_W/STEP/2)*STEP, z:10-Math.random()*90, s:.08+Math.random()*.22});
+    rpos[i*3]=rmeta[i].x;rpos[i*3+1]=-6.45;rpos[i*3+2]=rmeta[i].z;}
+  const rgeo=new THREE.BufferGeometry();rgeo.setAttribute('position',new THREE.BufferAttribute(rpos,3));
+  const rpts=new THREE.Points(rgeo,new THREE.PointsMaterial({size:mobile?.65:.55,map:TEX,color:0x36f0c8,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:.95}));
+  scene.add(rpts);
+  let mx=0,my=0;addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5;},{passive:true});
+  addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+  let t=0;
+  function loop(){requestAnimationFrame(loop);t+=0.016;
+    for(let i=0;i<N;i++){pos[i*3+2]+=spd[i]*.48;if(pos[i*3+2]>18)pos[i*3+2]=-22;}
+    geo.attributes.position.needsUpdate=true;pts.rotation.y+=.0006;
+    grid.position.z=(t*1.6)%STEP;grid2.position.z=1+((t*1.1)%STEP); // 地板向前流動
+    for(let i=0;i<RN;i++){const m=rmeta[i];m.z+=m.s;if(m.z>12){m.z=-80;m.x=(Math.floor(Math.random()*(GRID_W/STEP))-GRID_W/STEP/2)*STEP;}
+      rpos[i*3]=m.x;rpos[i*3+2]=m.z;}
+    rgeo.attributes.position.needsUpdate=true;
+    camera.position.x+=((mx*4)-camera.position.x)*.04;camera.position.y+=((2.2-my*2.4)-camera.position.y)*.04;camera.lookAt(0,0.6,0);
+    renderer.render(scene,camera);}
+  loop();
+})();
+</script>
+<script>
+(function(){
+  const D=window.SolarCupData;if(!D){document.body.innerHTML='<p style="color:#fff;padding:40px">資料層 tournament-data.js 未載入</p>';return;}
+  const TD=D.buildTournament();
+  const embMini=D.embMini,embChip=D.embChip,TIER_META=D.TIER_META;
+
+  // ---- 小四角節點（組網格用）----
+  function quadMini(group){
+    const V=[[42,12],[72,42],[42,72],[12,42]]; // 上右下左
+    const idx=new Map();group.teams.forEach((t,i)=>idx.set(t,i));
+    let lines='',pads='';
+    // 6 場對戰連線：勝方球團色（電路走線感）
+    group.matches.forEach(m=>{
+      const ai=idx.get(m.a),bi=idx.get(m.b),wc=m.winner.club.c;
+      lines+=`<line x1="${V[ai][0]}" y1="${V[ai][1]}" x2="${V[bi][0]}" y2="${V[bi][1]}" stroke="${wc}" stroke-width="1.3" opacity=".42"/>`;
+    });
+    // 頂點焊盤：前二亮球團色+發光呼吸環，後二暗框
+    group.teams.forEach((t,i)=>{
+      const up=t.seedRank<=2,c=t.club.c,v=V[i];
+      if(up){
+        pads+=`<circle cx="${v[0]}" cy="${v[1]}" r="9" fill="${c}" opacity=".22"><animate attributeName="opacity" values=".1;.32;.1" dur="2.6s" repeatCount="indefinite"/></circle>`;
+        pads+=`<circle cx="${v[0]}" cy="${v[1]}" r="5.5" fill="${c}" stroke="#03060d" stroke-width="1"/>`;
+      }else{
+        pads+=`<circle cx="${v[0]}" cy="${v[1]}" r="5" fill="rgba(3,6,13,.9)" stroke="${c}" stroke-width="1.6"/>`;
+      }
+    });
+    // 中央核心點
+    pads+=`<circle cx="42" cy="42" r="2" fill="rgba(234,252,255,.5)"/>`;
+    return `<svg class="quad" viewBox="0 0 84 84">${lines}${pads}</svg>`;
+  }
+
+  // 大卡版四角圖：頂點含徽記+隊名+名次，卡片直接可讀
+  function quadCard(group,upTier,dnTier){
+    const upM=TIER_META[upTier],dnM=TIER_META[dnTier];
+    const cx=140,cy=134,R=92,nodeR=17;
+    const V=group.teams.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/4;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
+    const idx=new Map();group.teams.forEach((t,i)=>idx.set(t,i));
+    function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;return{x1:a.x+ux*nodeR,y1:a.y+uy*nodeR,x2:b.x-ux*nodeR,y2:b.y-uy*nodeR};}
+    let lines='',photons='',nodes='';
+    group.matches.forEach((m,k)=>{
+      const ai=idx.get(m.a),bi=idx.get(m.b),wi=idx.get(m.winner),li=wi===ai?bi:ai;
+      const A=V[ai],B=V[bi],wv=V[wi],lv=V[li],wc=m.winner.club.c;
+      const e=edge(A,B),le=edge(lv,wv);
+      lines+=`<line x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="1.8" opacity=".6"/>`;
+      const dur=(2.2+(k%3)*0.4).toFixed(1);
+      photons+=`<circle r="2.2" fill="${wc}" pointer-events="none"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${le.x1.toFixed(1)},${le.y1.toFixed(1)} L${le.x2.toFixed(1)},${le.y2.toFixed(1)}"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.85;1" dur="${dur}s" repeatCount="indefinite"/></circle>`;
+    });
+    group.teams.forEach((t,i)=>{const v=V[i],up=t.seedRank<=2,c=t.club.c;
+      const lyOff=(i===0)?-(nodeR+14):(nodeR+14),labY=v.y+lyOff,labW=Math.max(46,t.label.length*10+14);
+      nodes+=`<g>
+        ${up?`<circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR+4}" fill="none" stroke="${up?upM.col:dnM.col}" stroke-width="1.6" opacity=".85"><animate attributeName="opacity" values=".4;.9;.4" dur="2.6s" repeatCount="indefinite"/></circle>`:''}
+        <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR}" fill="rgba(3,6,13,.9)" stroke="${c}" stroke-width="2.2"/>
+        <g transform="translate(${(v.x-13).toFixed(1)},${(v.y-13).toFixed(1)}) scale(0.13)">${embMini(t.club.key,c)}</g>
+        <circle cx="${(v.x+13).toFixed(1)}" cy="${(v.y-13).toFixed(1)}" r="7.5" fill="${c}"/>
+        <text x="${(v.x+13).toFixed(1)}" y="${(v.y-10).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="9" fill="#03060d">${t.seedRank}</text>
+        <rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-9).toFixed(1)}" width="${labW}" height="18" rx="3" fill="rgba(3,6,13,.92)" stroke="${up?upM.col:'rgba(255,255,255,.14)'}" stroke-width="1"/>
+        <text x="${v.x.toFixed(1)}" y="${(labY+3.5).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="9.5" fill="${up?'#eafcff':'#9fb0c8'}">${t.label}</text></g>`;
+    });
+    return `<svg class="quadbig" viewBox="0 0 280 268">${lines}${photons}${nodes}</svg>`;
+  }
+  // 精簡積分榜（卡片用）
+  function miniStand(group,upTier,dnTier){
+    const upM=TIER_META[upTier],dnM=TIER_META[dnTier];
+    return group.rank.map((t,i)=>{const up=i<2,m=up?upM:dnM;
+      return `<div class="ms-row ${up?'up':''}"><span class="ms-rk" style="color:${up?m.col:'#5b7089'}">${i+1}</span>
+        <span class="ms-nm">${t.label}</span><span class="ms-tag" style="color:${m.col};border-color:${m.col}">${m.name}</span></div>`;}).join('');
+  }
+
+  // 賽程字卡：時間 + 場地 + 對戰 + 比分/待賽（不假裝即時，未回報留白）
+  function scheduleCard(group,upTier,dnTier){
+    const played=group.played,done=group.done;
+    let rows='',curRound=0;
+    group.matches.forEach(m=>{
+      const isPlayed=m.slot<played;
+      if(m.round!==curRound){curRound=m.round;rows+=`<div class="sc-round"><b>${m.time}</b><span>第 ${curRound} 輪</span><i></i></div>`;}
+      const aWin=isPlayed&&m.winner===m.a,bWin=isPlayed&&m.winner===m.b,ac=m.a.club.c,bc=m.b.club.c;
+      rows+=`<div class="sc-row ${isPlayed?'done':'wait'}">
+        <span class="sc-court">場${m.court}</span>
+        <span class="sc-team ${aWin?'win':''}" style="${aWin?'color:'+ac:''}">${m.a.label}</span>
+        <span class="sc-score">${isPlayed?`<b class="${aWin?'w':''}">${m.sa}</b><i>:</i><b class="${bWin?'w':''}">${m.sb}</b>`:'<span class="sc-vs">vs</span>'}</span>
+        <span class="sc-team r ${bWin?'win':''}" style="${bWin?'color:'+bc:''}">${m.b.label}</span>
+        <span class="sc-flag">${isPlayed?'✓':'待賽'}</span>
+      </div>`;
+    });
+    // 暫定/定案分流
+    const upM=TIER_META[upTier],dnM=TIER_META[dnTier];
+    const flow=group.rank.map((t,i)=>{const up=i<2,m=up?upM:dnM;
+      return `<span class="sc-fl" style="color:${m.col};border-color:${m.col}">${t.label} → ${m.name}</span>`;}).join('');
+    return `<div class="sc-body">${rows}</div>
+      <div class="sc-flow"><div class="sc-flow-h">${done?'分流結果 · 定案':'暫定分流 · 賽果陸續更新'}</div><div class="sc-flow-tags">${flow}</div></div>`;
+  }
+
+  function renderGrid(groups,elId,upTier,dnTier){
+    const el=document.getElementById(elId);
+    el.innerHTML=groups.map(g=>{
+      const upc=TIER_META[upTier].col;
+      return `<div class="qcell" data-gid="${g.gid}" style="--cc:${upc};--cg:color-mix(in srgb,${upc} 30%,transparent)">
+        <div class="gid">${g.gid}</div>
+        <div class="gst" style="color:${upc}">分流完成</div>
+        ${quadMini(g)}
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.qcell').forEach(c=>c.addEventListener('click',()=>openQuad(c.dataset.gid,upTier,dnTier)));
+  }
+
+  // 3D 卡牌輪盤（coverflow）
+  function renderWheel(groups,elId,upTier,dnTier){
+    const el=document.getElementById(elId);
+    const upc=TIER_META[upTier].col,upg=`color-mix(in srgb,${upc} 30%,transparent)`;
+    const stage=document.createElement('div');stage.className='cstage';
+    function cardHTML(g){
+      const stTxt=g.done?'分流完成':(g.played===0?'尚未開打':('進行中 '+g.played+'/6'));
+      const stCol=g.done?upc:(g.played===0?'#5b7089':'#ffcf33');
+      const pins='<span class="pins l">'+('<i></i>'.repeat(7))+'</span><span class="pins r">'+('<i></i>'.repeat(7))+'</span>';
+      return `${pins}<span class="chipid">SC2-${g.gid}</span><div class="cc-in"><div class="cc-head"><span class="gid-badge"><b>${g.gid}</b><i>組</i></span><span class="cc-st" style="color:${stCol}">${stTxt}</span></div>
+        ${scheduleCard(g,upTier,dnTier)}
+        <div class="cc-more">▸ 點卡看四角關係圖 · 長按鎖定輪盤</div></div>`;
+    }
+    const cards=groups.map((g,i)=>{
+      const d=document.createElement('div');d.className='ccard';d.dataset.gid=g.gid;d.dataset.i=i;
+      d._g=g;d._refresh=()=>{d.innerHTML=cardHTML(g);};
+      d.style.setProperty('--cc',upc);d.style.setProperty('--cg',upg);
+      d.innerHTML=cardHTML(g);
+      // 中間卡 3D tilt 跟隨滑鼠
+      d.addEventListener('pointermove',e=>{
+        if(!d.classList.contains('center')||dragging)return;
+        const r=d.getBoundingClientRect(),px=(e.clientX-r.left)/r.width-.5,py=(e.clientY-r.top)/r.height-.5;
+        d.style.setProperty('--tx',(px*7).toFixed(2)+'deg');d.style.setProperty('--ty',(-py*6).toFixed(2)+'deg');
+      });
+      d.addEventListener('pointerleave',()=>{d.style.setProperty('--tx','0deg');d.style.setProperty('--ty','0deg');});
+      // 長按 600ms → 鎖定切換；單擊 → 即時開卡/轉到中間
+      let holdTimer=null,holdFired=false;
+      d.addEventListener('pointerdown',()=>{
+        holdFired=false;
+        holdTimer=setTimeout(()=>{
+          if(moved>8)return;
+          holdFired=true;toggleLock();
+          if(navigator.vibrate)navigator.vibrate(30);
+        },600);
+      });
+      const cancelHold=()=>{if(holdTimer){clearTimeout(holdTimer);holdTimer=null;}};
+      d.addEventListener('pointerup',cancelHold);
+      d.addEventListener('pointerleave',cancelHold);
+      d.addEventListener('pointermove',()=>{if(moved>8)cancelHold();});
+      d.addEventListener('click',()=>{
+        if(moved>8||holdFired)return;
+        if(Math.abs(i-Math.round(cur))<0.5){openQuad(g.gid,upTier,dnTier);}
+        else if(!lockedW){go(i);}
+      });
+      stage.appendChild(d);return d;
+    });
+    const prev=document.createElement('button');prev.className='carr prev';prev.textContent='‹';
+    const next=document.createElement('button');next.className='carr next';next.textContent='›';
+    const nav=document.createElement('div');nav.className='cnav';
+    const dots=groups.map((g,i)=>{const s=document.createElement('span');s.className='cdot';s.addEventListener('click',()=>go(i));nav.appendChild(s);return s;});
+    const lockpill=document.createElement('div');lockpill.className='lockpill';lockpill.innerHTML='🔒 已鎖定 · 長按解鎖';
+    el.innerHTML='';el.appendChild(stage);el.appendChild(prev);el.appendChild(next);el.appendChild(nav);el.appendChild(lockpill);
+    let lockedW=false;
+    function toggleLock(){lockedW=!lockedW;el.classList.toggle('locked',lockedW);}
+
+    let cur=0,target=0,raf=null;
+    const mob=innerWidth<640;
+    const CARDW=mob?Math.min(360,Math.round(innerWidth*0.8)):330;
+    const GAP=mob?CARDW*0.92:CARDW*0.74, TZBASE=mob?170:240, ROTMAX=mob?44:52, SCSTEP=mob?0.14:0.14;
+    // 手機卡片放大到接近滿版
+    if(mob)cards.forEach(c=>{c.style.width=CARDW+'px';c.style.marginLeft=(-CARDW/2)+'px';});
+    function layout(){
+      cards.forEach((c,i)=>{
+        const off=i-cur;
+        const rotY=Math.max(-ROTMAX,Math.min(ROTMAX,-off*30));
+        const tx=off*GAP*(1/(1+Math.abs(off)*0.28));
+        const tz=-Math.abs(off)*TZBASE;
+        const sc=Math.max(.52,1-Math.abs(off)*SCSTEP);
+        const op=Math.abs(off)>(mob?2.2:2.6)?0:Math.max(0,1-Math.abs(off)*(mob?0.38:0.34));
+        c.style.transform=`translate3d(${tx}px,0,${tz}px) rotateY(${rotY}deg) scale(${sc})`;
+        c.style.opacity=op;c.style.zIndex=String(100-Math.round(Math.abs(off)*10));
+        c.classList.toggle('center',Math.abs(off)<0.4);
+      });
+      dots.forEach((s,i)=>s.classList.toggle('on',i===Math.round(cur)));
+    }
+    function anim(){cur+=(target-cur)*0.075;if(Math.abs(target-cur)<0.001){cur=target;layout();raf=null;return;}layout();raf=requestAnimationFrame(anim);}
+    function go(i){if(lockedW)return;target=Math.max(0,Math.min(groups.length-1,i));if(!raf)raf=requestAnimationFrame(anim);}
+    prev.addEventListener('click',()=>go(Math.round(target)-1));
+    next.addEventListener('click',()=>go(Math.round(target)+1));
+    // 拖曳/滑動（方向鎖定：水平拖輪盤、垂直讓頁面捲動）
+    let dragging=false,sx=0,sy=0,scur=0,moved=0,locked=null;
+    function down(x,y){if(lockedW)return;dragging=true;sx=x;sy=y;scur=cur;moved=0;locked=null;}
+    function move(x,y,ev){if(!dragging)return;const dx=x-sx,dy=y-sy;
+      if(locked===null&&(Math.abs(dx)>6||Math.abs(dy)>6))locked=Math.abs(dx)>Math.abs(dy)?'x':'y';
+      if(locked==='y'){dragging=false;return;} // 垂直→交還頁面捲動
+      if(locked==='x'&&ev&&ev.cancelable)ev.preventDefault();
+      moved=Math.abs(dx);cur=scur-dx/GAP;cur=Math.max(-0.5,Math.min(groups.length-0.5,cur));layout();}
+    function up(){if(!dragging)return;dragging=false;target=Math.max(0,Math.min(groups.length-1,Math.round(cur)));if(!raf)raf=requestAnimationFrame(anim);}
+    el.addEventListener('pointerdown',e=>{down(e.clientX,e.clientY);el.setPointerCapture&&el.setPointerCapture(e.pointerId);});
+    el.addEventListener('pointermove',e=>move(e.clientX,e.clientY,e));
+    el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);el.addEventListener('pointerleave',up);
+    let wheelLock=0;
+    el.addEventListener('wheel',e=>{if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){e.preventDefault();const now=Date.now();if(now-wheelLock<380||lockedW)return;wheelLock=now;go(Math.round(target)+(e.deltaX>0?1:-1));}},{passive:false});
+    layout();
+    return {go};
+  }
+
+  // 檢視切換（輪盤/網格）
+  function bindViewToggle(){
+    document.querySelectorAll('.lh-view .vbtn').forEach(b=>b.addEventListener('click',()=>{
+      const lane=b.dataset.lane,view=b.dataset.view;
+      document.querySelectorAll(`.lh-view .vbtn[data-lane="${lane}"]`).forEach(x=>x.classList.remove('on'));b.classList.add('on');
+      const wheel=document.getElementById(lane==='comp'?'compWheel':'casWheel');
+      const grid=document.getElementById(lane==='comp'?'compGrid':'casGrid');
+      if(view==='wheel'){wheel.style.display='';grid.style.display='none';}
+      else{wheel.style.display='none';grid.style.display='grid';}
+    }));
+  }
+
+  // ---- 四角循環進程卡 ----
+  const mask=document.getElementById('qmask'),card=document.getElementById('qcard');
+  function findGroup(gid){return [...TD.qualGroups.comp,...TD.qualGroups.casual].find(g=>g.gid===gid);}
+  function openQuad(gid,upTier,dnTier){
+    const g=findGroup(gid);if(!g)return;
+    const upM=TIER_META[upTier],dnM=TIER_META[dnTier],CC=upM.col;
+    card.style.setProperty('--cc',CC);card.style.setProperty('--cg',`color-mix(in srgb,${CC} 30%,transparent)`);
+    card.style.setProperty('--upc',upM.col);card.style.setProperty('--dnc',dnM.col);
+    // 四角座標
+    const cx=200,cy=180,R=118,nodeR=20;
+    const teams=g.teams;
+    const V=teams.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/4;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
+    const idx=new Map();teams.forEach((t,i)=>idx.set(t,i));
+    function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;return{x1:a.x+ux*nodeR,y1:a.y+uy*nodeR,x2:b.x-ux*nodeR,y2:b.y-uy*nodeR};}
+    let links='',photons='',labels='',nodes='';
+    g.matches.forEach((m,k)=>{
+      const played=m.slot<g.played;
+      const ai=idx.get(m.a),bi=idx.get(m.b),wi=idx.get(m.winner),li=wi===ai?bi:ai;
+      const A=V[ai],B=V[bi],wv=V[wi],lv=V[li],wc=played?m.winner.club.c:'rgba(120,140,170,.22)';
+      const e=edge(A,B),le=edge(lv,wv);
+      links+=`<line class="glink" data-k="${k}" data-i="${ai}" data-j="${bi}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="${played?2:1.2}" opacity="${played?.72:.9}" ${played?'':'stroke-dasharray="4 4"'}/>`;
+      if(!played)return; // 未完賽:僅暗虛線，無光子無比分
+      const dur=(2.2+(k%3)*0.4).toFixed(1);
+      photons+=`<circle r="2.8" fill="${wc}" pointer-events="none"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${le.x1.toFixed(1)},${le.y1.toFixed(1)} L${le.x2.toFixed(1)},${le.y2.toFixed(1)}"/><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;.15;.85;1" dur="${dur}s" repeatCount="indefinite"/></circle>`;
+      const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,leftIsA=A.x<=B.x;
+      const ls=leftIsA?m.sa:m.sb,rs=leftIsA?m.sb:m.sa,leftWin=(leftIsA?ai:bi)===wi,dim='#5b7089';
+      labels+=`<g class="scoreLbl" data-k="${k}"><rect x="${(mx-27).toFixed(1)}" y="${(my-11).toFixed(1)}" width="54" height="22" rx="3" fill="#03060d" stroke="${wc}" stroke-width="1.2"/>
+        <text x="${(mx-6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="end" font-family="Orbitron,sans-serif" font-weight="${leftWin?'900':'500'}" font-size="11" fill="${leftWin?wc:dim}">${ls}</text>
+        <text x="${mx.toFixed(1)}" y="${(my+3).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="${dim}">:</text>
+        <text x="${(mx+6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron,sans-serif" font-weight="${!leftWin?'900':'500'}" font-size="11" fill="${!leftWin?wc:dim}">${rs}</text></g>`;
+    });
+    teams.forEach((t,i)=>{const v=V[i],rank=t.seedRank,up=rank<=2,c=t.club.c;
+      const lyOff=(i===0)?-(nodeR+16):(nodeR+16),labY=v.y+lyOff,labW=Math.max(52,t.label.length*11+16);
+      nodes+=`<g class="gnode" data-i="${i}">
+        ${up?`<circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR+5}" fill="none" stroke="${up?upM.col:dnM.col}" stroke-width="2" opacity=".9"/>`:''}
+        <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR}" fill="rgba(3,6,13,.9)" stroke="${c}" stroke-width="2.6"/>
+        <g transform="translate(${(v.x-16).toFixed(1)},${(v.y-16).toFixed(1)}) scale(0.16)">${embMini(t.club.key,c)}</g>
+        <circle cx="${(v.x+15).toFixed(1)}" cy="${(v.y-15).toFixed(1)}" r="9" fill="${c}"/>
+        <text x="${(v.x+15).toFixed(1)}" y="${(v.y-11.5).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="10" fill="#03060d">${rank}</text>
+        <g><rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-11).toFixed(1)}" width="${labW}" height="22" rx="3" fill="rgba(3,6,13,.9)" stroke="${up?upM.col:'rgba(255,255,255,.12)'}" stroke-width="1"/>
+          <text x="${v.x.toFixed(1)}" y="${(labY-1).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="11" fill="${up?'#eafcff':'#9fb0c8'}">${t.label}</text>
+          <text x="${v.x.toFixed(1)}" y="${(labY+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="7.5" fill="${c}">${t.w}勝 ${t.l}敗</text></g></g>`;
+    });
+    const stand=g.rank.map((t,i)=>{const up=i<2,c=t.club.c,tierM=up?upM:dnM;
+      const ratio=t._ratio!=null&&t._ratio<90?('失分率 '+t._ratio.toFixed(2)):'';
+      return `<div class="srow ${up?'up':'dn'}"><span class="rk">${i+1}</span>
+        <span class="rchip">${embChip(t.club)}</span><span class="rnm">${t.label}</span>
+        <span class="rwl">${t.w}勝 ${t.l}敗</span><span class="rrt">${ratio}</span>
+        <span class="radv">${tierM.name}</span></div>`;}).join('');
+
+    card.innerHTML=`<span class="qx" id="qx">✕</span><div class="qcin">
+      <div class="qhead"><div class="ql">${g.gid} 組</div><div class="qs">四角全循環 · 4 隊 6 場 · 前二 ${upM.name}　後二 ${dnM.name}</div></div>
+      <div class="qpent"><svg viewBox="0 -6 400 392"><g>${links}</g><g>${photons}</g><g>${labels}</g><g>${nodes}</g></svg>
+        <div class="qhint">▸ 點連線看該場比分 · 點頂點看該隊對戰 · 依失分率同分判定排序</div></div>
+      <div class="qstand"><div class="sh">${g.done?'分流結果 · 定案':'暫定分流 · 賽果陸續更新'}</div>${stand}</div></div>`;
+    mask.classList.add('show');
+    document.getElementById('qx').onclick=()=>mask.classList.remove('show');
+    // 互動
+    const svg=card.querySelector('svg');
+    const links_=[...svg.querySelectorAll('.glink')],labels_=[...svg.querySelectorAll('.scoreLbl')],nodes_=[...svg.querySelectorAll('.gnode')];
+    let act=null;
+    function clr(){links_.forEach(l=>l.classList.remove('dim'));labels_.forEach(l=>l.classList.remove('show'));nodes_.forEach(n=>n.classList.remove('dim'));act=null;}
+    function showM(k){clr();act='m'+k;const l=links_.find(x=>x.dataset.k===k);links_.forEach(x=>{if(x.dataset.k!==k)x.classList.add('dim');});const lb=labels_.find(x=>x.dataset.k===k);if(lb)lb.classList.add('show');nodes_.forEach(n=>{if(n.dataset.i!==l.dataset.i&&n.dataset.i!==l.dataset.j)n.classList.add('dim');});}
+    function showT(i){clr();act='t'+i;links_.forEach(l=>{if(l.dataset.i===i||l.dataset.j===i){const lb=labels_.find(x=>x.dataset.k===l.dataset.k);if(lb)lb.classList.add('show');}else l.classList.add('dim');});}
+    links_.forEach(l=>l.addEventListener('click',e=>{e.stopPropagation();const k=l.dataset.k;act==='m'+k?clr():showM(k);}));
+    nodes_.forEach(n=>n.addEventListener('click',e=>{e.stopPropagation();const i=n.dataset.i;act==='t'+i?clr():showT(i);}));
+    svg.addEventListener('click',clr);
+  }
+  mask.addEventListener('click',e=>{if(e.target===mask)mask.classList.remove('show');});
+
+  // ---- 渲染 ----
+  renderWheel(TD.qualGroups.comp,'compWheel','plat','gold');
+  renderWheel(TD.qualGroups.casual,'casWheel','silver','bronze');
+  renderGrid(TD.qualGroups.comp,'compGrid','plat','gold');
+  renderGrid(TD.qualGroups.casual,'casGrid','silver','bronze');
+  bindViewToggle();
+
+  // 四階級池
+  const poolDefs=[['plat','bracket-tree.html'],['gold','bracket-tree.html'],['silver','bracket-tree.html'],['bronze','bracket-tree.html']];
+  function drawPools(){
+    // 只有「已完賽分流定案」的組，其隊伍才注入階級池
+    const cnt={plat:0,gold:0,silver:0,bronze:0};
+    TD.qualGroups.comp.forEach(g=>{if(g.done){cnt.plat+=2;cnt.gold+=2;}});
+    TD.qualGroups.casual.forEach(g=>{if(g.done){cnt.silver+=2;cnt.bronze+=2;}});
+    document.getElementById('pools').innerHTML=poolDefs.map(([k,href])=>{
+      const m=TIER_META[k],c=cnt[k],max=k==='plat'||k==='gold'?20:30;
+      return `<a class="pool" href="${href}" style="--pc:${m.col};--pg:color-mix(in srgb,${m.col} 30%,transparent)">
+        <div class="pfill" style="height:${(c/max*100).toFixed(0)}%"></div>
+        <div class="pin"><div class="pnm">${m.name}</div><div class="pen">${m.en}</div>
+          <div class="pcnt">${c}<small> / ${max} 隊</small></div><div class="pbase">底分 ${m.base}</div>
+          <div class="pgo">進入複賽 ▸</div></div></a>`;
+    }).join('');
+  }
+  drawPools();
+
+  // ---- 賽程模擬拉桿:一桿推進全頁狀態 ----
+  const ALLG=[...TD.qualGroups.comp,...TD.qualGroups.casual];
+  ALLG.forEach(g=>{g._off=((g.gi*7)%4)-1;}); // 各組進度偏移(-1~+2)，模擬快慢差
+  const SIMLBL=['尚未開打','初賽開打 · 第一輪進行','初賽推進中','初賽推進中 · 快組完賽','初賽推進中 · 陸續分流','初賽後段 · 分流進行','初賽收尾 · 多數定案','全部完賽 · 分流定案'];
+  const simEl=document.getElementById('simProg'),simSt=document.getElementById('simSt');
+  function setProg(p){
+    ALLG.forEach(g=>{g.played=p===0?0:Math.max(0,Math.min(6,p+g._off));g.done=g.played>=6;});
+    // 輪盤卡片就地更新(不重置輪盤位置/鎖定)
+    document.querySelectorAll('.ccard').forEach(d=>{if(d._refresh)d._refresh();});
+    // 網格與池重繪
+    renderGrid(TD.qualGroups.comp,'compGrid','plat','gold');
+    renderGrid(TD.qualGroups.casual,'casGrid','silver','bronze');
+    drawPools();
+    // 總進度軸高亮:完賽→分流亮
+    const steps=document.querySelectorAll('#timeline .stp');
+    steps.forEach((s,i)=>s.classList.toggle('on',i===0||(i===1&&p>=7)));
+    simSt.textContent=SIMLBL[p];
+  }
+  simEl.addEventListener('input',()=>setProg(+simEl.value));
+  setProg(+simEl.value); // 初始同步
+
+  // 進度軸（此頁停在「初賽/分流」，複賽/封王連到淘汰樹）
+  document.querySelectorAll('#timeline .stp').forEach(s=>s.addEventListener('click',()=>{
+    const v=+s.dataset.s;if(v>=2){location.href='bracket-tree.html';}
+  }));
+})();
+</script>
+</body>
+</html>
