@@ -1018,8 +1018,11 @@
     updateLanes();
   });
 
-  document.querySelector('.lane').classList.add('on');
-  renderDetail(TIERS[0]);
+  // 由網址 #階級（plat/gold/silver/bronze）決定開哪一條，讓 qualifying 的四個按鈕一一對應
+  const _wantKey=(location.hash||'').replace('#','').trim();
+  const _startTier=TIERS.find(t=>t.key===_wantKey)||TIERS[0];
+  (document.querySelector('.lane[data-key="'+_startTier.key+'"]')||document.querySelector('.lane')).classList.add('on');
+  renderDetail(_startTier);
 })();
 </script>
 </body>
