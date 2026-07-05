@@ -926,5 +926,10 @@ if(!window.SolarCupData){
   }));
 })();
 </script>
+<style>@keyframes qhl{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 3px #ffd24a,0 0 16px rgba(255,210,74,.7)}}.qcell.qhl{animation:qhl 1.4s ease-out 3}</style>
+<script>/* 深連:#組別 捲動定位(力場排行點組別跳來) */
+addEventListener('load',function(){var g=(location.hash||'').replace('#','').trim();if(!g)return;
+  var c=document.querySelector('.qcell[data-gid="'+g+'"]');
+  if(c){setTimeout(function(){c.scrollIntoView({behavior:'smooth',block:'center'});c.classList.add('qhl');},200);}});</script>
 </body>
 </html>

@@ -271,6 +271,11 @@
   }
   rmask.addEventListener('click',e=>{if(e.target===rmask)rmask.classList.remove('show');});
 
+  // 深連:?club=<key>&q=<字> 預先篩選(力場排行點球團跳來)
+  (function(){const _p=new URLSearchParams(location.search),_c=_p.get('club');
+    if(_c&&TABS.some(x=>x.key===_c)){curTab=_c;tabsEl.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.dataset.k===_c));}
+    const _q=_p.get('q');if(_q){curQ=_q;const _e=document.getElementById('q');if(_e){_e.value=_q;clrEl.classList.add('show');}}
+  })();
   render();
 })();
 </script>
