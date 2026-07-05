@@ -106,8 +106,8 @@
   .entry.c1 .er{color:var(--dq-gold);border-color:rgba(255,210,74,.5);background:rgba(255,210,74,.12)}
   .entry.c2 .er{color:#d8dee9;border-color:rgba(216,222,233,.4);background:rgba(216,222,233,.08)}
   .entry.c3 .er{color:#ff9a6a;border-color:rgba(255,154,106,.4);background:rgba(255,154,106,.1)}
-  .entry .esp{width:26px;height:26px;image-rendering:pixelated;flex-shrink:0;position:relative}
-  .entry .esp::after{content:"";position:absolute;left:50%;bottom:-3px;width:65%;height:3px;
+  .entry .esp{width:clamp(46px,12.5vw,58px);height:clamp(46px,12.5vw,58px);image-rendering:pixelated;flex-shrink:0;position:relative}
+  .entry .esp::after{content:"";position:absolute;left:50%;bottom:-4px;width:70%;height:4px;
     background:radial-gradient(ellipse,rgba(0,0,0,.5),transparent 72%);transform:translateX(-50%);z-index:-1}
   .entry .enm{font-family:'DotGothic16',monospace;font-size:14px;color:var(--dq-frame);min-width:70px;
     display:flex;flex-wrap:wrap;align-items:baseline;column-gap:2px;row-gap:2px}
