@@ -62,6 +62,7 @@
   .legend .lg{display:inline-flex;align-items:center;gap:5px}
   .legend .sw{width:11px;height:11px;border-radius:2px;border:1px solid rgba(255,255,255,.2)}
   .legend .sw.off{background:rgba(255,255,255,.04)} .legend .sw.on{background:rgba(34,211,238,.9);box-shadow:0 0 8px rgba(34,211,238,.6)}
+  .legend .sw.ready{background:rgba(255,194,75,.85);box-shadow:0 0 8px rgba(255,194,75,.6)}
 
   /* 示範進度拉桿 */
   .demo-row{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:11px 14px;border:1px dashed rgba(255,207,51,.4);
@@ -93,7 +94,11 @@
   .cell.done{background:rgba(34,211,238,.1);box-shadow:inset 0 0 0 1px rgba(34,211,238,.5),inset 0 0 18px rgba(34,211,238,.16)}
   .cell.done .code{color:#fff}
   .cell.done::after{content:"";position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--field,#22d3ee);box-shadow:0 0 9px var(--field,#22d3ee)}
-  .cell:not(.done):not(.empty):not(.ev){opacity:.72}
+  /* 準備上場：同場地前一輪完賽 → 下下場亮琥珀提醒 */
+  .cell.ready{background:rgba(255,194,75,.12);animation:readyPulse 1.4s ease-in-out infinite}
+  .cell.ready::after{content:"準備";position:absolute;top:3px;right:4px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:8px;color:#ffe0a0;letter-spacing:.04em;background:rgba(120,78,8,.65);padding:1px 4px;border-radius:2px}
+  @keyframes readyPulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,194,75,.5),inset 0 0 14px rgba(255,194,75,.12)}50%{box-shadow:inset 0 0 0 1px rgba(255,194,75,.95),inset 0 0 22px rgba(255,194,75,.32)}}
+  .cell:not(.done):not(.ready):not(.empty):not(.ev){opacity:.72}
   .cell:not(.empty):not(.ev):hover{background:rgba(34,211,238,.16);opacity:1}
   .cell.hidden{opacity:.12 !important;filter:grayscale(1)}
   .cell .ev-label{font-size:10px;color:var(--accent,#c77dff);font-weight:700;padding:6px 2px;text-align:center;font-family:'Orbitron',sans-serif}
@@ -115,6 +120,8 @@
   .lm .lsc{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:#fff;margin-top:3px}
   .lm.done{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.08);box-shadow:inset 0 0 14px rgba(34,211,238,.1)}
   .lm.done::after{content:"";position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--field,#22d3ee);box-shadow:0 0 9px var(--field,#22d3ee)}
+  .lm.ready{border-color:rgba(255,194,75,.6);background:rgba(255,194,75,.08);animation:readyPulse 1.4s ease-in-out infinite}
+  .lm.ready::after{content:"準備";position:absolute;top:9px;right:11px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:9px;color:#ffe0a0}
   .lm.hidden{display:none}
   .empty-note{text-align:center;color:var(--dim,#5b7089);font-size:12px;padding:40px}
 
@@ -174,8 +181,9 @@
     </div>
     <select class="club" id="clubSel"><option value="all">全部球團</option></select>
     <div class="legend">
-      <span class="lg"><span class="sw off"></span>未完成</span>
-      <span class="lg"><span class="sw on"></span>已完成亮燈＋比分</span>
+      <span class="lg"><span class="sw off"></span>未開賽</span>
+      <span class="lg"><span class="sw ready"></span>準備上場（下下場提醒）</span>
+      <span class="lg"><span class="sw on"></span>已完賽＋比分</span>
       <span class="lg" style="margin-left:auto">篩選：級別＋球團</span>
     </div>
   </div>
@@ -232,12 +240,12 @@
   SC.matches.forEach(m=>{m._t=assign(m);});
 
   // ===== 結果狀態（未接 Sheet 前：示範拉桿；接 Sheet 後：CSV 覆蓋）=====
-  // results[code] = {sa,sb,done}
+  // results[場次編號n] = {sa,sb,done}（n 為 1-310 唯一；對戰代號會重複故不可當 key）
   const results={};
   function seedScore(n){const lo=11+((n*7+3)%9);const aw=(n*13+5)%2===0;return aw?[21,lo]:[lo,21];}
-  function applyDemo(k){for(const code in results)delete results[code];
+  function applyDemo(k){for(const key in results)delete results[key];
     const done=SC.matches.slice().sort((a,b)=>a.n-b.n).slice(0,k);
-    done.forEach(m=>{const s=seedScore(m.n);results[m.code]={sa:s[0],sb:s[1],done:true};});
+    done.forEach(m=>{const s=seedScore(m.n);results[m.n]={sa:s[0],sb:s[1],done:true};});
     render();updateLive(k>0?'demo':'demo');}
 
   // ===== 篩選狀態 =====
@@ -280,14 +288,14 @@
     body.querySelectorAll('.cell[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
   }
   function cellHTML(m){
-    const r=results[m.code], vis=visible(m), col=tierCol(m);
+    const r=results[m.n], vis=visible(m), col=tierCol(m);
     let inner='<div class="code" style="color:'+col+'"><span class="tdot" style="background:'+col+'"></span>'+m.code+'</div>';
     if(r&&r.done){const wa=r.sa>r.sb;
       inner+='<div class="vs">'+(m._t?('<span class="u">'+m._t[0].label+'</span><span class="u">'+m._t[1].label+'</span>'):'<span class="tbd">—</span>')+'</div>';
       inner+='<div class="sc"><span class="'+(wa?'w':'')+'">'+r.sa+'</span> : <span class="'+(wa?'':'w')+'">'+r.sb+'</span></div>';
     }else if(m._t){inner+='<div class="vs"><span class="u">'+m._t[0].label+'</span><span class="u">'+m._t[1].label+'</span></div>';}
     else{inner+='<div class="tbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+'</div>';}
-    return '<div class="cell'+(r&&r.done?' done':'')+(vis?'':' hidden')+'" data-n="'+m.n+'">'+inner+'</div>';
+    return '<div class="cell'+(r&&r.done?' done':(READY.has(m.n)?' ready':''))+(vis?'':' hidden')+'" data-n="'+m.n+'">'+inner+'</div>';
   }
 
   // ===== 清單看板 =====
@@ -299,8 +307,8 @@
       const ms=SC.matches.filter(m=>m.s===sl.s&&m.e===sl.e&&visible(m)).sort((a,b)=>a.ct-b.ct);
       if(!ms.length)return;
       html+='<div class="slot"><div class="st">'+sl.s+'–'+sl.e+' <span class="ln"></span></div><div class="lgrid">';
-      ms.forEach(m=>{const r=results[m.code],col=tierCol(m);
-        html+='<div class="lm'+(r&&r.done?' done':'')+'" data-n="'+m.n+'"><div class="lh"><span class="lcode" style="color:'+col+'">'+m.code+'</span><span class="lct">場 '+m.ct+'</span></div>';
+      ms.forEach(m=>{const r=results[m.n],col=tierCol(m);
+        html+='<div class="lm'+(r&&r.done?' done':(READY.has(m.n)?' ready':''))+'" data-n="'+m.n+'"><div class="lh"><span class="lcode" style="color:'+col+'">'+m.code+'</span><span class="lct">場 '+m.ct+'</span></div>';
         if(m._t){html+='<div class="lvs"><b>'+m._t[0].label+'</b> vs <b>'+m._t[1].label+'</b></div>';}
         else{html+='<div class="ltbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+' · '+m.grp+' '+(m.tier!=='—'?m.tier:'')+'</div>';}
         if(r&&r.done){const wa=r.sa>r.sb;html+='<div class="lsc">'+r.sa+' : '+r.sb+'</div>';}
@@ -312,14 +320,25 @@
     wrap.querySelectorAll('.lm[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
   }
 
-  function render(){if(mode==='matrix')renderMatrix();else renderList();}
+  // 準備上場：同場地，某場完賽 → 下下場（+2）亮準備燈提醒（正在打的是 +1，準備的是 +2）
+  let READY=new Set();
+  function computeReady(){
+    READY=new Set();
+    for(let c=1;c<=SC.courts;c++){
+      const ms=byCourt[c]||[];let frontier=-1;
+      ms.forEach((m,idx)=>{if(results[m.n]&&results[m.n].done)frontier=idx;});
+      if(frontier>=0){const ri=frontier+2;
+        if(ri<ms.length){const rn=ms[ri].n;if(!(results[rn]&&results[rn].done))READY.add(rn);}}
+    }
+  }
+  function render(){computeReady();if(mode==='matrix')renderMatrix();else renderList();}
 
   // ===== 詳情 modal =====
   const mask=document.getElementById('mask'),dcard=document.getElementById('dcard');
   const TIERCLS={'白金':'plat','黃金':'gold','銀':'silver','銅':'bronze'};
   const GRPHASH={};
   function openDetail(n){
-    const m=SC.matches.find(x=>x.n===n);if(!m)return;const r=results[m.code],col=tierCol(m);
+    const m=SC.matches.find(x=>x.n===n);if(!m)return;const r=results[m.n],col=tierCol(m);
     const wa=r&&r.done&&r.sa>r.sb, wb=r&&r.done&&r.sb>r.sa;
     const side=(t,sc,win)=>'<div class="dside'+(win?' win':'')+'"><div class="dn">'+(t?t.label:'待定')+'</div><div class="dc">'+(t?(t.clubFull||t.club||''):'')+'</div><div class="dp">'+(sc!=null?sc:'–')+'</div></div>';
     let links='';
@@ -331,7 +350,7 @@
       '<div class="dcode" style="color:'+col+'">'+m.code+'</div>'+
       '<div class="dmeta"><span class="dtag" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'66">'+m.grp+(m.tier!=='—'?' · '+m.tier:'')+'</span><span>'+m.stage+'</span><span>場地 '+m.ct+'</span><span>'+m.s+'–'+m.e+'</span><span>#'+m.n+'</span></div>'+
       '<div class="dvs">'+side(m._t&&m._t[0],r&&r.done?r.sa:null,wa)+'<span class="dvsx">VS</span>'+side(m._t&&m._t[1],r&&r.done?r.sb:null,wb)+'</div>'+
-      '<div class="dstat">'+(r&&r.done?'<b>已完成</b> · 21 分制單局':(m._t?'尚未開賽':'對戰隊伍待'+(m.stage==='資格賽'?'抽籤':'上輪分流')))+'</div>'+
+      '<div class="dstat">'+(r&&r.done?'<b>已完成</b> · 21 分制單局':(READY.has(m.n)?'<b style="color:#ffe0a0">準備上場</b> · 同場地即將輪到，請就位':(m._t?'尚未開賽':'對戰隊伍待'+(m.stage==='資格賽'?'抽籤':'上輪分流'))))+'</div>'+
       '<div class="dlinks">'+links+'</div>';
     mask.classList.add('show');
     document.getElementById('dx').onclick=()=>mask.classList.remove('show');
@@ -361,18 +380,18 @@
   dr.addEventListener('input',()=>{document.getElementById('demoN').textContent=dr.value;applyDemo(+dr.value);});
 
   // ===== Google Sheets 讀取層（Phase 3 接入；此為 stub，未設定網址則走示範）=====
-  // 設定：把「即時比分」Sheet 發布為 CSV，填入下方 SHEET_CSV_URL；欄位需含 對戰代號,隊A,隊B,分A,分B
+  // 設定：把「即時比分」Sheet 發布為 CSV，填入下方 SHEET_CSV_URL；欄位需含 場次編號(唯一key),隊A,隊B,分A,分B（對戰代號僅供閱讀，會重複不可當 key）
   const SHEET_CSV_URL=''; // ← Phase 3 由庫洛洛建表後填入
   function pollSheet(){
     if(!SHEET_CSV_URL)return; // 未設定→維持示範
     fetch(SHEET_CSV_URL).then(r=>r.text()).then(csv=>{
       const rows=csv.split(/\r?\n/).map(r=>r.split(','));const head=rows.shift().map(s=>s.trim());
-      const ci=n=>head.indexOf(n);const cCode=ci('對戰代號'),cA=ci('隊A'),cB=ci('隊B'),cSA=ci('分A'),cSB=ci('分B');
+      const ci=nm=>head.indexOf(nm);const cN=ci('場次編號'),cA=ci('隊A'),cB=ci('隊B'),cSA=ci('分A'),cSB=ci('分B');
       let live=false;
-      rows.forEach(cols=>{const code=(cols[cCode]||'').trim();if(!code)return;
-        const m=SC.byCode(code);const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
-        if(m&&cols[cA])m._t=[{label:cols[cA].trim(),club:'',clubKey:''},{label:(cols[cB]||'').trim(),club:'',clubKey:''}];
-        if(!isNaN(sa)&&!isNaN(sb)){results[code]={sa:sa,sb:sb,done:true};live=true;}});
+      rows.forEach(cols=>{const nn=parseInt((cols[cN]||'').trim());if(!nn)return; // 唯一 key＝場次編號
+        const m=SC.matches.find(x=>x.n===nn);const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
+        if(m&&cA>=0&&cols[cA])m._t=[{label:cols[cA].trim(),club:'',clubKey:''},{label:(cols[cB]||'').trim(),club:'',clubKey:''}];
+        if(!isNaN(sa)&&!isNaN(sb)){results[nn]={sa:sa,sb:sb,done:true};live=true;}});
       document.getElementById('upd').innerHTML='資料來源：即時比分 Sheet · 更新於 <b>'+nowStr()+'</b>';
       if(live)updateLive('live');render();
     }).catch(()=>{});
