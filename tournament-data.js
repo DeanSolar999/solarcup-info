@@ -167,8 +167,9 @@
     // 分組（打散）：競技 10 組×4、休閒 15 組×4
     const compS=shuffle(comp), casS=shuffle(casual);
     const compGroups=[],casGroups=[];
-    for(let g=0;g<10;g++)compGroups.push(runGroup('C-'+String(g+1).padStart(2,'0'),compS.slice(g*4,g*4+4),g));
-    for(let g=0;g<15;g++)casGroups.push(runGroup('R-'+String(g+1).padStart(2,'0'),casS.slice(g*4,g*4+4),g));
+    // 組別代號對應賽程主檔：競技資格 競資-A…J（10 組）、休閒資格 休資-A…O（15 組）
+    for(let g=0;g<10;g++)compGroups.push(runGroup('競資-'+String.fromCharCode(65+g),compS.slice(g*4,g*4+4),g));
+    for(let g=0;g<15;g++)casGroups.push(runGroup('休資-'+String.fromCharCode(65+g),casS.slice(g*4,g*4+4),g));
 
     // 分流（賽道內，依 seedRank）：前二上階級、後二下階級
     const tiers={plat:[],gold:[],silver:[],bronze:[]};
