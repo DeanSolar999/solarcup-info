@@ -176,7 +176,7 @@
     <div class="chips" id="tierChips">
       <span class="chip on" data-tier="all">全部</span>
       <span class="chip" data-tier="plat">白金</span><span class="chip" data-tier="gold">黃金</span>
-      <span class="chip" data-tier="silver">銀</span><span class="chip" data-tier="bronze">銅</span>
+      <span class="chip" data-tier="silver">白銀</span><span class="chip" data-tier="bronze">青銅</span>
       <span class="chip" data-tier="yao">曜請</span><span class="chip" data-tier="qual">資格賽</span>
     </div>
     <select class="club" id="clubSel"><option value="all">全部球團</option></select>
@@ -275,6 +275,7 @@
 
   const TS=SC.tierStyle, GS=SC.grpStyle;
   function tierCol(m){return (TS[m.tier]&&TS[m.tier].col)||GS[m.grp]||'#8fa2d8';}
+  function tierName(t){return (TS[t]&&TS[t].name!==undefined)?TS[t].name:t;} // 銀→白銀、銅→青銅顯示
   function teamLabel(t){return t?t.label:null;}
 
   // ===== 矩陣看板 =====
@@ -331,7 +332,7 @@
       ms.forEach(m=>{const r=results[m.n],col=tierCol(m);
         html+='<div class="lm'+(r&&r.done?' done':(READY.has(m.n)?' ready':''))+'" data-n="'+m.n+'"><div class="lh"><span class="lcode" style="color:'+col+'">'+m.code+'</span><span class="lct">場 '+m.ct+'</span></div>';
         if(m._t){html+='<div class="lvs"><b>'+m._t[0].label+'</b> vs <b>'+m._t[1].label+'</b></div>';}
-        else{html+='<div class="ltbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+' · '+m.grp+' '+(m.tier!=='—'?m.tier:'')+'</div>';}
+        else{html+='<div class="ltbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+' · '+m.grp+' '+tierName(m.tier)+'</div>';}
         if(r&&r.done){const wa=r.sa>r.sb;html+='<div class="lsc">'+r.sa+' : '+r.sb+'</div>';}
         html+='</div>';
       });
@@ -377,7 +378,7 @@
     if(m._t)links+='<a class="dlk" href="team-search.html?q='+encodeURIComponent(m._t[0].label)+'">▸ 戰績查詢</a>';
     dcard.innerHTML='<span class="dx" id="dx">✕ CLOSE</span>'+
       '<div class="dcode" style="color:'+col+'">'+m.code+'</div>'+
-      '<div class="dmeta"><span class="dtag" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'66">'+m.grp+(m.tier!=='—'?' · '+m.tier:'')+'</span><span>'+m.stage+'</span><span>場地 '+m.ct+'</span><span>'+m.s+'–'+m.e+'</span><span>#'+m.n+'</span></div>'+
+      '<div class="dmeta"><span class="dtag" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'66">'+m.grp+(m.tier!=='—'?' · '+tierName(m.tier):'')+'</span><span>'+m.stage+'</span><span>場地 '+m.ct+'</span><span>'+m.s+'–'+m.e+'</span><span>#'+m.n+'</span></div>'+
       '<div class="dvs">'+side(m._t&&m._t[0],r&&r.done?r.sa:null,wa)+'<span class="dvsx">VS</span>'+side(m._t&&m._t[1],r&&r.done?r.sb:null,wb)+'</div>'+
       '<div class="dstat">'+(r&&r.done?'<b>已完成</b> · 21 分制單局':(READY.has(m.n)?'<b style="color:#ffe0a0">準備上場</b> · 同場地即將輪到，請就位':(m._t?'尚未開賽':'對戰隊伍待'+(m.stage==='資格賽'?'抽籤':'上輪分流'))))+'</div>'+
       '<div class="dlinks">'+links+'</div>';

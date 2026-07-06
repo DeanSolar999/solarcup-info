@@ -61,9 +61,9 @@
 
   // 級別 → 顏色/樣式鍵（對齊全站四階級 + 曜請）
   const TIER_STYLE={
-    '白金':{key:'plat',col:'#4d9fff'},'黃金':{key:'gold',col:'#ffcf33'},
-    '銀':{key:'silver',col:'#ff4d6a'},'銅':{key:'bronze',col:'#34e07a'},
-    '—':{key:'none',col:'#8fa2d8'},
+    '白金':{key:'plat',col:'#4d9fff',name:'白金'},'黃金':{key:'gold',col:'#ffcf33',name:'黃金'},
+    '銀':{key:'silver',col:'#ff4d6a',name:'白銀'},'銅':{key:'bronze',col:'#34e07a',name:'青銅'},
+    '—':{key:'none',col:'#8fa2d8',name:''},
   };
   const GRP_STYLE={'競技組':'#4d9fff','休閒組':'#34e07a','曜請組':'#ffc24b'};
 
