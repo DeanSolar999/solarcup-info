@@ -223,10 +223,10 @@
 (function(){
   // ---- 曜請 8 隊（受邀外部隊伍 · 佔位資料，正式名單確定後替換）----
   const TEAMS=[
-    {id:0,label:'曜請 01',c:'#ffc24b'},{id:1,label:'曜請 02',c:'#ff8a3c'},
-    {id:2,label:'曜請 03',c:'#22d3ee'},{id:3,label:'曜請 04',c:'#2ee6c8'},
-    {id:4,label:'曜請 05',c:'#a855f7'},{id:5,label:'曜請 06',c:'#ff3ca6'},
-    {id:6,label:'曜請 07',c:'#a3e635'},{id:7,label:'曜請 08',c:'#6b6bff'},
+    {id:0,label:'雷熊嗷嗷2',c:'#ffc24b',p:['熊','雷']},{id:1,label:'羽球次等生',c:'#ff8a3c',p:['康恩','恩尼']},
+    {id:2,label:'慈母手聰線',c:'#22d3ee',p:['李慈','聰聰']},{id:3,label:'隨便取就好',c:'#2ee6c8',p:['凱文','和蒲']},
+    {id:4,label:'賴東東不錯',c:'#a855f7',p:['魚骨','賴賴']},{id:5,label:'番茄嚇嚇叫',c:'#ff3ca6',p:['凱力','番茄']},
+    {id:6,label:'哎呀呀呀呀',c:'#a3e635',p:['小曹','小宇']},{id:7,label:'甘巴爹',c:'#6b6bff',p:['馬特','下巴']},
   ];
   // ---- 固定種子亂數 ----
   let _sd=20260815;
@@ -389,7 +389,7 @@
       <span class="rx" id="rx">✕</span><div class="rin">
       <div class="rhead"><div class="emb">${octoEmb(t.c)}</div>
         <div><div class="tn">${t.label}</div><div class="ts">INVITATIONAL · 受邀隊伍</div>
-        <div class="pl">隊員：${(window.SolarCupData&&SolarCupData.demoPlayers?SolarCupData.demoPlayers('INV'+i):['—','—']).join(' · ')}</div>
+        <div class="pl">隊員：${t.p?t.p.join(' · '):'—'}</div>
         <div class="tags"><span class="tag">曜請</span><span>全循環 · 編號 ${String(i+1).padStart(2,'0')}</span></div></div></div>
       <div class="rstats">
         <div class="c"><div class="v">${me.w}</div><div class="k">勝</div></div>

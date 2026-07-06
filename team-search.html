@@ -214,7 +214,7 @@
     if(curTab==='invite')list=list.filter(t=>t.tier==='invite');
     else if(curTab!=='all')list=list.filter(t=>t.clubKey===curTab);
     if(curQ){const q=curQ.toLowerCase();
-      list=list.filter(t=>t.label.toLowerCase().includes(q)||t.club.toLowerCase().includes(q)||t.tierName.includes(q)||t.group.toLowerCase().includes(q)||t.track.includes(q));}
+      list=list.filter(t=>t.label.toLowerCase().includes(q)||t.club.toLowerCase().includes(q)||(t.clubFull&&t.clubFull.toLowerCase().includes(q))||(t.players&&t.players.join('').toLowerCase().includes(q))||t.tierName.includes(q)||t.group.toLowerCase().includes(q)||t.track.includes(q));}
     return list;
   }
   function render(){
@@ -254,7 +254,7 @@
     rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${emb(t)}</div>
       <span class="rx" id="rx">✕</span><div class="rin">
       <div class="rhead"><div class="emb">${emb(t)}</div>
-        <div><div class="tn">${t.label}</div><div class="ts">${t.club} 球團 · ${t.track}賽道</div>
+        <div><div class="tn">${t.label}</div><div class="ts">${t.clubFull||t.club} · ${t.track}賽道</div>
         <div class="pl">隊員：${t.players?t.players.join(' · '):'—'}</div>
         <div class="tags"><span class="tag">${t.tierName}</span><span>編號 ${t.group}</span></div></div></div>
       <div class="rstats">

@@ -96,7 +96,9 @@
 
   /* 排行命令視窗 */
   .board{margin-top:6px;padding:14px 14px 16px}
-  .board .bt{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--dq-gold);margin-bottom:14px;text-align:center;letter-spacing:.06em}
+  .board .bt{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--dq-gold);margin-bottom:5px;text-align:center;letter-spacing:.06em}
+  .board .bt-sub{font-family:'DotGothic16',monospace;font-size:11px;line-height:1.5;color:#ffcf6b;text-align:center;margin:0 auto 14px;padding:4px 10px;max-width:92%;
+    background:rgba(255,180,60,.09);border:1px solid rgba(255,200,90,.32);border-radius:3px;letter-spacing:.02em}
   .entry{display:flex;align-items:center;gap:11px;padding:10px 10px;border-bottom:1px solid rgba(244,248,255,.14);
     position:relative;border-radius:2px}
   .entry:nth-child(even){background:rgba(255,255,255,.025)}
@@ -142,7 +144,9 @@
   .modal .mhead .mn{font-family:'Press Start 2P',monospace;font-size:13px;color:var(--dq-frame)}
   .modal .mhead .mc{font-family:'DotGothic16',monospace;font-size:11px;color:#8fa2d8;margin-top:5px}
   .modal .mx{position:absolute;top:14px;right:18px;font-family:'Press Start 2P',monospace;font-size:12px;color:var(--dq-gold);cursor:pointer}
-  .munit{display:flex;align-items:center;gap:9px;font-family:'DotGothic16',monospace;font-size:12px;padding:6px 0;border-bottom:1px solid rgba(244,248,255,.08)}
+  .munit{display:flex;align-items:center;flex-wrap:wrap;gap:9px;row-gap:4px;font-family:'DotGothic16',monospace;font-size:12px;padding:7px 0;border-bottom:1px solid rgba(244,248,255,.08)}
+  .unm{flex:1 1 100%;font-size:13px;color:#eaf0ff;font-weight:bold;letter-spacing:.01em;word-break:break-word}
+  .unm::before{content:"▸ ";color:var(--dq-gold);font-weight:normal}
   .munit .ut{padding:1px 7px;font-size:9px;font-family:'Press Start 2P',monospace}
   .munit .up{margin-left:auto;color:var(--dq-gold);font-family:'Press Start 2P',monospace;font-size:9px}
   .ut-p{color:var(--plat)}.ut-g{color:var(--gold)}.ut-s{color:var(--silver)}.ut-b{color:var(--bronze)}
@@ -393,6 +397,7 @@ document.getElementById("tsToggle").addEventListener("click",function(){cur^=1;i
 
   <div class="dqbox kb kb-board board">
     <div class="bt">▼ FIELD RANKING ▼</div>
+    <div class="bt-sub">◆ 示範預覽 ｜ 賽事 8/15 開打，力場分數為模擬展示，當日更新真實戰績</div>
     <div id="entries"></div>
   </div>
 
@@ -402,7 +407,7 @@ document.getElementById("tsToggle").addEventListener("click",function(){cur^=1;i
 
   <footer>
     ＡＴ ＦＩＥＬＤ ＡＲＥＮＡ ｜ 力場擂台 · 曜日盃 ＴＷＯ<br>
-    <span class="demo">◆ ＤＥＭＯ · 力場數值為模擬資料</span><br>
+    <span class="demo">◆ 示範預覽 · 隊伍／球團／組別為真實名單，力場分數為模擬（8/15 開賽後更新）</span><br>
     <span class="demo" id="artCredit" style="display:none">◆ 團寵美術：Tuxemon Project（CC-BY-SA 3.0）· tuxemon.org ｜ UI 邊框：Kenney（CC0）· kenney.nl</span>
   </footer>
 </div>
@@ -592,7 +597,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     let field=0;
     const units=_ct[club.key].map(tm=>{const base=TIERBASE[tm.tier]||0,wp=tm.w*WINPTS,pts=base+wp;field+=pts;
       return {label:tm.label,tier:tm.tier,tierName:tm.tierName,group:tm.group,track:tm.track,w:tm.w,l:tm.l,gf:tm.gf,ga:tm.ga,base,wp,pts};});
-    return {name:club.name,code:'U-0'+(i+1),c:club.c,clubKey:club.key,units,field};
+    return {name:club.name,full:club.full||club.name,code:'U-0'+(i+1),c:club.c,clubKey:club.key,units,field};
   });
   // 力場＝各隊(階級底分＋勝場加分)加總;進化門檻依實際分佈動態三等分
   const _fs=TEAMS.map(t=>t.field),_lo=Math.min(..._fs),_hi=Math.max(..._fs);
@@ -809,6 +814,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
       const list=t.units.filter(u=>u.track===track);if(!list.length)return '';
       list.sort((a,b)=>b.pts-a.pts);
       const rows=list.map(u=>`<div class="munit">
+        <span class="unm">${u.label}</span>
         <a class="ut ${TIERKEYCLS[u.tier]}" href="bracket-tree.html#${u.tier}" title="看${u.tierName}階級淘汰樹">${u.tierName}</a>
         <a class="ugrp" href="qualifying.html#${u.group}" title="看 ${u.group} 組初賽戰況">${u.group}</a>
         <span class="uwl">${u.w}勝${u.l}敗</span>
@@ -817,9 +823,9 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     }
     mpanel.innerHTML=`<span class="mx" id="mx">✕ CLOSE</span>
       <div class="mhead"><span class="msp">${t.spr}</span>
-        <div><div class="mn" style="color:${t.c}">${t.name}</div>
+        <div><div class="mn" style="color:${t.c}">${t.full}</div>
         <div class="mc">${t.job.names[t.stage-1]} · LV.${lv(t)} · ${STAGE_NAMES[t.stage]} · 第 ${rk} 名 · 力場 ${t.field} AT</div></div></div>
-      <a class="mlink" href="team-search.html?club=${t.clubKey}">▸ 查看 ${t.name} 全部 ${t.units.length} 隊戰績卡</a>
+      <a class="mlink" href="team-search.html?club=${t.clubKey}">▸ 查看 ${t.full} 全部 ${t.units.length} 隊戰績卡</a>
       ${trackBlock('競技')}${trackBlock('休閒')}
       <div class="mnote">力場 ＝ 各隊（階級底分＋每勝 ${WINPTS} 分）加總｜點<b style="color:#8fd3ff">階級</b>進淘汰樹、點<b style="color:#8fd3ff">組別</b>看初賽戰況</div>`;
     modal.classList.add('show');

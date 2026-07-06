@@ -371,11 +371,11 @@ if(!window.SolarCupData){
 
   // ---- 球團資料（十團 + 自由為中性灰）----
   const CLUB_DATA=[
-    {key:'huanle',name:'歡樂',c:'#ff8a3c'},{key:'yuzhou',name:'小羽宙',c:'#22d3ee'},
-    {key:'poli',name:'魄力',c:'#ff3ca6'},{key:'dachuan',name:'大船',c:'#6b6bff'},
-    {key:'limao',name:'狸貓拳',c:'#2ee6c8'},{key:'dangdang',name:'蕩蕩',c:'#a3e635'},
-    {key:'yuguang',name:'羽光',c:'#a855f7'},{key:'solarA',name:'曜日A',c:'#ffb3d1'},
-    {key:'solarB',name:'曜日B',c:'#ff9ec4'},{key:'free',name:'自由',c:'#8a95a5'},
+    {key:'huanle',name:'歡樂',full:'歡樂羽球隊',c:'#ff8a3c'},{key:'yuzhou',name:'小羽宙',full:'小羽宙',c:'#22d3ee'},
+    {key:'poli',name:'魄力',full:'魄力羽球',c:'#ff3ca6'},{key:'dachuan',name:'大船',full:'大船羽球',c:'#6b6bff'},
+    {key:'limao',name:'狸貓拳',full:'狸貓拳羽球隊',c:'#2ee6c8'},{key:'dangdang',name:'蕩蕩',full:'蕩蕩歡樂羽球團',c:'#a3e635'},
+    {key:'yuguang',name:'羽光',full:'羽光羽球團',c:'#a855f7'},{key:'solarA',name:'曜日一',full:'曜日一',c:'#ffb3d1'},
+    {key:'solarB',name:'曜日二',full:'曜日二',c:'#ff9ec4'},{key:'free',name:'自由',full:'自由組',c:'#8a95a5'},
   ];
   const CLUB_BY_KEY={};CLUB_DATA.forEach(c=>CLUB_BY_KEY[c.key]=c);
   // 九球團（有隊伍歸屬）+ 自由（不計團體積分）
@@ -387,6 +387,30 @@ if(!window.SolarCupData){
     gold:{name:'黃金',en:'GOLD',col:'#ffcf33',base:200,lane:'comp'},
     silver:{name:'白銀',en:'SILVER',col:'#ff4d6a',base:100,lane:'casual'},
     bronze:{name:'青銅',en:'BRONZE',col:'#34e07a',base:0,lane:'casual'},
+  };
+
+  // ---- 真實隊伍名單（曜日盃TWO_賽事整合主檔；僅隊名/球團/選手暱稱，手機Email不入站）----
+  const ROSTER={
+    huanle:{comp:[['喵喵喵喵喵','湯包','阿達'],['目前沒想法','小P','亮亮'],['阿嬤特拉斯','勝利','小村'],['我不想比賽','小溫','Steven']],
+      casual:[['放過老人家','丹尼','東于'],['打那個胖子','達比','阿林'],['伊森吃～恩','包恩','Ethan'],['飛長丸美','丸弟','小飛'],['可攻也可守','小柯','大雄'],['自由自在瘋','Ben','阿風']]},
+    yuzhou:{comp:[['琳達雙余座','Carry','尾巴'],['淇淇與弟弟','淇淇','柴克'],['羽你亂鬥','肥力','哈倫'],['我們想一下','Kai','黑輪']],
+      casual:[['野雞出來浪','俊介','Ian'],['謙BU可擋','咘咘','謙謙'],['吃屎吉娃娃','小B','YaYa'],['蔥爆吉娃娃','Ryan QoQ','James VoV'],['明年40了','達達','阿杰'],['媽呀傑奶大','James','W']]},
+    poli:{comp:[['魄力代表隊','亞馬','Frank'],['大調查小學','阿嚕','小狐狸'],['Skip','Jack','小阿明'],['還在磨合中','Bernie','小豪']],
+      casual:[['荖蒻慚冰','Kent','村長'],['揪蛋幾勒','阿比','阿力'],['電力十足','小志','皮卡丘'],['歐恩吸壹 ONCE','Neil','Joe'],['兩隻噗嚨共','武','龍'],['芬散注意力','阿芬','威力']]},
+    dachuan:{comp:[['鴛鴛相報','阿浩','Rick'],['TD','阿鈦','莫迪'],['來TGB打','大熊','誠誠'],['就來試試','亞哲','駿']],
+      casual:[['支援TGB','挨滴','子銘'],['Ho力薛','薛寶','瓦力'],['發起就掛網','Nice','俊恩'],['摸蜆仔兼seiko','Jeff','YY'],['樺騏來','阿樺','騏騏'],['請假來比賽','夯特','小澤']]},
+    limao:{comp:[['狸貓金Carry','牛牛','Kerry'],['萊一群狸貓','萊姆','阿群'],['太子變狸貓','Darren','喬治'],['勿《惹》 Me','Zin','烏克']],
+      casual:[['出事了阿北','宸宸','阿和'],['啊對對對隊','小海','Howard'],['狸貓愛波霸','Eddie','Mango'],['禮貌的狸貓','柴犬','阿堯'],['耍廢的狸貓','Hank','Tim'],['GOGO齊狸王','尼克','KC']]},
+    dangdang:{comp:[['干飯二人組','Nick','建宏'],['早餐暈碳','玉米','饅頭'],['恐龍扛狼扛','樹樹','克里斯'],['翔翔醬','大翔','小余']],
+      casual:[['古咕古','小古','小林'],['JoeJoe雨林','宇霖','Joe'],['柚呆又菜','柚子','皓呆'],['線條洨狗','普爾','Hank'],['OOHH','歐文','Hugo'],['馬Leo','Leo翔','馬力歐']]},
+    yuguang:{comp:[['V.SOP來一杯','Vernon','Steven'],['裕擎故縱','裕智','擎元'],['早安宸柏','Shawn','Polur'],['Han悠','小悠','Hank']],
+      casual:[['ㄉㄨㄢˋㄉㄨㄢˋ','Leo張','段段'],['戴資淫娃','潘潘','小鬼'],['雙生','阿勳','麥基'],['打蚊子二人','Willan','阿宏'],['下一隊準備','Monk','Bosh'],['101','阿原','玄文']]},
+    solarA:{comp:[['下一隊','小王','桑德'],['大腿中山羌','吉偉','聲揚'],['萬獸之業','阿業','阿怪'],['有點胖的R','胖胖','Little Raymond']],
+      casual:[['剪刀石頭布','小布(Brian chang)','兔子'],['不適合才隊','小江（阿輝）','小歐'],['眼鏡熊','江肯','綸仔'],['人家第一次','嘎嘎','雪糕'],['姆丹花','姆斯','丹'],['喵語的費綸','貓貓','費綸']]},
+    solarB:{comp:[['GANDARA','NATHAN','MIGGY'],['徹夜玩樂','阿徹','阿樂'],['TF-ING','小譚','小夫'],['桃氣包','包子（台南）','大桃']],
+      casual:[['我不想流汗','小安','澤澤'],['志瑋我教練','AP','AG'],['曜餓死了','Shine','Ethan'],['第一次會痛','包子','許誠'],['翔叫霆都難','阿霆','翔'],['請打我隊友','阿信','阿樂']]},
+    free:{comp:[['yoyo姬妹','阿又','阿京'],['大叔隊','阿浩','李柏偉'],['打我不隊','至哲','Yoyo'],['體質二十八','呱呱','伯翰']],
+      casual:[['16羽之草','江金翰','莊畯崴'],['羽爆兄弟','包子','憂太'],['凡人修呆傳','美呆','阿凡'],['買台積就隊','小任','阿忠'],['嘿耶隊','四爺','Norman'],['帕莎小隊','小雨','波森']]},
   };
 
   // ---- 亂數（固定種子，資料穩定，兩頁一致）----
@@ -466,8 +490,8 @@ if(!window.SolarCupData){
   }
 
   // ---- 建立一隊 ----
-  function mkTeam(club,lane,label){
-    return {tid:'T'+(++_tid),club,clubObj:club,lane,label,
+  function mkTeam(club,lane,label,players){
+    return {tid:'T'+(++_tid),club,clubObj:club,lane,label,players:players||null,
       w:0,l:0,gf:0,ga:0,matches:[],
       seedGroup:null,seedRank:null,tier:null,base:0};
   }
@@ -496,12 +520,10 @@ if(!window.SolarCupData){
   // ---- 完整賽事樹 ----
   function buildTournament(seed){
     resetSeed(seed);_tid=0;
-    // 報名：競技 9團×4 + 自由4 = 40；休閒 9團×6 + 自由6 = 60
+    // 報名：10 團×(競技4+休閒6)=100 + 曜請8 = 108（真實名單 ROSTER）
     const comp=[],casual=[];
-    NINE.forEach(c=>{for(let i=1;i<=4;i++)comp.push(mkTeam(c,'comp',c.name+'C'+i));});
-    for(let i=1;i<=4;i++)comp.push(mkTeam(FREE,'comp','自由C'+i));
-    NINE.forEach(c=>{for(let i=1;i<=6;i++)casual.push(mkTeam(c,'casual',c.name+'R'+i));});
-    for(let i=1;i<=6;i++)casual.push(mkTeam(FREE,'casual','自由R'+i));
+    CLUB_DATA.forEach(c=>{ROSTER[c.key].comp.forEach(t=>comp.push(mkTeam(c,'comp',t[0],[t[1],t[2]])));});
+    CLUB_DATA.forEach(c=>{ROSTER[c.key].casual.forEach(t=>casual.push(mkTeam(c,'casual',t[0],[t[1],t[2]])));});
 
     // 分組（打散）：競技 10 組×4、休閒 15 組×4
     const compS=shuffle(comp), casS=shuffle(casual);
