@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='42' fill='none' stroke='%2322d3ee' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='14' fill='%23ff3cac'/%3E%3C/svg%3E">
+<title>SOLAR CUP TWO ｜ 戰情看板 LIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{background:var(--void,#03060d);color:var(--ink,#dbeafe);font-family:'Share Tech Mono',monospace;overflow-x:hidden;min-height:100vh}
+
+  /* 背景（比照首頁 NERV 網格＋掃描線）*/
+  #grid-bg{position:fixed;inset:0;z-index:-2;pointer-events:none;
+    background-image:linear-gradient(rgba(120,200,200,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(120,200,200,.14) 1px,transparent 1px);
+    background-size:46px 46px;opacity:.3;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,#000 30%,transparent 82%);
+    mask-image:radial-gradient(ellipse 80% 70% at 50% 30%,#000 30%,transparent 82%)}
+  #scan{position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.16) 2px 4px);mix-blend-mode:multiply;opacity:.35}
+
+  .wrap{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:20px 16px 90px}
+
+  /* 頁首 */
+  .hd{margin:14px 0 18px}
+  .hd .sh{display:flex;align-items:center;gap:13px;margin-bottom:12px;flex-wrap:wrap}
+  .hd .idx{font-family:'Orbitron',sans-serif;font-weight:900;font-size:12px;color:var(--field,#22d3ee);border:1px solid var(--pcb,rgba(29,233,182,.5));padding:6px 9px}
+  .hd h1{font-family:'Orbitron',sans-serif;font-weight:900;font-size:clamp(20px,5vw,34px);color:#fff;letter-spacing:.04em;
+    text-shadow:0 0 24px rgba(34,211,238,.4)}
+  .hd h1 .lv{color:var(--magenta,#ff3cac)}
+  .live-dot{display:inline-flex;align-items:center;gap:7px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;
+    color:var(--magenta,#ff3cac);border:1px solid rgba(255,60,172,.5);padding:5px 10px;border-radius:3px;background:rgba(255,60,172,.08)}
+  .live-dot .d{width:8px;height:8px;border-radius:50%;background:var(--magenta,#ff3cac);box-shadow:0 0 10px var(--magenta,#ff3cac);animation:pulse 1.3s infinite}
+  .live-dot.demo{color:#ffcf33;border-color:rgba(255,207,51,.5);background:rgba(255,207,51,.08)}
+  .live-dot.demo .d{background:#ffcf33;box-shadow:0 0 10px #ffcf33}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .hd .meta{display:flex;gap:18px;flex-wrap:wrap;font-size:11px;color:var(--dim,#5b7089);letter-spacing:.06em}
+  .hd .meta b{color:var(--field,#22d3ee);font-weight:400}
+  .hd .upd{font-size:10.5px;color:var(--dim,#5b7089)}
+  .hd .upd b{color:var(--field2,#1de9b6)}
+
+  /* 控制列 */
+  .ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:16px 0 12px;padding:12px;
+    border:1px solid var(--line,rgba(29,233,182,.16));background:rgba(6,16,22,.55);border-radius:6px}
+  .seg{display:inline-flex;border:1px solid var(--pcb,rgba(29,233,182,.5));border-radius:4px;overflow:hidden}
+  .seg button{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;padding:8px 15px;border:0;cursor:pointer;
+    background:transparent;color:var(--dim,#5b7089);transition:.2s}
+  .seg button.on{background:var(--field,#22d3ee);color:#03060d}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{font-size:11px;padding:6px 11px;border:1px solid var(--line,rgba(29,233,182,.16));border-radius:3px;color:var(--dim,#5b7089);cursor:pointer;transition:.2s;white-space:nowrap}
+  .chip:hover{border-color:var(--field,#22d3ee);color:var(--ink,#dbeafe)}
+  .chip.on{color:#03060d;font-weight:700;border-color:transparent}
+  .chip.on[data-tier=all]{background:var(--field,#22d3ee)}
+  .chip.on[data-tier=plat]{background:var(--plat,#4d9fff)} .chip.on[data-tier=gold]{background:var(--gold,#ffcf33)}
+  .chip.on[data-tier=silver]{background:var(--silver,#ff4d6a)} .chip.on[data-tier=bronze]{background:var(--bronze,#34e07a)}
+  .chip.on[data-tier=yao]{background:#ffc24b} .chip.on[data-tier=qual]{background:#8fa2d8}
+  select.club{font-family:'Share Tech Mono',monospace;font-size:12px;padding:7px 10px;background:rgba(6,16,22,.9);color:var(--ink,#dbeafe);
+    border:1px solid var(--line,rgba(29,233,182,.16));border-radius:4px;cursor:pointer;margin-left:auto}
+  .legend{display:flex;gap:14px;font-size:10.5px;color:var(--dim,#5b7089);align-items:center;flex-basis:100%;margin-top:2px}
+  .legend .lg{display:inline-flex;align-items:center;gap:5px}
+  .legend .sw{width:11px;height:11px;border-radius:2px;border:1px solid rgba(255,255,255,.2)}
+  .legend .sw.off{background:rgba(255,255,255,.04)} .legend .sw.on{background:rgba(34,211,238,.9);box-shadow:0 0 8px rgba(34,211,238,.6)}
+
+  /* 示範進度拉桿 */
+  .demo-row{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:11px 14px;border:1px dashed rgba(255,207,51,.4);
+    background:rgba(255,207,51,.05);border-radius:6px;font-size:11.5px;color:#ffcf6b;flex-wrap:wrap}
+  .demo-row input[type=range]{flex:1;min-width:160px;accent-color:#ffcf33}
+  .demo-row b{color:#ffe08a;font-family:'Orbitron',sans-serif;font-weight:700}
+
+  /* ===== 矩陣看板 ===== */
+  .matrix-wrap{overflow-x:auto;border:1px solid var(--line,rgba(29,233,182,.16));border-radius:8px;background:rgba(3,8,14,.5)}
+  table.mx{border-collapse:collapse;width:100%;min-width:920px}
+  table.mx th,table.mx td{border:1px solid rgba(120,200,200,.1);padding:0;vertical-align:top}
+  table.mx thead th{position:sticky;top:0;z-index:3;background:rgba(8,18,28,.97);font-family:'Orbitron',sans-serif;font-weight:700;
+    font-size:11px;color:var(--field,#22d3ee);padding:9px 4px;text-align:center;letter-spacing:.04em}
+  table.mx thead th:first-child{left:0;z-index:4}
+  table.mx .tcol{position:sticky;left:0;z-index:2;background:rgba(8,16,26,.97);font-family:'Orbitron',sans-serif;font-weight:700;
+    font-size:10.5px;color:var(--ink,#dbeafe);padding:8px 8px;text-align:center;white-space:nowrap;min-width:74px}
+  table.mx .tcol .e{display:block;font-size:8.5px;color:var(--dim,#5b7089);font-weight:400;margin-top:2px}
+  .cell{min-height:52px;padding:5px 6px;cursor:pointer;transition:.15s;position:relative;height:100%}
+  .cell.empty{cursor:default;background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(255,255,255,.015) 6px 12px)}
+  .cell.ev{cursor:default;background:rgba(168,85,247,.08)}
+  .cell .code{font-family:'Orbitron',sans-serif;font-weight:700;font-size:10px;letter-spacing:.02em;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+  .cell .tdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .cell .vs{font-size:10.5px;line-height:1.35;color:var(--ink,#dbeafe)}
+  .cell .vs .u{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+  .cell .tbd{font-size:10px;color:var(--dim,#5b7089)}
+  .cell .sc{font-family:'Orbitron',sans-serif;font-weight:900;font-size:12px;color:#fff;margin-top:2px}
+  .cell .sc .w{color:var(--field2,#1de9b6)}
+  /* 亮燈：已完成 */
+  .cell.done{background:rgba(34,211,238,.1);box-shadow:inset 0 0 0 1px rgba(34,211,238,.5),inset 0 0 18px rgba(34,211,238,.16)}
+  .cell.done .code{color:#fff}
+  .cell.done::after{content:"";position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--field,#22d3ee);box-shadow:0 0 9px var(--field,#22d3ee)}
+  .cell:not(.done):not(.empty):not(.ev){opacity:.72}
+  .cell:not(.empty):not(.ev):hover{background:rgba(34,211,238,.16);opacity:1}
+  .cell.hidden{opacity:.12 !important;filter:grayscale(1)}
+  .cell .ev-label{font-size:10px;color:var(--accent,#c77dff);font-weight:700;padding:6px 2px;text-align:center;font-family:'Orbitron',sans-serif}
+
+  /* ===== 清單看板 ===== */
+  .list-wrap{display:none}
+  .slot{margin-bottom:18px}
+  .slot .st{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--field,#22d3ee);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .slot .st .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--pcb,rgba(29,233,182,.5)),transparent)}
+  .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px}
+  .lm{border:1px solid var(--line,rgba(29,233,182,.16));border-radius:6px;padding:10px 12px;cursor:pointer;transition:.18s;background:rgba(6,16,22,.5);position:relative}
+  .lm:hover{transform:translateY(-2px);border-color:var(--field,#22d3ee);box-shadow:0 0 18px rgba(34,211,238,.18)}
+  .lm .lh{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+  .lm .lcode{font-family:'Orbitron',sans-serif;font-weight:700;font-size:11px}
+  .lm .lct{margin-left:auto;font-size:9.5px;color:var(--dim,#5b7089)}
+  .lm .lvs{font-size:12px;line-height:1.5}
+  .lm .lvs b{color:#fff}
+  .lm .ltbd{font-size:11px;color:var(--dim,#5b7089)}
+  .lm .lsc{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:#fff;margin-top:3px}
+  .lm.done{border-color:rgba(34,211,238,.5);background:rgba(34,211,238,.08);box-shadow:inset 0 0 14px rgba(34,211,238,.1)}
+  .lm.done::after{content:"";position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--field,#22d3ee);box-shadow:0 0 9px var(--field,#22d3ee)}
+  .lm.hidden{display:none}
+  .empty-note{text-align:center;color:var(--dim,#5b7089);font-size:12px;padding:40px}
+
+  /* 詳情 modal */
+  .mask{position:fixed;inset:0;z-index:60;background:rgba(2,4,9,.82);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+  .mask.show{display:flex;animation:sc2FadeIn .2s}
+  .dcard{width:min(440px,94vw);border:1px solid var(--pcb,rgba(29,233,182,.5));background:rgba(6,14,22,.97);border-radius:8px;padding:20px;position:relative;
+    box-shadow:0 0 40px rgba(34,211,238,.2);animation:sc2CardIn .26s}
+  .dcard .dx{position:absolute;top:12px;right:14px;font-size:12px;color:var(--dim,#5b7089);cursor:pointer;font-family:'Orbitron',sans-serif}
+  .dcard .dcode{font-family:'Orbitron',sans-serif;font-weight:900;font-size:20px;color:#fff;letter-spacing:.03em}
+  .dcard .dmeta{font-size:11px;color:var(--dim,#5b7089);margin:6px 0 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .dcard .dtag{font-size:10px;padding:2px 8px;border-radius:2px;font-weight:700;font-family:'Orbitron',sans-serif}
+  .dcard .dvs{display:flex;align-items:center;gap:10px;margin:14px 0}
+  .dcard .dside{flex:1;text-align:center;padding:12px 8px;border:1px solid var(--line,rgba(29,233,182,.16));border-radius:6px}
+  .dcard .dside .dn{font-size:14px;color:#fff;font-weight:700;word-break:break-word}
+  .dcard .dside .dc{font-size:10px;color:var(--dim,#5b7089);margin-top:3px}
+  .dcard .dside .dp{font-family:'Orbitron',sans-serif;font-weight:900;font-size:26px;margin-top:6px;color:var(--field,#22d3ee)}
+  .dcard .dside.win{border-color:var(--field2,#1de9b6);box-shadow:0 0 16px rgba(29,233,182,.2)}
+  .dcard .dvsx{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--dim,#5b7089);font-size:13px}
+  .dcard .dstat{text-align:center;font-size:11px;color:var(--dim,#5b7089);margin:4px 0 14px}
+  .dcard .dstat b{color:var(--field2,#1de9b6)}
+  .dcard .dlinks{display:flex;gap:8px;flex-wrap:wrap}
+  .dcard .dlk{flex:1;min-width:110px;text-align:center;font-size:11px;padding:9px;border:1px solid var(--pcb,rgba(29,233,182,.5));border-radius:4px;
+    color:var(--field,#22d3ee);text-decoration:none;transition:.2s}
+  .dcard .dlk:hover{background:rgba(34,211,238,.12)}
+
+  .foot{text-align:center;font-size:10px;color:var(--dim,#5b7089);margin-top:30px;letter-spacing:.06em;line-height:1.8}
+  .foot b{color:var(--field2,#1de9b6)}
+  @media(max-width:640px){.ctrl{padding:10px}.seg button{padding:7px 11px}}
+</style>
+</head>
+<body>
+<div id="grid-bg"></div><div id="scan"></div>
+
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html" class="on">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+
+<div class="wrap">
+  <div class="hd">
+    <div class="sh">
+      <span class="idx">07</span>
+      <h1>戰情看板 <span class="lv">LIVE</span></h1>
+      <span class="live-dot demo" id="liveBadge"><span class="d"></span><span id="liveTxt">示範預覽</span></span>
+    </div>
+    <div class="meta">
+      <span>📅 <b id="mDate">2026.08.15（六）</b></span><span>📍 <b id="mVenue">大安運動中心 · 10 面場</b></span>
+      <span>🏸 <b>310 場</b></span><span class="upd" id="upd">資料來源：待接即時比分 Sheet</span>
+    </div>
+  </div>
+
+  <div class="ctrl">
+    <div class="seg" id="modeSeg"><button data-mode="matrix" class="on">▦ 矩陣看板</button><button data-mode="list">☰ 時間清單</button></div>
+    <div class="chips" id="tierChips">
+      <span class="chip on" data-tier="all">全部</span>
+      <span class="chip" data-tier="plat">白金</span><span class="chip" data-tier="gold">黃金</span>
+      <span class="chip" data-tier="silver">銀</span><span class="chip" data-tier="bronze">銅</span>
+      <span class="chip" data-tier="yao">曜請</span><span class="chip" data-tier="qual">資格賽</span>
+    </div>
+    <select class="club" id="clubSel"><option value="all">全部球團</option></select>
+    <div class="legend">
+      <span class="lg"><span class="sw off"></span>未完成</span>
+      <span class="lg"><span class="sw on"></span>已完成亮燈＋比分</span>
+      <span class="lg" style="margin-left:auto">篩選：級別＋球團</span>
+    </div>
+  </div>
+
+  <div class="demo-row" id="demoRow">
+    <span>▶ 示範進度（接上 Sheet 後改由真實比分驅動亮燈）</span>
+    <input type="range" id="demoRange" min="0" max="310" value="0">
+    <span>已完成 <b id="demoN">0</b> / 310 場</span>
+  </div>
+
+  <div class="matrix-wrap" id="matrixWrap"><table class="mx"><thead id="mxHead"></thead><tbody id="mxBody"></tbody></table></div>
+  <div class="list-wrap" id="listWrap"></div>
+
+  <div class="foot">
+    ＳＯＬＡＲ ＣＵＰ ＴＷＯ · 戰情看板 LIVE · 場地×時間 310 場即時推進<br>
+    <b id="footState">◆ 示範預覽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往初賽分流／淘汰樹／戰績查詢
+  </div>
+</div>
+
+<div class="mask" id="mask"><div class="dcard" id="dcard"></div></div>
+
+<link rel="stylesheet" href="design-tokens.css">
+<script src="tournament-data.js"></script>
+<script src="schedule-data.js"></script>
+<script>
+(function(){
+  const SC=window.SolarCupSchedule, SD=window.SolarCupData;
+  if(!SC){document.getElementById('matrixWrap').innerHTML='<p class="empty-note">賽程資料 schedule-data.js 未載入</p>';return;}
+
+  // ===== 佔位隊伍指派（未接 Sheet 前展示用；接 Sheet 後由真實資料覆蓋）=====
+  // 資格賽：各組 4 隊 RR 6 場配對；曜請：主檔真實對戰表；淘汰賽：待分流/待定
+  const RR=[[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]];
+  // 曜請組主檔對戰表：場次編號 → [隊index a,b]（隊 index 0-7 對齊 buildAllTeams 曜請順序）
+  const YAO={157:[0,1],179:[0,2],275:[0,3],247:[0,4],307:[0,5],295:[0,6],209:[0,7],
+    276:[1,2],180:[1,3],297:[1,4],248:[1,5],210:[1,6],309:[1,7],
+    158:[2,3],308:[2,4],229:[2,5],257:[2,6],298:[2,7],
+    230:[3,4],296:[3,5],310:[3,6],258:[3,7],
+    159:[4,5],189:[4,6],286:[4,7],285:[5,6],190:[5,7],160:[6,7]};
+  let grpTeams={}, yaoTeams=[], clubList=[];
+  if(SD){
+    const all=SD.buildAllTeams().teams;
+    all.forEach(t=>{if(t.track==='曜請')return;(grpTeams[t.group]=grpTeams[t.group]||[]).push(t);});
+    yaoTeams=all.filter(t=>t.track==='曜請');
+    clubList=SD.NINE.concat([SD.FREE]).map(c=>({key:c.key,name:c.full||c.name}));
+  }
+  // 建每場的隊伍（placeholder）
+  const qCount={};
+  function assign(m){
+    if(m.stage==='資格賽'){const c=qCount[m.code]=(qCount[m.code]||0);qCount[m.code]++;const ts=grpTeams[m.code];
+      if(ts&&ts.length>=4){const pr=RR[c%6];return[ts[pr[0]],ts[pr[1]]];}return null;}
+    if(m.grp==='曜請組'){const pr=YAO[m.n];if(pr&&yaoTeams.length>=8)return[yaoTeams[pr[0]],yaoTeams[pr[1]]];return null;}
+    return null; // 淘汰賽待分流
+  }
+  SC.matches.forEach(m=>{m._t=assign(m);});
+
+  // ===== 結果狀態（未接 Sheet 前：示範拉桿；接 Sheet 後：CSV 覆蓋）=====
+  // results[code] = {sa,sb,done}
+  const results={};
+  function seedScore(n){const lo=11+((n*7+3)%9);const aw=(n*13+5)%2===0;return aw?[21,lo]:[lo,21];}
+  function applyDemo(k){for(const code in results)delete results[code];
+    const done=SC.matches.slice().sort((a,b)=>a.n-b.n).slice(0,k);
+    done.forEach(m=>{const s=seedScore(m.n);results[m.code]={sa:s[0],sb:s[1],done:true};});
+    render();updateLive(k>0?'demo':'demo');}
+
+  // ===== 篩選狀態 =====
+  let mode='matrix', tierF='all', clubF='all';
+  function tierKey(m){if(m.grp==='曜請組')return 'yao';if(m.stage==='資格賽')return 'qual';
+    return ({'白金':'plat','黃金':'gold','銀':'silver','銅':'bronze'})[m.tier]||'qual';}
+  function matchClub(m){if(clubF==='all')return true;if(!m._t)return false;
+    return m._t[0].clubKey===clubF||m._t[1].clubKey===clubF;}
+  function visible(m){if(tierF!=='all'&&tierKey(m)!==tierF)return false;if(!matchClub(m))return false;return true;}
+
+  const TS=SC.tierStyle, GS=SC.grpStyle;
+  function tierCol(m){return (TS[m.tier]&&TS[m.tier].col)||GS[m.grp]||'#8fa2d8';}
+  function teamLabel(t){return t?t.label:null;}
+
+  // ===== 矩陣看板 =====
+  const byCourt=SC.byCourt();
+  // 時段列（含非比賽事件）
+  function slots(){
+    const set={};SC.matches.forEach(m=>{set[m.s+'|'+m.e]=1;});
+    SC.events.forEach(e=>{set[e.s+'|'+e.e]=1;});
+    return Object.keys(set).map(k=>{const p=k.split('|');return{s:p[0],e:p[1]};}).sort((a,b)=>a.s<b.s?-1:1);
+  }
+  const SLOTS=slots();
+  function renderMatrix(){
+    const head=document.getElementById('mxHead');
+    let h='<tr><th>時間</th>';for(let c=1;c<=SC.courts;c++)h+='<th>場 '+c+'</th>';h+='</tr>';head.innerHTML=h;
+    const body=document.getElementById('mxBody');let rows='';
+    SLOTS.forEach(sl=>{
+      const ev=SC.events.find(e=>e.s===sl.s&&e.e===sl.e);
+      rows+='<tr><td class="tcol">'+sl.s+'<span class="e">'+sl.e+'</span></td>';
+      if(ev){rows+='<td colspan="'+SC.courts+'" class="cell ev"><div class="ev-label">◆ '+ev.label+'</div></td></tr>';return;}
+      for(let c=1;c<=SC.courts;c++){
+        const m=(byCourt[c]||[]).find(x=>x.s===sl.s&&x.e===sl.e);
+        if(!m){rows+='<td><div class="cell empty"></div></td>';continue;}
+        rows+='<td>'+cellHTML(m)+'</td>';
+      }
+      rows+='</tr>';
+    });
+    body.innerHTML=rows;
+    body.querySelectorAll('.cell[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
+  }
+  function cellHTML(m){
+    const r=results[m.code], vis=visible(m), col=tierCol(m);
+    let inner='<div class="code" style="color:'+col+'"><span class="tdot" style="background:'+col+'"></span>'+m.code+'</div>';
+    if(r&&r.done){const wa=r.sa>r.sb;
+      inner+='<div class="vs">'+(m._t?('<span class="u">'+m._t[0].label+'</span><span class="u">'+m._t[1].label+'</span>'):'<span class="tbd">—</span>')+'</div>';
+      inner+='<div class="sc"><span class="'+(wa?'w':'')+'">'+r.sa+'</span> : <span class="'+(wa?'':'w')+'">'+r.sb+'</span></div>';
+    }else if(m._t){inner+='<div class="vs"><span class="u">'+m._t[0].label+'</span><span class="u">'+m._t[1].label+'</span></div>';}
+    else{inner+='<div class="tbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+'</div>';}
+    return '<div class="cell'+(r&&r.done?' done':'')+(vis?'':' hidden')+'" data-n="'+m.n+'">'+inner+'</div>';
+  }
+
+  // ===== 清單看板 =====
+  function renderList(){
+    const wrap=document.getElementById('listWrap');let html='';
+    SLOTS.forEach(sl=>{
+      const ev=SC.events.find(e=>e.s===sl.s&&e.e===sl.e);
+      if(ev){html+='<div class="slot"><div class="st">'+sl.s+'–'+sl.e+' <span class="ln"></span></div><div class="lgrid"><div class="lm" style="grid-column:1/-1;text-align:center;color:var(--accent);cursor:default">◆ '+ev.label+'</div></div></div>';return;}
+      const ms=SC.matches.filter(m=>m.s===sl.s&&m.e===sl.e&&visible(m)).sort((a,b)=>a.ct-b.ct);
+      if(!ms.length)return;
+      html+='<div class="slot"><div class="st">'+sl.s+'–'+sl.e+' <span class="ln"></span></div><div class="lgrid">';
+      ms.forEach(m=>{const r=results[m.code],col=tierCol(m);
+        html+='<div class="lm'+(r&&r.done?' done':'')+'" data-n="'+m.n+'"><div class="lh"><span class="lcode" style="color:'+col+'">'+m.code+'</span><span class="lct">場 '+m.ct+'</span></div>';
+        if(m._t){html+='<div class="lvs"><b>'+m._t[0].label+'</b> vs <b>'+m._t[1].label+'</b></div>';}
+        else{html+='<div class="ltbd">待'+(m.stage==='資格賽'?'抽籤':'分流')+' · '+m.grp+' '+(m.tier!=='—'?m.tier:'')+'</div>';}
+        if(r&&r.done){const wa=r.sa>r.sb;html+='<div class="lsc">'+r.sa+' : '+r.sb+'</div>';}
+        html+='</div>';
+      });
+      html+='</div></div>';
+    });
+    wrap.innerHTML=html||'<div class="empty-note">此篩選條件下沒有場次</div>';
+    wrap.querySelectorAll('.lm[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
+  }
+
+  function render(){if(mode==='matrix')renderMatrix();else renderList();}
+
+  // ===== 詳情 modal =====
+  const mask=document.getElementById('mask'),dcard=document.getElementById('dcard');
+  const TIERCLS={'白金':'plat','黃金':'gold','銀':'silver','銅':'bronze'};
+  const GRPHASH={};
+  function openDetail(n){
+    const m=SC.matches.find(x=>x.n===n);if(!m)return;const r=results[m.code],col=tierCol(m);
+    const wa=r&&r.done&&r.sa>r.sb, wb=r&&r.done&&r.sb>r.sa;
+    const side=(t,sc,win)=>'<div class="dside'+(win?' win':'')+'"><div class="dn">'+(t?t.label:'待定')+'</div><div class="dc">'+(t?(t.clubFull||t.club||''):'')+'</div><div class="dp">'+(sc!=null?sc:'–')+'</div></div>';
+    let links='';
+    if(m.stage==='資格賽')links+='<a class="dlk" href="qualifying.html#'+m.code+'">▸ 初賽分流</a>';
+    if(m.tier!=='—')links+='<a class="dlk" href="bracket-tree.html#'+(TIERCLS[m.tier]||'')+'">▸ 階級淘汰樹</a>';
+    if(m.grp==='曜請組')links+='<a class="dlk" href="invitational.html">▸ 曜請全循環</a>';
+    if(m._t)links+='<a class="dlk" href="team-search.html?q='+encodeURIComponent(m._t[0].label)+'">▸ 戰績查詢</a>';
+    dcard.innerHTML='<span class="dx" id="dx">✕ CLOSE</span>'+
+      '<div class="dcode" style="color:'+col+'">'+m.code+'</div>'+
+      '<div class="dmeta"><span class="dtag" style="background:'+col+'22;color:'+col+';border:1px solid '+col+'66">'+m.grp+(m.tier!=='—'?' · '+m.tier:'')+'</span><span>'+m.stage+'</span><span>場地 '+m.ct+'</span><span>'+m.s+'–'+m.e+'</span><span>#'+m.n+'</span></div>'+
+      '<div class="dvs">'+side(m._t&&m._t[0],r&&r.done?r.sa:null,wa)+'<span class="dvsx">VS</span>'+side(m._t&&m._t[1],r&&r.done?r.sb:null,wb)+'</div>'+
+      '<div class="dstat">'+(r&&r.done?'<b>已完成</b> · 21 分制單局':(m._t?'尚未開賽':'對戰隊伍待'+(m.stage==='資格賽'?'抽籤':'上輪分流')))+'</div>'+
+      '<div class="dlinks">'+links+'</div>';
+    mask.classList.add('show');
+    document.getElementById('dx').onclick=()=>mask.classList.remove('show');
+  }
+  mask.addEventListener('click',e=>{if(e.target===mask)mask.classList.remove('show');});
+
+  // ===== LIVE 狀態徽章 =====
+  function updateLive(state){
+    const b=document.getElementById('liveBadge'),t=document.getElementById('liveTxt'),f=document.getElementById('footState');
+    const doneN=Object.keys(results).length;
+    if(state==='live'){b.classList.remove('demo');t.textContent='LIVE 即時';f.textContent='◆ LIVE 即時賽況';}
+    else{b.classList.add('demo');t.textContent='示範預覽';f.textContent='◆ 示範預覽（待接即時比分 Sheet）';}
+  }
+
+  // ===== 控制列事件 =====
+  document.getElementById('modeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+    mode=b.dataset.mode;document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===b));
+    document.getElementById('matrixWrap').style.display=mode==='matrix'?'':'none';
+    document.getElementById('listWrap').style.display=mode==='list'?'block':'none';
+    render();});
+  document.getElementById('tierChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
+    tierF=c.dataset.tier;document.querySelectorAll('#tierChips .chip').forEach(x=>x.classList.toggle('on',x===c));render();});
+  const clubSel=document.getElementById('clubSel');
+  clubList.forEach(c=>{const o=document.createElement('option');o.value=c.key;o.textContent=c.name;clubSel.appendChild(o);});
+  clubSel.addEventListener('change',()=>{clubF=clubSel.value;render();});
+  const dr=document.getElementById('demoRange');
+  dr.addEventListener('input',()=>{document.getElementById('demoN').textContent=dr.value;applyDemo(+dr.value);});
+
+  // ===== Google Sheets 讀取層（Phase 3 接入；此為 stub，未設定網址則走示範）=====
+  // 設定：把「即時比分」Sheet 發布為 CSV，填入下方 SHEET_CSV_URL；欄位需含 對戰代號,隊A,隊B,分A,分B
+  const SHEET_CSV_URL=''; // ← Phase 3 由庫洛洛建表後填入
+  function pollSheet(){
+    if(!SHEET_CSV_URL)return; // 未設定→維持示範
+    fetch(SHEET_CSV_URL).then(r=>r.text()).then(csv=>{
+      const rows=csv.split(/\r?\n/).map(r=>r.split(','));const head=rows.shift().map(s=>s.trim());
+      const ci=n=>head.indexOf(n);const cCode=ci('對戰代號'),cA=ci('隊A'),cB=ci('隊B'),cSA=ci('分A'),cSB=ci('分B');
+      let live=false;
+      rows.forEach(cols=>{const code=(cols[cCode]||'').trim();if(!code)return;
+        const m=SC.byCode(code);const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
+        if(m&&cols[cA])m._t=[{label:cols[cA].trim(),club:'',clubKey:''},{label:(cols[cB]||'').trim(),club:'',clubKey:''}];
+        if(!isNaN(sa)&&!isNaN(sb)){results[code]={sa:sa,sb:sb,done:true};live=true;}});
+      document.getElementById('upd').innerHTML='資料來源：即時比分 Sheet · 更新於 <b>'+nowStr()+'</b>';
+      if(live)updateLive('live');render();
+    }).catch(()=>{});
+  }
+  function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
+
+  // 初始渲染
+  render();updateLive('demo');
+  if(SHEET_CSV_URL){document.getElementById('demoRow').style.display='none';pollSheet();setInterval(pollSheet,45000);}
+})();
+</script>
+</body>
+</html>

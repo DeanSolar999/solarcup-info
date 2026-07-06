@@ -68,6 +68,9 @@
     border:1px solid var(--pcb);background:rgba(29,233,182,.06);color:var(--teal);cursor:pointer;text-decoration:none;transition:.22s}
   .btn:hover{background:rgba(29,233,182,.16);box-shadow:0 0 24px rgba(29,233,182,.35);transform:translateY(-2px)}
   .btn.primary{border-color:var(--cyan);color:#03060d;background:linear-gradient(120deg,var(--cyan),var(--teal))}
+  .btn.live{border-color:var(--magenta);color:#fff;background:linear-gradient(120deg,rgba(255,60,172,.28),rgba(168,85,247,.22))}
+  .btn.live:hover{box-shadow:0 0 26px rgba(255,60,172,.45)}
+  .btn.live .livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--magenta);box-shadow:0 0 10px var(--magenta);margin-right:8px;vertical-align:middle;animation:blink 1.2s infinite}
   .scroll-cue{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:.2em;color:var(--dim);animation:bob 2s infinite}
   @keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
 
@@ -178,7 +181,7 @@
 <link rel="stylesheet" href="design-tokens.css">
 </head>
 <body>
-<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html" class="on">首頁</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html" class="on">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
 
 <!-- ========================= 首頁 ========================= -->
 <div class="view active" id="view-home">
@@ -202,6 +205,7 @@
         <div class="it"><span class="k">COURTS</span><span class="v">10</span></div>
       </div>
       <div class="cta">
+        <a class="btn live" href="solar-cup-live.html"><span class="livedot"></span>戰情看板 LIVE</a>
         <a class="btn primary" href="terminal.html">▸ 進入賽事實時系統</a>
         <a class="btn" href="#format">查看完整賽事資訊 ↓</a>
       </div>
