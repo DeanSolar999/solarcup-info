@@ -189,9 +189,15 @@
   </div>
 
   <div class="demo-row" id="demoRow">
-    <span>▶ 示範進度（接上 Sheet 後改由真實比分驅動亮燈）</span>
-    <input type="range" id="demoRange" min="0" max="310" value="0">
-    <span>已完成 <b id="demoN">0</b> / 310 場</span>
+    <span>▶ 示範時鐘</span>
+    <input type="range" id="demoTime" min="480" max="1065" value="520" step="5">
+    <span>現在 <b id="demoClock">08:40</b></span>
+    <span>輸入遲延
+      <select id="demoDelay" style="background:rgba(6,16,22,.9);color:#ffcf6b;border:1px solid rgba(255,207,51,.45);border-radius:3px;padding:3px 6px;font-family:inherit">
+        <option value="0">0 分（即時填分）</option><option value="10">10 分（達補燈門檻）</option><option value="15">15 分（明顯遲延）</option>
+      </select>
+    </span>
+    <span>已完賽 <b id="demoN">0</b> / 310 · 拉時間看推進；設遲延看「時間補燈」補上準備燈</span>
   </div>
 
   <div class="matrix-wrap" id="matrixWrap"><table class="mx"><thead id="mxHead"></thead><tbody id="mxBody"></tbody></table></div>
@@ -243,10 +249,21 @@
   // results[場次編號n] = {sa,sb,done}（n 為 1-310 唯一；對戰代號會重複故不可當 key）
   const results={};
   function seedScore(n){const lo=11+((n*7+3)%9);const aw=(n*13+5)%2===0;return aw?[21,lo]:[lo,21];}
-  function applyDemo(k){for(const key in results)delete results[key];
-    const done=SC.matches.slice().sort((a,b)=>a.n-b.n).slice(0,k);
-    done.forEach(m=>{const s=seedScore(m.n);results[m.n]={sa:s[0],sb:s[1],done:true};});
-    render();updateLive(k>0?'demo':'demo');}
+  const PAD=n=>String(n).padStart(2,'0');
+  function toMin(t){const p=String(t).split(':');return (+p[0])*60+(+p[1]);}
+  function minHHMM(m){return PAD(Math.floor(m/60))+':'+PAD(m%60);}
+  function isDone(m){return !!(results[m.n]&&results[m.n].done);}
+  let LIVE=false, demoNowMin=toMin('08:40'), demoDelay=0;
+  function realClockMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
+  function nowMin(){return LIVE?realClockMin():demoNowMin;}      // 準備燈時間觸發的「現在」
+  // 示範：依「模擬時間＋輸入遲延」推導完賽（賽末+遲延 ≤ 現在 → 視為分數已填）
+  function recomputeDemo(){
+    for(const k in results)delete results[k];
+    SC.matches.forEach(m=>{if(toMin(m.e)+demoDelay<=demoNowMin){const s=seedScore(m.n);results[m.n]={sa:s[0],sb:s[1],done:true};}});
+    render();
+    const ec=document.getElementById('demoClock');if(ec)ec.textContent=minHHMM(demoNowMin);
+    const en=document.getElementById('demoN');if(en)en.textContent=Object.keys(results).length;
+  }
 
   // ===== 篩選狀態 =====
   let mode='matrix', tierF='all', clubF='all';
@@ -320,15 +337,23 @@
     wrap.querySelectorAll('.lm[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
   }
 
-  // 準備上場：同場地，某場完賽 → 下下場（+2）亮準備燈提醒（正在打的是 +1，準備的是 +2）
+  // 準備上場（雙觸發，取聯集）：
+  //  ① 比分觸發：同場地某場完賽 → 下下場(+2)亮（正在打的是 +1）
+  //  ② 時間觸發（防輸入遲延）：正在打的那場依賽程已開打滿 10 分卻還沒填分 → 下一未完賽場補亮
   let READY=new Set();
   function computeReady(){
-    READY=new Set();
+    READY=new Set();const nm=nowMin();
     for(let c=1;c<=SC.courts;c++){
-      const ms=byCourt[c]||[];let frontier=-1;
-      ms.forEach((m,idx)=>{if(results[m.n]&&results[m.n].done)frontier=idx;});
-      if(frontier>=0){const ri=frontier+2;
-        if(ri<ms.length){const rn=ms[ri].n;if(!(results[rn]&&results[rn].done))READY.add(rn);}}
+      const ms=byCourt[c]||[];
+      // ① 比分觸發
+      let frontier=-1;ms.forEach((m,idx)=>{if(isDone(m))frontier=idx;});
+      if(frontier>=0){const ri=frontier+2;if(ri<ms.length&&!isDone(ms[ri]))READY.add(ms[ri].n);}
+      // ② 時間觸發：找最早未完賽且已到開賽時間者＝正在打；開打滿10分→下一未完賽場亮
+      let playIdx=-1;
+      for(let idx=0;idx<ms.length;idx++){if(!isDone(ms[idx])){if(toMin(ms[idx].s)<=nm)playIdx=idx;break;}}
+      if(playIdx>=0&&nm>=toMin(ms[playIdx].s)+10){
+        for(let j=playIdx+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}
+      }
     }
   }
   function render(){computeReady();if(mode==='matrix')renderMatrix();else renderList();}
@@ -376,8 +401,10 @@
   const clubSel=document.getElementById('clubSel');
   clubList.forEach(c=>{const o=document.createElement('option');o.value=c.key;o.textContent=c.name;clubSel.appendChild(o);});
   clubSel.addEventListener('change',()=>{clubF=clubSel.value;render();});
-  const dr=document.getElementById('demoRange');
-  dr.addEventListener('input',()=>{document.getElementById('demoN').textContent=dr.value;applyDemo(+dr.value);});
+  const dtime=document.getElementById('demoTime'), ddelay=document.getElementById('demoDelay');
+  function demoUpdate(){demoNowMin=+dtime.value;demoDelay=+ddelay.value;recomputeDemo();}
+  dtime.addEventListener('input',demoUpdate);
+  ddelay.addEventListener('change',demoUpdate);
 
   // ===== Google Sheets 讀取層（Phase 3 接入；此為 stub，未設定網址則走示範）=====
   // 設定：把「即時比分」Sheet 發布為 CSV，填入下方 SHEET_CSV_URL；欄位需含 場次編號(唯一key),隊A,隊B,分A,分B（對戰代號僅供閱讀，會重複不可當 key）
@@ -399,8 +426,9 @@
   function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
 
   // 初始渲染
-  render();updateLive('demo');
-  if(SHEET_CSV_URL){document.getElementById('demoRow').style.display='none';pollSheet();setInterval(pollSheet,45000);}
+  updateLive('demo');
+  if(SHEET_CSV_URL){LIVE=true;document.getElementById('demoRow').style.display='none';render();pollSheet();setInterval(pollSheet,45000);setInterval(render,30000);}
+  else{demoUpdate();}
 })();
 </script>
 </body>
