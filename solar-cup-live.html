@@ -150,6 +150,60 @@
 
   .foot{text-align:center;font-size:10px;color:var(--dim,#5b7089);margin-top:30px;letter-spacing:.06em;line-height:1.8}
   .foot b{color:var(--field2,#1de9b6)}
+  /* ===== 現在焦點（手機主視覺）===== */
+  .now-focus{display:none;margin:0 0 14px;border:1px solid rgba(255,60,172,.35);border-radius:8px;
+    background:linear-gradient(180deg,rgba(255,60,172,.08),rgba(6,16,22,.5));padding:12px 12px 10px}
+  .now-focus .nf-h{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;color:var(--magenta,#ff3cac);letter-spacing:.06em;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .now-focus .nf-h .d{width:8px;height:8px;border-radius:50%;background:var(--magenta,#ff3cac);box-shadow:0 0 9px var(--magenta,#ff3cac);animation:pulse 1.3s infinite}
+  .nf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:8px}
+  .nf-item{border-radius:6px;padding:8px 10px;border:1px solid var(--line,rgba(29,233,182,.16));background:rgba(3,8,14,.55);cursor:pointer;transition:.15s}
+  .nf-item:hover{transform:translateY(-1px)}
+  .nf-item.play{border-color:rgba(34,211,238,.5)}
+  .nf-item.rdy{border-color:rgba(255,194,75,.55);background:rgba(255,194,75,.06)}
+  .nf-item .nf-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .nf-item .nf-st{font-family:'Orbitron',sans-serif;font-weight:700;font-size:9px;padding:2px 7px;border-radius:2px}
+  .nf-item .nf-st.play{color:#03181f;background:var(--field,#22d3ee)}
+  .nf-item .nf-st.rdy{color:#3a2600;background:#ffc24b}
+  .nf-item .nf-ct{margin-left:auto;color:var(--dim,#5b7089);font-size:10px}
+  .nf-item .nf-code{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px}
+  .nf-item .nf-vs{font-size:12.5px;color:var(--ink,#dbeafe);margin-top:3px;line-height:1.4}
+  .nf-item .nf-sc{font-family:'Orbitron',sans-serif;font-weight:900;font-size:14px;color:#fff;margin-top:2px}
+  .nf-empty{color:var(--dim,#5b7089);font-size:12px;padding:6px 2px;grid-column:1/-1}
+
+  /* ===== 單場地垂直 ===== */
+  .court-bar{display:none;gap:6px;overflow-x:auto;padding:2px 0 12px;-webkit-overflow-scrolling:touch}
+  .court-bar button{flex:0 0 auto;font-family:'Orbitron',sans-serif;font-weight:700;font-size:12px;padding:8px 15px;border:1px solid var(--line,rgba(29,233,182,.16));
+    border-radius:5px;background:rgba(6,16,22,.6);color:var(--dim,#5b7089);cursor:pointer;transition:.15s}
+  .court-bar button.on{background:var(--field,#22d3ee);color:#03060d}
+  .court-wrap{display:none}
+  .cv{display:flex;gap:11px;border-bottom:1px solid rgba(120,200,200,.08);padding:11px 4px;cursor:pointer;transition:.15s}
+  .cv:hover{background:rgba(34,211,238,.05)}
+  .cv .cv-t{font-family:'Orbitron',sans-serif;font-weight:700;font-size:13px;color:var(--ink,#dbeafe);min-width:50px;padding-top:1px}
+  .cv .cv-t small{display:block;font-size:9px;color:var(--dim,#5b7089);font-weight:400}
+  .cv .cv-body{flex:1;border-left:3px solid var(--cvc,#8fa2d8);padding-left:11px}
+  .cv .cv-code{font-family:'Orbitron',sans-serif;font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:6px}
+  .cv .cv-st{font-size:9px;font-family:'Orbitron',sans-serif;font-weight:700;padding:2px 7px;border-radius:2px;margin-left:auto}
+  .cv .cv-vs{font-size:13.5px;color:var(--ink,#dbeafe);margin-top:3px}
+  .cv .cv-vs b{color:#fff}
+  .cv .cv-sc{font-family:'Orbitron',sans-serif;font-weight:900;font-size:16px;color:#fff;margin-top:3px}
+  .cv.done{background:rgba(34,211,238,.06)} .cv.done .cv-body{border-color:var(--field,#22d3ee)}
+  .cv.ready{background:rgba(255,194,75,.05)} .cv.ready .cv-body{border-color:#ffc24b}
+  .cv.playing .cv-body{border-color:var(--field2,#1de9b6)}
+
+  /* ===== 手機優化 ===== */
+  @media(max-width:760px){
+    .wrap{padding:14px 10px 80px}
+    #modeSeg button[data-mode=matrix]{display:none}   /* 矩陣給大螢幕/投影 */
+    .chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+    .chip{flex:0 0 auto}
+    .club{margin-left:0;width:100%}
+    .ctrl{gap:8px}.legend{font-size:10px}
+    .lgrid{grid-template-columns:1fr}
+    .lm{padding:12px 14px}.lm .lcode{font-size:13px}.lm .lvs{font-size:14.5px}.lm .lsc{font-size:18px}
+    .nf-grid{grid-template-columns:1fr 1fr}
+    .hd h1{font-size:24px}
+  }
+  @media(max-width:430px){.nf-grid{grid-template-columns:1fr}}
   @media(max-width:640px){.ctrl{padding:10px}.seg button{padding:7px 11px}}
 </style>
 </head>
@@ -172,7 +226,7 @@
   </div>
 
   <div class="ctrl">
-    <div class="seg" id="modeSeg"><button data-mode="matrix" class="on">▦ 矩陣看板</button><button data-mode="list">☰ 時間清單</button></div>
+    <div class="seg" id="modeSeg"><button data-mode="matrix" class="on">▦ 矩陣</button><button data-mode="list">☰ 清單</button><button data-mode="court">▤ 單場地</button></div>
     <div class="chips" id="tierChips">
       <span class="chip on" data-tier="all">全部</span>
       <span class="chip" data-tier="plat">白金</span><span class="chip" data-tier="gold">黃金</span>
@@ -200,8 +254,11 @@
     <span>已完賽 <b id="demoN">0</b> / 310 · 拉時間看推進；設遲延看「時間補燈」補上準備燈</span>
   </div>
 
+  <div class="now-focus" id="nowFocus"></div>
+  <div class="court-bar" id="courtBar"></div>
   <div class="matrix-wrap" id="matrixWrap"><table class="mx"><thead id="mxHead"></thead><tbody id="mxBody"></tbody></table></div>
   <div class="list-wrap" id="listWrap"></div>
+  <div class="court-wrap" id="courtWrap"></div>
 
   <div class="foot">
     ＳＯＬＡＲ ＣＵＰ ＴＷＯ · 戰情看板 LIVE · 場地×時間 310 場即時推進<br>
@@ -345,23 +402,75 @@
   // 準備上場（雙觸發，取聯集）：
   //  ① 比分觸發：同場地某場完賽 → 下下場(+2)亮（正在打的是 +1）
   //  ② 時間觸發（防輸入遲延）：正在打的那場依賽程已開打滿 10 分卻還沒填分 → 下一未完賽場補亮
-  let READY=new Set();
+  let READY=new Set(), PLAYING=new Set();
   function computeReady(){
-    READY=new Set();const nm=nowMin();
+    READY=new Set();PLAYING=new Set();const nm=nowMin();
     for(let c=1;c<=SC.courts;c++){
       const ms=byCourt[c]||[];
       // ① 比分觸發
       let frontier=-1;ms.forEach((m,idx)=>{if(isDone(m))frontier=idx;});
       if(frontier>=0){const ri=frontier+2;if(ri<ms.length&&!isDone(ms[ri]))READY.add(ms[ri].n);}
-      // ② 時間觸發：找最早未完賽且已到開賽時間者＝正在打；開打滿10分→下一未完賽場亮
+      // ② 進行中＝最早未完賽且已到開賽時間者；開打滿10分→下一未完賽場補亮準備
       let playIdx=-1;
       for(let idx=0;idx<ms.length;idx++){if(!isDone(ms[idx])){if(toMin(ms[idx].s)<=nm)playIdx=idx;break;}}
-      if(playIdx>=0&&nm>=toMin(ms[playIdx].s)+10){
-        for(let j=playIdx+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}
-      }
+      if(playIdx>=0){PLAYING.add(ms[playIdx].n);
+        if(nm>=toMin(ms[playIdx].s)+10){for(let j=playIdx+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}}}
     }
   }
-  function render(){computeReady();if(mode==='matrix')renderMatrix();else renderList();}
+  // ===== 現在焦點（進行中＋準備上場，手機主視覺）=====
+  function nfItem(m,kind){const col=tierCol(m),r=results[m.n];
+    const st=kind==='play'?'進行中':'準備';
+    const vs=m._t?(m._t[0].label+' <span style="color:var(--dim,#5b7089)">vs</span> '+m._t[1].label):'<span style="color:var(--dim,#5b7089)">待'+(m.stage==='資格賽'?'抽籤':'分流')+'</span>';
+    const sc=(r&&r.done)?'<div class="nf-sc">'+r.sa+' : '+r.sb+'</div>':'';
+    return '<div class="nf-item '+kind+'" data-n="'+m.n+'"><div class="nf-top"><span class="nf-st '+kind+'">'+st+'</span><span class="nf-ct">場 '+m.ct+'</span></div><div class="nf-code" style="color:'+col+'">'+m.code+'</div><div class="nf-vs">'+vs+'</div>'+sc+'</div>';
+  }
+  function renderNowFocus(){
+    const el=document.getElementById('nowFocus');
+    if(mode==='matrix'){el.style.display='none';return;}
+    el.style.display='block';
+    const get=set=>[...set].map(n=>SC.matches.find(m=>m.n===n)).filter(m=>m&&visible(m)).sort((a,b)=>a.ct-b.ct);
+    const playing=get(PLAYING), ready=get(READY);
+    let h='<div class="nf-h"><span class="d"></span>現在戰況 · '+minHHMM(nowMin())+'</div><div class="nf-grid">';
+    if(!playing.length&&!ready.length)h+='<div class="nf-empty">目前無進行中場次</div>';
+    playing.forEach(m=>h+=nfItem(m,'play'));ready.forEach(m=>h+=nfItem(m,'rdy'));
+    h+='</div>';el.innerHTML=h;
+    el.querySelectorAll('[data-n]').forEach(x=>x.addEventListener('click',()=>openDetail(+x.dataset.n)));
+  }
+  // ===== 單場地垂直 =====
+  let curCourt=1;
+  function renderCourtBar(){
+    const el=document.getElementById('courtBar');let h='';
+    for(let c=1;c<=SC.courts;c++)h+='<button data-c="'+c+'"'+(c===curCourt?' class="on"':'')+'>場 '+c+'</button>';
+    el.innerHTML=h;
+    el.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{curCourt=+b.dataset.c;render();}));
+  }
+  function renderCourt(){
+    renderCourtBar();
+    const el=document.getElementById('courtWrap');
+    const ms=(byCourt[curCourt]||[]).filter(visible);
+    if(!ms.length){el.innerHTML='<div class="empty-note">此篩選下・場地 '+curCourt+' 無場次</div>';return;}
+    let h='';
+    ms.forEach(m=>{const r=results[m.n],col=tierCol(m),ready=READY.has(m.n),playing=PLAYING.has(m.n);
+      const cls=(r&&r.done)?'done':(ready?'ready':(playing?'playing':''));
+      const st=(r&&r.done)?'完賽':(ready?'準備':(playing?'進行中':''));
+      const stbg=(r&&r.done)?'var(--field,#22d3ee);color:#031820':(ready?'#ffc24b;color:#3a2600':'rgba(29,233,182,.28);color:#dbeafe');
+      h+='<div class="cv '+cls+'" data-n="'+m.n+'" style="--cvc:'+col+'"><div class="cv-t">'+m.s+'<small>'+m.e+'</small></div><div class="cv-body"><div class="cv-code" style="color:'+col+'">'+m.code+(st?'<span class="cv-st" style="background:'+stbg+'">'+st+'</span>':'')+'</div>';
+      h+=m._t?('<div class="cv-vs"><b>'+m._t[0].label+'</b> vs <b>'+m._t[1].label+'</b></div>'):('<div class="cv-vs" style="color:var(--dim,#5b7089)">待'+(m.stage==='資格賽'?'抽籤':'分流')+'</div>');
+      if(r&&r.done)h+='<div class="cv-sc">'+r.sa+' : '+r.sb+'</div>';
+      h+='</div></div>';
+    });
+    el.innerHTML=h;
+    el.querySelectorAll('.cv[data-n]').forEach(x=>x.addEventListener('click',()=>openDetail(+x.dataset.n)));
+  }
+  function render(){
+    computeReady();
+    document.getElementById('matrixWrap').style.display=mode==='matrix'?'':'none';
+    document.getElementById('listWrap').style.display=mode==='list'?'block':'none';
+    document.getElementById('courtWrap').style.display=mode==='court'?'block':'none';
+    document.getElementById('courtBar').style.display=mode==='court'?'flex':'none';
+    if(mode==='matrix')renderMatrix();else if(mode==='list')renderList();else renderCourt();
+    renderNowFocus();
+  }
 
   // ===== 詳情 modal =====
   const mask=document.getElementById('mask'),dcard=document.getElementById('dcard');
@@ -398,8 +507,6 @@
   // ===== 控制列事件 =====
   document.getElementById('modeSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
     mode=b.dataset.mode;document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===b));
-    document.getElementById('matrixWrap').style.display=mode==='matrix'?'':'none';
-    document.getElementById('listWrap').style.display=mode==='list'?'block':'none';
     render();});
   document.getElementById('tierChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;
     tierF=c.dataset.tier;document.querySelectorAll('#tierChips .chip').forEach(x=>x.classList.toggle('on',x===c));render();});
@@ -430,8 +537,9 @@
   }
   function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
 
-  // 初始渲染
+  // 初始渲染（手機預設清單，矩陣留給大螢幕）
   updateLive('demo');
+  if(window.innerWidth<760){mode='list';document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='list'));}
   if(SHEET_CSV_URL){LIVE=true;document.getElementById('demoRow').style.display='none';render();pollSheet();setInterval(pollSheet,45000);setInterval(render,30000);}
   else{demoUpdate();}
 })();
