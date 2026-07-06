@@ -290,18 +290,22 @@
     const head=document.getElementById('mxHead');
     let h='<tr><th>時間</th>';for(let c=1;c<=SC.courts;c++)h+='<th>場 '+c+'</th>';h+='</tr>';head.innerHTML=h;
     const body=document.getElementById('mxBody');let rows='';
+    const filterActive=(tierF!=='all')||(clubF!=='all');
     SLOTS.forEach(sl=>{
       const ev=SC.events.find(e=>e.s===sl.s&&e.e===sl.e);
+      if(ev){if(filterActive)return; // 篩選時隱藏非比賽時段列
+        rows+='<tr><td class="tcol">'+sl.s+'<span class="e">'+sl.e+'</span></td><td colspan="'+SC.courts+'" class="cell ev"><div class="ev-label">◆ '+ev.label+'</div></td></tr>';return;}
+      const cells=[];let anyVis=false;
+      for(let c=1;c<=SC.courts;c++){const m=(byCourt[c]||[]).find(x=>x.s===sl.s&&x.e===sl.e);cells.push(m);if(m&&visible(m))anyVis=true;}
+      if(filterActive&&!anyVis)return; // 整列無符合篩選→隱藏該時段
       rows+='<tr><td class="tcol">'+sl.s+'<span class="e">'+sl.e+'</span></td>';
-      if(ev){rows+='<td colspan="'+SC.courts+'" class="cell ev"><div class="ev-label">◆ '+ev.label+'</div></td></tr>';return;}
-      for(let c=1;c<=SC.courts;c++){
-        const m=(byCourt[c]||[]).find(x=>x.s===sl.s&&x.e===sl.e);
-        if(!m){rows+='<td><div class="cell empty"></div></td>';continue;}
+      cells.forEach(m=>{
+        if(!m||(filterActive&&!visible(m))){rows+='<td><div class="cell empty"></div></td>';return;} // 篩選時非符合者留白
         rows+='<td>'+cellHTML(m)+'</td>';
-      }
+      });
       rows+='</tr>';
     });
-    body.innerHTML=rows;
+    body.innerHTML=rows||'<tr><td colspan="'+(SC.courts+1)+'" class="empty-note" style="padding:40px">此篩選條件下沒有場次</td></tr>';
     body.querySelectorAll('.cell[data-n]').forEach(el=>el.addEventListener('click',()=>openDetail(+el.dataset.n)));
   }
   function cellHTML(m){
