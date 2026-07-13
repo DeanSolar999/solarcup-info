@@ -514,25 +514,56 @@
   clubList.forEach(c=>{const o=document.createElement('option');o.value=c.key;o.textContent=c.name;clubSel.appendChild(o);});
   clubSel.addEventListener('change',()=>{clubF=clubSel.value;render();});
   const dtime=document.getElementById('demoTime'), ddelay=document.getElementById('demoDelay');
-  function demoUpdate(){demoNowMin=+dtime.value;demoDelay=+ddelay.value;recomputeDemo();}
+  function demoUpdate(){if(typeof SHEET_LIVE!=='undefined'&&SHEET_LIVE)return;demoNowMin=+dtime.value;demoDelay=+ddelay.value;recomputeDemo();}
   dtime.addEventListener('input',demoUpdate);
   ddelay.addEventListener('change',demoUpdate);
 
-  // ===== Google Sheets 讀取層（Phase 3 接入；此為 stub，未設定網址則走示範）=====
-  // 設定：把「即時比分」Sheet 發布為 CSV，填入下方 SHEET_CSV_URL；欄位需含 場次編號(唯一key),隊A,隊B,分A,分B（對戰代號僅供閱讀，會重複不可當 key）
-  const SHEET_CSV_URL=''; // ← Phase 3 由庫洛洛建表後填入
+  // ===== Google Sheets 讀取層（部署版）=====
+  // 部署：後端資料庫上 Google 試算表後，把試算表 ID 貼進 SHEET_ID（網址 /d/ 與 /edit 之間那串）。
+  // 讀「8_發布_戰情看板」分頁 CSV（檔案需開「知道連結的任何人可檢視」）。
+  // 未偵測到真實分數前維持示範模式；偵測到第一筆分數自動轉 LIVE（藏示範拉桿、改用真實時鐘）。
+  const SHEET_ID=''; // ← 部署後由庫洛洛填入
+  const SHEET_CSV_URL=SHEET_ID?'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('8_發布_戰情看板'):'';
+  let SHEET_LIVE=false;
+  const nameLookup={};
+  if(SD){SD.buildAllTeams().teams.forEach(t=>{nameLookup[t.label]=t;});}
+  function mkTeamRef(name){name=(name||'').trim();if(!name)return null;
+    return nameLookup[name]||{label:name,club:'',clubFull:'',clubKey:''};}
+  function parseCSV(text){ // gviz out:csv 欄位帶引號；支援引號內逗號與 "" 跳脫
+    const rows=[];let row=[],cur='',q=false;
+    for(let i=0;i<text.length;i++){const ch=text[i];
+      if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+      else if(ch==='"')q=true;
+      else if(ch===','){row.push(cur);cur='';}
+      else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';
+        if(row.length>1||row[0]!=='')rows.push(row);row=[];}
+      else cur+=ch;}
+    if(cur!==''||row.length){row.push(cur);if(row.length>1||row[0]!=='')rows.push(row);}
+    return rows;
+  }
+  function goLive(){ if(SHEET_LIVE)return; SHEET_LIVE=true; LIVE=true;
+    document.getElementById('demoRow').style.display='none';
+    for(const k in results)delete results[k];
+    updateLive('live'); setInterval(render,30000); }   // 真實時鐘每 30 秒重算準備燈
   function pollSheet(){
-    if(!SHEET_CSV_URL)return; // 未設定→維持示範
+    if(!SHEET_CSV_URL)return;
     fetch(SHEET_CSV_URL).then(r=>r.text()).then(csv=>{
-      const rows=csv.split(/\r?\n/).map(r=>r.split(','));const head=rows.shift().map(s=>s.trim());
-      const ci=nm=>head.indexOf(nm);const cN=ci('場次編號'),cA=ci('隊A'),cB=ci('隊B'),cSA=ci('分A'),cSB=ci('分B');
-      let live=false;
+      const rows=parseCSV(csv); if(!rows.length)return;
+      const head=rows.shift().map(s=>s.trim());
+      const ci=nm=>head.indexOf(nm);
+      const cN=ci('場次編號'),cA=ci('隊A'),cB=ci('隊B'),cSA=ci('分A'),cSB=ci('分B');
+      if(cN<0)return;
+      const found={};let any=false;
       rows.forEach(cols=>{const nn=parseInt((cols[cN]||'').trim());if(!nn)return; // 唯一 key＝場次編號
-        const m=SC.matches.find(x=>x.n===nn);const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
-        if(m&&cA>=0&&cols[cA])m._t=[{label:cols[cA].trim(),club:'',clubKey:''},{label:(cols[cB]||'').trim(),club:'',clubKey:''}];
-        if(!isNaN(sa)&&!isNaN(sb)){results[nn]={sa:sa,sb:sb,done:true};live=true;}});
-      document.getElementById('upd').innerHTML='資料來源：即時比分 Sheet · 更新於 <b>'+nowStr()+'</b>';
-      if(live)updateLive('live');render();
+        const m=SC.matches.find(x=>x.n===nn);if(!m)return;
+        const ta=mkTeamRef(cols[cA]),tb=mkTeamRef(cols[cB]);
+        if(ta&&tb)m._t=[ta,tb];                    // 真實隊伍（含淘汰賽分流）隨時覆蓋顯示
+        const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
+        if(!isNaN(sa)&&!isNaN(sb)){found[nn]={sa:sa,sb:sb,done:true};any=true;}});
+      if(any)goLive();                             // 偵測到第一筆真分才轉 LIVE
+      if(SHEET_LIVE){for(const k in results)delete results[k];Object.assign(results,found);}
+      document.getElementById('upd').innerHTML='資料來源：後端資料庫（Google Sheets）· 更新於 <b>'+nowStr()+'</b>'+(SHEET_LIVE?'':' · 尚未開賽（示範模式）');
+      render();
     }).catch(()=>{});
   }
   function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
@@ -540,8 +571,8 @@
   // 初始渲染（手機預設清單，矩陣留給大螢幕）
   updateLive('demo');
   if(window.innerWidth<760){mode='list';document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='list'));}
-  if(SHEET_CSV_URL){LIVE=true;document.getElementById('demoRow').style.display='none';render();pollSheet();setInterval(pollSheet,45000);setInterval(render,30000);}
-  else{demoUpdate();}
+  demoUpdate(); // 先以示範起步；接上 Sheet 後偵測到真分才由 goLive() 轉正式
+  if(SHEET_CSV_URL){pollSheet();setInterval(pollSheet,45000);}
 })();
 </script>
 </body>
