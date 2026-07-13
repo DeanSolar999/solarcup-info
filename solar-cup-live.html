@@ -522,7 +522,7 @@
   // 部署：後端資料庫上 Google 試算表後，把試算表 ID 貼進 SHEET_ID（網址 /d/ 與 /edit 之間那串）。
   // 讀「8_發布_戰情看板」分頁 CSV（檔案需開「知道連結的任何人可檢視」）。
   // 未偵測到真實分數前維持示範模式；偵測到第一筆分數自動轉 LIVE（藏示範拉桿、改用真實時鐘）。
-  const SHEET_ID='1BodI68otG2h7Q3ASxdMiWYBfiMnNcdmT'; // 曜日盃TWO_後端資料庫（Google Drive）
+  const SHEET_ID='1KqX0AJKHU8TR-t0hUZLqB6jib0tL7BbR'; // 曜日盃TWO_後端資料庫_正式版 v2.5（Google Drive）
   const SHEET_CSV_URL=SHEET_ID?'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('8_發布_戰情看板'):'';
   let SHEET_LIVE=false;
   const nameLookup={};
