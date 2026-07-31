@@ -122,12 +122,12 @@
 <body>
 <canvas id="bg3d"></canvas>
 <div class="scanlines"></div>
-<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html" class="on">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">資格賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html" class="on">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
 <div class="wrap">
   <header>
     <h1>戰績<span class="a">查詢</span></h1>
     <div class="sub">TEAM RECORD SEARCH · 108 TEAMS</div>
-    <div class="meta">◆ DEMO DATA ｜ 共 <b>108</b> 隊 ｜ 輸入隊名或球團即時搜尋 · 或點分頁籤瀏覽 ｜ 點隊伍看完整戰績卡</div>
+    <div class="meta" id="srcMeta">◆ DEMO DATA ｜ 共 <b>108</b> 隊 ｜ 輸入隊名或球團即時搜尋 · 或點分頁籤瀏覽 ｜ 點隊伍看完整戰績卡</div>
   </header>
 
   <div class="search">
@@ -148,6 +148,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="tournament-data.js"></script>
+<script src="schedule-data.js"></script>
+<script src="live-data.js"></script>
 <script>
 /* 背景光子流（青） */
 (function(){
@@ -243,14 +245,24 @@
     rcard.style.setProperty('--rc',t.tierColor);
     rcard.style.setProperty('--rg','color-mix(in srgb,'+t.tierColor+' 30%,transparent)');
     const logs=t.matches.map(m=>{
+      // LIVE 形狀 {round,vs,sc,win}（vs 為隊名字串）／DEMO 形狀 {a,b,sa,sb,winner}（隊物件）
+      if(m.vs!==undefined){
+        const oppT=byName[m.vs],col=oppT?oppT.clubColor:'var(--tcol)';
+        return `<div class="lr"><span class="st">${m.round}</span>
+          <span class="op">vs <b style="color:${col}">${m.vs}</b></span>
+          <span class="sc">${m.sc.replace('：',' : ')}</span>
+          <span class="bdg ${m.win?'w':'l'}">${m.win?'勝':'負'}</span></div>`;
+      }
       const isA=m.a.tid===t.tid,opp=isA?m.b:m.a,my=isA?m.sa:m.sb,op=isA?m.sb:m.sa,win=m.winner.tid===t.tid;
-      const stg=t.tier==='invite'?('第 '+m.round+' 輪'):(t.group+' 初賽');
+      const stg=t.tier==='invite'?('第 '+m.round+' 輪'):(t.group+' 資格賽');
       return `<div class="lr"><span class="st">${stg}</span>
         <span class="op">vs <b style="color:${opp.clubObj.c}">${opp.label}</b></span>
         <span class="sc">${my} : ${op}</span>
         <span class="bdg ${win?'w':'l'}">${win?'勝':'負'}</span></div>`;
     }).join('');
-    const rankTxt=t.tier==='invite'?`曜請排名 第 ${t.rank} 名`:`初賽分流 → ${t.tierName}（第 ${t.rank} 名晉級）`;
+    const rankTxt=LIVE
+      ? (t._stop?`目前戰況 → ${t.tierName}（${t._stop}）`:`目前戰況 → ${t.tierName}`)
+      : (t.tier==='invite'?`曜請排名 第 ${t.rank} 名`:`資格賽分流 → ${t.tierName}（第 ${t.rank} 名晉級）`);
     rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${emb(t)}</div>
       <span class="rx" id="rx">✕</span><div class="rin">
       <div class="rhead"><div class="emb">${emb(t)}</div>
@@ -260,7 +272,8 @@
       <div class="rstats">
         <div class="c"><div class="v">${t.w}</div><div class="k">勝</div></div>
         <div class="c"><div class="v">${t.l}</div><div class="k">敗</div></div>
-        <div class="c"><div class="v">${t.base+ (t.tier==='invite'?0:(2-Math.min(t.rank,2))*0)}</div><div class="k">階級底分</div></div></div>
+        <div class="c"><div class="v">${LIVE&&t._total!=null?t._total:t.base}</div><div class="k">${LIVE&&t._total!=null?'隊伍總分':'階級底分'}</div></div></div>
+      ${LIVE&&t._stop?`<div class="rfoot" style="border:0;padding:2px 0 0">目前止步階段：<b>${t._stop}</b></div>`:''}
       <div class="rlog"><div class="lh">對戰紀錄 · MATCH LOG</div>${logs||'<div style="color:var(--dim);font-size:11px;padding:8px 0">暫無比賽紀錄</div>'}</div>
       <div class="rfoot">${rankTxt} · ${t.w} 勝 ${t.l} 敗 · 得失分 ${t.gf}/${t.ga}</div>
       <div class="rop"><span>背景徽記濃度</span><input type="range" id="rwmR" min="0" max="100" value="22"><span class="pv" id="rwmV">22%</span></div></div>`;
@@ -270,6 +283,45 @@
     rr.addEventListener('input',()=>{wm.style.opacity=String(+rr.value/100);rv.textContent=rr.value+'%';});
   }
   rmask.addEventListener('click',e=>{if(e.target===rmask)rmask.classList.remove('show');});
+
+  // ===== 後端資料庫串接：偵測到真實比分才覆蓋，賽前維持示範 =====
+  const byName={};teams.forEach(t=>{byName[t.label]=t;});
+  let LIVE=false;
+  function applyLive(d){
+    if(!d||!d.hasReal)return;
+    const SC=window.SolarCupSchedule;
+    const scoreByName={};Object.keys(d.teamScores||{}).forEach(k=>{const s=d.teamScores[k];if(s&&s.name)scoreByName[s.name]=s;});
+    // 依真實比分重算每隊戰績與對戰紀錄
+    const agg={};
+    function put(name,vs,gf,ga,n){
+      if(!byName[name])return;
+      const a=agg[name]||(agg[name]={w:0,l:0,gf:0,ga:0,logs:[]});
+      a.gf+=gf;a.ga+=ga;if(gf>ga)a.w++;else if(ga>gf)a.l++;
+      const m=SC?SC.matches.find(x=>x.n===n):null;
+      a.logs.push({round:m?(m.code+' · '+m.s):('第 '+n+' 場'),vs:vs,sc:gf+'：'+ga,win:gf>ga});
+    }
+    Object.keys(d.matches||{}).forEach(k=>{
+      const m=d.matches[k];if(!m||!m.done)return;
+      put(m.a,m.b,m.sa,m.sb,+k);put(m.b,m.a,m.sb,m.sa,+k);
+    });
+    teams.forEach(t=>{
+      const a=agg[t.label];
+      t.w=a?a.w:0;t.l=a?a.l:0;t.gf=a?a.gf:0;t.ga=a?a.ga:0;t.matches=a?a.logs:[];
+      const s=scoreByName[t.label];
+      if(s){t._total=s.total;t._stop=s.stop;
+        if(s.tier&&['白金','黃金','白銀','青銅'].indexOf(s.tier)>=0){
+          t.tierName=s.tier;
+          const TM={'白金':'#4d9fff','黃金':'#ffcf33','白銀':'#ff4d6a','青銅':'#34e07a'};
+          t.tierColor=TM[s.tier]||t.tierColor;}}
+    });
+    LIVE=true;
+    const meta=document.getElementById('srcMeta');
+    const _t=d.updatedAt?new Date(d.updatedAt):null;
+    const _ts=_t&&!isNaN(_t)?String(_t.getHours()).padStart(2,'0')+':'+String(_t.getMinutes()).padStart(2,'0'):'—';
+    if(meta)meta.innerHTML='● LIVE ｜ 資料來源：後端資料庫 ｜ 更新於 <b>'+_ts+'</b> ｜ 共 <b>108</b> 隊 ｜ 點隊伍看完整戰績卡';
+    render();
+  }
+  if(window.SolarCupLive&&SolarCupLive.onUpdate)SolarCupLive.onUpdate(applyLive);
 
   // 深連:?club=<key>&q=<字> 預先篩選(力場排行點球團跳來)
   (function(){const _p=new URLSearchParams(location.search),_c=_p.get('club');

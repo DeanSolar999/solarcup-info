@@ -65,7 +65,7 @@
 <link rel="stylesheet" href="design-tokens.css">
 </head>
 <body>
-<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html" class="on">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html" class="on">終端</a><a href="qualifying.html">資格賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
 <canvas id="bg3d"></canvas>
 <div class="hz tl"></div><div class="hz tr"></div><div class="hz bl"></div><div class="hz br"></div>
 
@@ -122,7 +122,7 @@
   function ngon(cx,cy,r,n,rot){const p=[];for(let i=0;i<n;i++){const a=(rot||0)+i*2*Math.PI/n;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return p;}
   function ps(pts){return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');}
   const TILES=[
-    {file:'qualifying.html',en:'QUALIFYING · SORTING PROTOCOL',name:'初賽分流',c:'#22d3ee',
+    {file:'qualifying.html',en:'QUALIFYING · SORTING PROTOCOL',name:'資格賽分流',c:'#22d3ee',
      desc:'競技 10 組 ＋ 休閒 15 組卡牌輪盤。預排賽程字卡、四角關係圖、失分率分流、四階級注入池。',
      icon:C=>`<svg viewBox="0 0 100 100"><circle cx="50" cy="18" r="7" fill="${C}"/><line x1="50" y1="25" x2="24" y2="52" stroke="${C}" stroke-width="2.4"/><line x1="50" y1="25" x2="42" y2="54" stroke="${C}" stroke-width="2.4"/><line x1="50" y1="25" x2="58" y2="54" stroke="${C}" stroke-width="2.4"/><line x1="50" y1="25" x2="76" y2="52" stroke="${C}" stroke-width="2.4"/><rect x="16" y="56" width="16" height="20" rx="2" fill="none" stroke="#4d9fff" stroke-width="2.4"/><rect x="36" y="56" width="16" height="20" rx="2" fill="none" stroke="#ffcf33" stroke-width="2.4"/><rect x="56" y="56" width="16" height="20" rx="2" fill="none" stroke="#ff4d6a" stroke-width="2.4"/><rect x="72" y="56" width="16" height="20" rx="2" fill="none" stroke="#34e07a" stroke-width="2.4" transform="translate(4,0)"/></svg>`},
     {file:'bracket-tree.html',en:'ELIMINATION TREE',name:'階級淘汰樹',c:'#4d9fff',

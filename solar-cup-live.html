@@ -210,7 +210,7 @@
 <body>
 <div id="grid-bg"></div><div id="scan"></div>
 
-<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html" class="on">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html" class="on">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">資格賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
 
 <div class="wrap">
   <div class="hd">
@@ -262,7 +262,7 @@
 
   <div class="foot">
     ＳＯＬＡＲ ＣＵＰ ＴＷＯ · 戰情看板 LIVE · 場地×時間 310 場即時推進<br>
-    <b id="footState">◆ 示範預覽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往初賽分流／淘汰樹／戰績查詢
+    <b id="footState">◆ 示範預覽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往資格賽分流／淘汰樹／戰績查詢
   </div>
 </div>
 
@@ -481,7 +481,7 @@
     const wa=r&&r.done&&r.sa>r.sb, wb=r&&r.done&&r.sb>r.sa;
     const side=(t,sc,win)=>'<div class="dside'+(win?' win':'')+'"><div class="dn">'+(t?t.label:'待定')+'</div><div class="dc">'+(t?(t.clubFull||t.club||''):'')+'</div><div class="dp">'+(sc!=null?sc:'–')+'</div></div>';
     let links='';
-    if(m.stage==='資格賽')links+='<a class="dlk" href="qualifying.html#'+m.code+'">▸ 初賽分流</a>';
+    if(m.stage==='資格賽')links+='<a class="dlk" href="qualifying.html#'+m.code+'">▸ 資格賽分流</a>';
     if(m.tier!=='—')links+='<a class="dlk" href="bracket-tree.html#'+(TIERCLS[m.tier]||'')+'">▸ 階級淘汰樹</a>';
     if(m.grp==='曜請組')links+='<a class="dlk" href="invitational.html">▸ 曜請全循環</a>';
     if(m._t)links+='<a class="dlk" href="team-search.html?q='+encodeURIComponent(m._t[0].label)+'">▸ 戰績查詢</a>';

@@ -67,7 +67,7 @@
   .stand .medal{font-size:13px;min-width:20px;text-align:center}
   .stand .nm{flex:1;color:var(--ink);font-weight:700}
   .stand .wl{font-size:10px;color:var(--dim);white-space:nowrap}
-  .stand .rt{font-size:9px;color:var(--dim);min-width:74px;text-align:right}
+  .stand .rt{font-size:9px;color:var(--dim);min-width:92px;text-align:right;white-space:nowrap}
   .stand .row.p1{background:linear-gradient(90deg,rgba(255,215,0,.12),transparent)}
   .stand .row.p1 .rk{color:#ffd76a}
   .stand .row.p2{background:linear-gradient(90deg,rgba(200,210,225,.09),transparent)}
@@ -90,7 +90,7 @@
   .m{display:flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid rgba(255,255,255,.07);border-radius:5px;font-size:11.5px;background:rgba(6,11,20,.5)}
   .m.done{border-color:rgba(255,194,75,.28)}
   .m.wait{opacity:.48}
-  .m .ct{font-size:8px;color:var(--dim);min-width:24px}
+  .m .ct{font-size:8px;color:var(--dim);min-width:52px;white-space:nowrap}
   .m .t{flex:1;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .m .t.r{text-align:left}
   .m .t.w{color:var(--amber);font-weight:700}
@@ -152,14 +152,14 @@
 <link rel="stylesheet" href="design-tokens.css">
 </head>
 <body>
-<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">初賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html" class="on">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
+<nav class="sc2-nav"><a class="sc2-logo" href="solar-cup-two.html">SOLAR CUP <b>TWO</b></a><input type="checkbox" id="sc2navT" class="sc2-nav-t"><label for="sc2navT" class="sc2-nav-btn" aria-label="選單"><span></span><span></span><span></span></label><div class="sc2-links"><a href="solar-cup-two.html">首頁</a><a href="solar-cup-live.html">戰情看板</a><a href="terminal.html">終端</a><a href="qualifying.html">資格賽分流</a><a href="bracket-tree.html">階級淘汰樹</a><a href="invitational.html" class="on">曜請全循環</a><a href="team-search.html">戰績查詢</a><a href="at-field-ranking.html">力場排行</a><a href="club-emblems.html">球團徽記</a></div></nav>
 <canvas id="bg3d"></canvas>
 <div class="scanlines"></div>
 <div class="wrap">
     <header>
     <h1>曜請<span class="a">全循環</span></h1>
     <div class="sub">INVITATIONAL · FULL ROUND ROBIN · 8 TEAMS</div>
-    <div class="meta">◆ DEMO DATA ｜ <b>8</b> 隊全循環 <b>28</b> 場 · <b>7</b> 輪 ｜ 依勝場取 <b>冠 · 亞 · 季</b> ｜ 獨立賽程 · 不分流 · 不計團體積分</div>
+    <div class="meta">◆ 賽程為官方定案 · 比分為 DEMO ｜ <b>8</b> 隊全循環 <b>28</b> 場 · <b>7</b> 輪 ｜ 首場 <b>12:50</b> ｜ 依勝場取 <b>冠 · 亞 · 季</b> ｜ 獨立賽程 · 不分流 · 不計團體積分</div>
   </header>
 
   <div class="progbar">
@@ -175,14 +175,14 @@
       <div class="hint">▸ 點頂點看該隊 7 場比分 · 再點同一頂點開啟戰績檔案 · 點空白處還原</div>
     </div>
     <div class="panel">
-      <div class="ph">積分榜<span class="pn">勝場 → 互咬失分率</span></div>
+      <div class="ph">積分榜<span class="pn">勝場 → 總得失分率（總得÷總失）</span></div>
       <div class="stand" id="stand"></div>
-      <div class="note">同分判定依大會簡章第九章：勝場 → 同分隊互咬失分率（得分÷失分）→ 直接對戰 → 現場裁定。</div>
+      <div class="note">同分判定依大會簡章第六章：循環賽計點 勝 2 / 敗 1 / 棄賽 0；同分依序比 ① 總得失分率（總得分 ÷ 總失分，計全部循環場次）② 兩隊對戰勝負 ③ 抽籤。</div>
     </div>
   </div>
 
   <div class="panel sched">
-    <div class="ph">循環賽程表<span class="pn">7 輪 × 4 場 · 場地與時間為預排佔位 · 比分完賽後填入</span></div>
+    <div class="ph">循環賽程表<span class="pn">7 輪 × 4 場 · 場次 / 場地 / 時間依官方秩序冊 · 比分完賽後填入</span></div>
     <div id="rounds"></div>
   </div>
 </div>
@@ -231,48 +231,41 @@
   // ---- 固定種子亂數 ----
   let _sd=20260815;
   function rnd(){_sd=(_sd*9301+49297)%233280;return _sd/233280;}
-  // ---- 圓桌法排 7 輪賽程（8 隊 round robin）----
-  function schedule(){
-    const ids=[0,1,2,3,4,5,6,7],rounds=[];
-    for(let r=0;r<7;r++){
-      const rd=[];
-      for(let k=0;k<4;k++){const a=ids[k],b=ids[7-k];rd.push([a,b]);}
-      rounds.push(rd);
-      ids.splice(1,0,ids.pop()); // 固定 0，其餘輪轉
-    }
-    return rounds;
-  }
-  const ROUNDS=schedule();
-  const RTIME=['09:00','09:40','10:20','11:00','13:00','13:40','14:20'];
-  const COURTS=[7,8,9,10];
-  // ---- 預先生成 28 場勝負（固定種子）----
-  const MATCH={};
-  ROUNDS.forEach((rd,r)=>rd.forEach((pr,k)=>{
+  // ---- 官方賽程表（雲端「5_曜請成績」實抓 28 場 · 場次 / 場地 / 時間 / 對戰組合為官方定案，不再由程式推算）----
+  // 每筆：[場次編號, 場地, 開始, 結束, 隊A, 隊B]；隊為 TEAMS 索引（官方隊伍編號 101→0 … 108→7）
+  const SCHED=[
+    [157, 7,'12:50','13:05',0,1],[158, 8,'12:50','13:05',2,3],[159, 9,'12:50','13:05',4,5],[160,10,'12:50','13:05',6,7],
+    [179, 9,'13:20','13:35',0,2],[180,10,'13:20','13:35',1,3],[189, 9,'13:35','13:50',4,6],[190,10,'13:35','13:50',5,7],
+    [209, 9,'14:05','14:20',0,7],[210,10,'14:05','14:20',1,6],[229, 9,'14:35','14:50',2,5],[230,10,'14:35','14:50',3,4],
+    [247, 9,'15:05','15:20',0,4],[248,10,'15:05','15:20',1,5],[257, 9,'15:20','15:35',2,6],[258,10,'15:20','15:35',3,7],
+    [275, 9,'15:50','16:05',0,3],[276,10,'15:50','16:05',1,2],[285, 9,'16:05','16:20',5,6],[286,10,'16:05','16:20',4,7],
+    [295, 7,'16:35','16:50',0,6],[296, 8,'16:35','16:50',3,5],[297, 9,'16:35','16:50',1,4],[298,10,'16:35','16:50',2,7],
+    [307, 7,'17:05','17:20',0,5],[308, 8,'17:05','17:20',2,4],[309, 9,'17:05','17:20',1,7],[310,10,'17:05','17:20',3,6],
+  ];
+  // ---- 28 場（賽程官方 · 比分為 DEMO，固定種子）----
+  const MATCHES=SCHED.map((s,i)=>{
     const aWin=rnd()<0.5,lose=11+Math.floor(rnd()*9);
-    MATCH[r+'_'+k]={a:pr[0],b:pr[1],sa:aWin?21:lose,sb:aWin?lose:21,w:aWin?pr[0]:pr[1],r,k,time:RTIME[r],court:COURTS[k]};
-  }));
+    return {i,r:(i/4)|0,k:i%4,no:s[0],code:'曜請'+(i+1),court:s[1],time:s[2],tend:s[3],a:s[4],b:s[5],
+      sa:aWin?21:lose,sb:aWin?lose:21,w:aWin?s[4]:s[5]};
+  });
+  const ROUNDS=[0,1,2,3,4,5,6].map(r=>MATCHES.slice(r*4,r*4+4));
+  const RTIME=ROUNDS.map(rd=>[...new Set(rd.map(m=>m.time))].join(' / '));
 
   // ---- 依進度計算戰績 ----
   function calc(prog){
     const st=TEAMS.map(t=>({...t,w:0,l:0,gf:0,ga:0,ms:[]}));
-    Object.values(MATCH).forEach(m=>{
-      if(m.r*4+m.k>=prog)return;
+    const played=[];
+    MATCHES.forEach(m=>{
+      if(m.i>=prog)return;
       const A=st[m.a],B=st[m.b];
       A.gf+=m.sa;A.ga+=m.sb;B.gf+=m.sb;B.ga+=m.sa;
       if(m.w===m.a){A.w++;B.l++;}else{B.w++;A.l++;}
       A.ms.push(m);B.ms.push(m);
+      played.push({a:A,b:B,sa:m.sa,sb:m.sb,winner:st[m.w]});
     });
-    // 勝場 → 互咬失分率
-    const byW={};st.forEach(t=>{(byW[t.w]=byW[t.w]||[]).push(t);});
-    const rank=[];
-    Object.keys(byW).map(Number).sort((a,b)=>b-a).forEach(w=>{
-      const g=byW[w];
-      if(g.length>1){const set=new Set(g.map(t=>t.id));
-        g.forEach(t=>{let gf=0,ga=0;t.ms.forEach(m=>{if(set.has(m.a)&&set.has(m.b)){if(m.a===t.id){gf+=m.sa;ga+=m.sb;}else{gf+=m.sb;ga+=m.sa;}}});
-          t._r=ga>0?gf/ga:99;});
-        g.sort((x,y)=>y._r-x._r);}
-      g.forEach(t=>rank.push(t));
-    });
+    // 同分判定走共用資料層（官方秩序冊第六章）：勝場 → ① 總得失分率（總得÷總失，計全部循環場次）② 兩隊對戰勝負 ③ 抽籤
+    const rank=SolarCupData.rankGroup(st,played);
+    rank.forEach(t=>{t._r=t._ratio;});
     return {st,rank};
   }
 
@@ -283,16 +276,16 @@
     const V=TEAMS.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/8;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
     function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;return{x1:a.x+ux*nr,y1:a.y+uy*nr,x2:b.x-ux*nr,y2:b.y-uy*nr};}
     let links='',photons='',scores='',nodes='';
-    Object.values(MATCH).forEach(m=>{
-      const done=m.r*4+m.k<prog,A=V[m.a],B=V[m.b],e=edge(A,B);
+    MATCHES.forEach(m=>{
+      const done=m.i<prog,A=V[m.a],B=V[m.b],e=edge(A,B);
       const wc=done?TEAMS[m.w].c:'rgba(120,140,170,.14)';
-      links+=`<line class="olink" data-a="${m.a}" data-b="${m.b}" data-k="${m.r}_${m.k}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="${done?1.8:1}" opacity="${done?.6:.9}"/>`;
+      links+=`<line class="olink" data-a="${m.a}" data-b="${m.b}" data-k="${m.i}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="${done?1.8:1}" opacity="${done?.6:.9}"/>`;
       if(done){
         const li=m.w===m.a?m.b:m.a,le=edge(V[li],V[m.w]),dur=(2.4+((m.r+m.k)%3)*0.5).toFixed(1);
         photons+=`<circle r="2" fill="${TEAMS[m.w].c}" pointer-events="none"><animateMotion dur="${dur}s" repeatCount="indefinite" path="M${le.x1.toFixed(1)},${le.y1.toFixed(1)} L${le.x2.toFixed(1)},${le.y2.toFixed(1)}"/><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.85;1" dur="${dur}s" repeatCount="indefinite"/></circle>`;
         const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,leftIsA=A.x<=B.x;
         const ls=leftIsA?m.sa:m.sb,rs=leftIsA?m.sb:m.sa,lw=(leftIsA?m.a:m.b)===m.w;
-        scores+=`<g class="oscore" data-k="${m.r}_${m.k}"><rect x="${(mx-26).toFixed(1)}" y="${(my-10).toFixed(1)}" width="52" height="20" rx="3" fill="#03060d" stroke="${TEAMS[m.w].c}" stroke-width="1"/>
+        scores+=`<g class="oscore" data-k="${m.i}"><rect x="${(mx-26).toFixed(1)}" y="${(my-10).toFixed(1)}" width="52" height="20" rx="3" fill="#03060d" stroke="${TEAMS[m.w].c}" stroke-width="1"/>
           <text x="${(mx-5).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="end" font-family="Orbitron" font-weight="${lw?'900':'500'}" font-size="10" fill="${lw?TEAMS[m.w].c:'#5b7089'}">${ls}</text>
           <text x="${mx.toFixed(1)}" y="${(my+3).toFixed(1)}" text-anchor="middle" font-size="8" fill="#5b7089">:</text>
           <text x="${(mx+5).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron" font-weight="${!lw?'900':'500'}" font-size="10" fill="${!lw?TEAMS[m.w].c:'#5b7089'}">${rs}</text></g>`;
@@ -327,7 +320,7 @@
     const medals=['🥇','🥈','🥉'];
     standEl.innerHTML=rank.map((t,i)=>{
       const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
-      const ratio=t._r!=null&&t._r<90?('失分率 '+t._r.toFixed(2)):'';
+      const ratio=t._r!=null&&t._r<90?('總得失分率 '+t._r.toFixed(2)):'';
       return `<div class="row ${cls}"><span class="rk">${i+1}</span><span class="medal">${i<3&&prog>=28?medals[i]:''}</span>
         <span class="nm" style="color:${t.c}">${t.label}</span>
         <span class="wl">${t.w} 勝 ${t.l} 敗</span><span class="rt">${ratio}</span></div>`;
@@ -339,15 +332,15 @@
   function drawRounds(prog){
     let html='';
     ROUNDS.forEach((rd,r)=>{
-      const dc=rd.filter((pr,k)=>r*4+k<prog).length;
+      const dc=rd.filter(m=>m.i<prog).length;
       const state=dc===4?'done':(dc>0?'live':'wait');
       const tag=state==='done'?'<span class="tag done">✓ 完賽</span>':state==='live'?`<span class="tag live">● LIVE ${dc}/4</span>`:'<span class="tag wait">待賽</span>';
       html+=`<div class="round"><div class="rh"><b>第 ${r+1} 輪</b><span class="tm">${RTIME[r]}</span>${tag}</div><div class="mrow">`;
-      rd.forEach((pr,k)=>{
-        const m=MATCH[r+'_'+k],done=r*4+k<prog;
+      rd.forEach(m=>{
+        const done=m.i<prog;
         const aw=done&&m.w===m.a,bw=done&&m.w===m.b;
         html+=`<div class="m ${done?'done':'wait'}">
-          <span class="ct">場${m.court}</span>
+          <span class="ct">${m.time} 場${m.court}</span>
           <span class="t ${aw?'w':''}" style="${aw?'color:'+TEAMS[m.a].c:''}">${TEAMS[m.a].label}</span>
           <span class="sc">${done?`<b>${m.sa}</b><span style="font-size:8px">:</span><b>${m.sb}</b>`:'<span class="vs">vs</span>'}</span>
           <span class="t r ${bw?'w':''}" style="${bw?'color:'+TEAMS[m.b].c:''}">${TEAMS[m.b].label}</span>
@@ -372,9 +365,9 @@
     const me=rank.find(x=>x.id===i),pos=rank.indexOf(me)+1;
     rcard.style.setProperty('--rc',t.c);rcard.style.setProperty('--rg','color-mix(in srgb,'+t.c+' 30%,transparent)');
     // 該隊 7 場(按輪序)
-    const mine=Object.values(MATCH).filter(m=>m.a===i||m.b===i).sort((x,y)=>x.r-y.r);
+    const mine=MATCHES.filter(m=>m.a===i||m.b===i);
     const logs=mine.map(m=>{
-      const done=m.r*4+m.k<p,opp=TEAMS[m.a===i?m.b:m.a];
+      const done=m.i<p,opp=TEAMS[m.a===i?m.b:m.a];
       const my=m.a===i?m.sa:m.sb,op=m.a===i?m.sb:m.sa,win=done&&m.w===i;
       return `<div class="lr ${done?'':'pend'}"><span class="st">第 ${m.r+1} 輪 ${m.time}</span>
         <span class="op">vs <b style="color:${opp.c}">${opp.label}</b></span>
