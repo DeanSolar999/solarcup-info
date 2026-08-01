@@ -12,6 +12,7 @@
 
   // sheetName -> {t:抓取時間戳, promise:進行中/已完成的 Promise<rows>, data:最後一次成功結果}
   var _cache = {};
+  var _lastGood = null;   // 最後一次「四張分頁全部成功」的時間
 
   function gvizUrl(sheetName) {
     return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
@@ -61,14 +62,17 @@
       })
       .then(function (text) {
         var rows = parseCSV(text);
-        if (_cache[sheetName]) _cache[sheetName].data = rows;
+        ok = true;
+        if (_cache[sheetName]) { _cache[sheetName].data = rows; _cache[sheetName].ok = true; }
         return rows;
       })
       .catch(function (err) {
+        // 沿用舊快取讓畫面不閃爍，但標記本次未成功——updatedAt 不可假裝是「剛更新」
         console.warn('[SolarCupLive] fetchSheet 失敗：', sheetName, err);
+        if (_cache[sheetName]) _cache[sheetName].ok = false;
         return prevData || null;
       });
-    _cache[sheetName] = { t: now, promise: promise, data: prevData };
+    _cache[sheetName] = { t: now, promise: promise, data: prevData, ok: false };
     return promise;
   }
 
@@ -152,11 +156,16 @@
         clubScores.push({ club: club, teams: num(r[1]) || 0, total: num(r[2]) || 0, rank: num(r[3]) });
       });
 
+      // 四張分頁全部抓取成功才算「剛更新」；有任一張是沿用舊快取就保留上次成功時間，
+      // 避免連線異常時畫面顯示舊資料卻標成剛更新
+      var allOk = ['8_發布_戰情看板','3_資格賽積分榜','6_積分總表','7_球團積分']
+        .every(function (n) { return _cache[n] && _cache[n].ok; });
+      if (allOk) _lastGood = new Date();
       return {
         matches: matches, qualRank: qualRank, teamScores: teamScores,
         clubScores: clubScores, hasReal: hasReal,
         qualDone: qualDone, qualTotal: QUAL_LAST, knockoutStarted: knockoutStarted,
-        updatedAt: new Date(),
+        stale: !allOk, updatedAt: _lastGood || new Date(),
       };
     }).catch(function (err) {
       console.warn('[SolarCupLive] load 失敗：', err);

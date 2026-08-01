@@ -107,10 +107,6 @@
   };
 
   // ---- 亂數（固定種子，資料穩定，兩頁一致）----
-  let _sd=20260815;
-  function rnd(){_sd=(_sd*9301+49297)%233280;return _sd/233280;}
-  function resetSeed(s){_sd=s||20260815;}
-  function shuffle(a){const r=a.slice();for(let i=r.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
 
   // ---- 徽記系統（與 bracket-tree 一致）----
   function ngon(cx,cy,r,n,rot){const p=[];for(let i=0;i<n;i++){const a=(rot||0)+i*2*Math.PI/n;p.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r]);}return p;}
@@ -141,16 +137,33 @@
   }
   function embChip(club){return `<svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="86" fill="rgba(3,6,13,.6)" stroke="${club.c}" stroke-width="6"/>${embMini(club.key,club.c)}</svg>`;}
 
+  // ---- 雲端結果來源（唯一真相：後端資料庫 8_發布_戰情看板）----
+  // 由各頁在取得 SolarCupLive.load() 後呼叫 setLive(data) 注入；未注入＝全部未開打。
+  // 站上不再有任何模擬比分，賽前顯示真實賽程但無分數。
+  let LIVE=null;
+  function setLive(d){LIVE=d||null;}
+  function liveResult(n){
+    if(!LIVE||!LIVE.matches||n==null)return null;
+    const r=LIVE.matches[String(n)];
+    return (r&&r.done)?r:null;
+  }
+  function hasLive(){return !!(LIVE&&LIVE.hasReal);}
+
   // ---- 一場對戰（21 分單局）----
+  // 有雲端分數＝真實結果；沒有＝未開打（sa/sb 為 null，不計入任何統計）
   let _tid=0;
-  function playMatch(a,b){
-    // 隨機勝負與比分（21 分制、單局）
-    const aWin=rnd()<0.5;const lose=11+Math.floor(rnd()*9); // 敗方 11~19
-    const sa=aWin?21:lose, sb=aWin?lose:21;
-    const winner=aWin?a:b;
+  function playMatch(a,b,n){
+    const r=liveResult(n);
+    if(!r){
+      const m={a,b,sa:null,sb:null,winner:null,done:false,sc:'',n:n};
+      a.matches.push(m);b.matches.push(m);
+      return m;
+    }
+    const sa=r.sa,sb=r.sb;
+    const winner=sa>sb?a:b;                // 21 分單局無平手
     a.gf+=sa;a.ga+=sb;b.gf+=sb;b.ga+=sa;
-    if(aWin){a.w++;b.l++;}else{b.w++;a.l++;}
-    const m={a,b,sa,sb,winner,sc:sa+'：'+sb};
+    if(winner===a){a.w++;b.l++;}else{b.w++;a.l++;}
+    const m={a,b,sa,sb,winner,done:true,sc:sa+'：'+sb,n:n};
     a.matches.push(m);b.matches.push(m);
     return m;
   }
@@ -165,9 +178,11 @@
       const grp=byW[w];
       if(grp.length===1){ranked.push(grp[0]);return;}
       // 總得失分率：計該隊在此循環的所有場次得失分（非僅同分隊互相對戰）
+      // 只計已完賽場次；失分率 sentinel 統一 999（與後端 MIN(IFERROR(...,999),999) 一致）
       grp.forEach(t=>{let gf=0,ga=0;
-        matches.forEach(m=>{if(m.a===t){gf+=m.sa;ga+=m.sb;}else if(m.b===t){gf+=m.sb;ga+=m.sa;}});
-        t._ratio=ga>0?gf/ga:99;t._h2hgf=gf;t._h2hga=ga;});
+        matches.forEach(m=>{if(!m.done)return;
+          if(m.a===t){gf+=m.sa;ga+=m.sb;}else if(m.b===t){gf+=m.sb;ga+=m.sa;}});
+        t._ratio=ga>0?Math.min(gf/ga,999):999;t._h2hgf=gf;t._h2hga=ga;});
       grp.sort((x,y)=>{
         if(y._ratio!==x._ratio)return y._ratio-x._ratio; // 總得失分率大者先
         // 兩隊對戰勝負（僅兩隊同分同得失分率時）
@@ -198,19 +213,20 @@
     schedule.forEach((s,k)=>{
       const A=byName[s.a],B=byName[s.b];
       if(!A||!B)return;
-      const m=playMatch(A,B);
-      m.n=s.n;m.round=Math.floor(k/2)+1;m.time=s.time;m.court=s.court;m.slot=k;
+      const m=playMatch(A,B,s.n);
+      m.round=Math.floor(k/2)+1;m.time=s.time;m.court=s.court;m.slot=k;
       ms.push(m);
     });
     const rank=rankGroup(teams,ms);
     rank.forEach((t,i)=>t.seedRank=i+1);
-    const played=3+Math.floor(rnd()*4);          // demo 模擬進度：3~6 場已完賽
-    return {gid,teams,rank,matches:ms,played,gi,done:played>=6};
+    const played=ms.filter(m=>m.done).length;    // 真實完賽場數（非模擬進度）
+    return {gid,teams,rank,matches:ms,played,gi,done:played>=ms.length&&ms.length>0};
   }
 
   // ---- 完整賽事樹 ----
-  function buildTournament(seed){
-    resetSeed(seed);_tid=0;
+  function buildTournament(live){
+    if(live!==undefined)setLive(live);
+    _tid=0;
     // 報名：10 團×(競技4+休閒6)=100 + 曜請8 = 108（真實名單 ROSTER）
     const comp=[],casual=[];
     CLUB_DATA.forEach(c=>{ROSTER[c.key].comp.forEach(t=>comp.push(mkTeam(c,'comp',t[0],[t[1],t[2]])));});
@@ -235,11 +251,20 @@
       casGroups.push(runGroup(gid,teams,g));
     }
 
-    // 分流（賽道內，依 seedRank）：前二上階級、後二下階級
+    // 分流：該組 6 場全數完賽才定案（未完賽 tier=null＝待定，不預先洩漏分級）
+    // 有雲端「自動晉級」欄就以它為準（後端才是計分真相），否則依組內排名前二/後二
+    const CN2KEY={'白金':'plat','黃金':'gold','白銀':'silver','青銅':'bronze'};
+    const tierByName={};
+    if(LIVE&&LIVE.qualRank)Object.keys(LIVE.qualRank).forEach(id=>{
+      const q=LIVE.qualRank[id];if(q&&q.name&&CN2KEY[q.tier])tierByName[q.name]=CN2KEY[q.tier];});
     const tiers={plat:[],gold:[],silver:[],bronze:[]};
     function assign(t,tier){t.tier=tier;t.base=TIER_META[tier].base;tiers[tier].push(t);}
-    compGroups.forEach(g=>{g.rank.forEach((t,i)=>assign(t,i<2?'plat':'gold'));});
-    casGroups.forEach(g=>{g.rank.forEach((t,i)=>assign(t,i<2?'silver':'bronze'));});
+    function flow(groups,up,dn){groups.forEach(g=>{
+      if(!g.done)return;                                  // 未完賽：維持 tier=null
+      g.rank.forEach((t,i)=>assign(t,tierByName[t.label]||(i<2?up:dn)));
+    });}
+    flow(compGroups,'plat','gold');
+    flow(casGroups,'silver','bronze');
 
     return {
       qualGroups:{comp:compGroups,casual:casGroups},
@@ -255,38 +280,40 @@
     {key:'inv5',name:'曜請',c:'#a855f7'},{key:'inv6',name:'曜請',c:'#ff3ca6'},
     {key:'inv7',name:'曜請',c:'#a3e635'},{key:'inv8',name:'曜請',c:'#6b6bff'},
   ];
+
+  // ---- 曜請組 28 場官方賽程（場次編號｜場地｜起｜訖｜隊A index｜隊B index）----
+  const INVITE_SCHEDULE=[
+    [157, 7,'12:50','13:05',0,1],[158, 8,'12:50','13:05',2,3],[159, 9,'12:50','13:05',4,5],[160,10,'12:50','13:05',6,7],
+    [179, 9,'13:20','13:35',0,2],[180,10,'13:20','13:35',1,3],[189, 9,'13:35','13:50',4,6],[190,10,'13:35','13:50',5,7],
+    [209, 9,'14:05','14:20',0,7],[210,10,'14:05','14:20',1,6],[229, 9,'14:35','14:50',2,5],[230,10,'14:35','14:50',3,4],
+    [247, 9,'15:05','15:20',0,4],[248,10,'15:05','15:20',1,5],[257, 9,'15:20','15:35',2,6],[258,10,'15:20','15:35',3,7],
+    [275, 9,'15:50','16:05',0,3],[276,10,'15:50','16:05',1,2],[285, 9,'16:05','16:20',5,6],[286,10,'16:05','16:20',4,7],
+    [295, 7,'16:35','16:50',0,6],[296, 8,'16:35','16:50',3,5],[297, 9,'16:35','16:50',1,4],[298,10,'16:35','16:50',2,7],
+    [307, 7,'17:05','17:20',0,5],[308, 8,'17:05','17:20',2,4],[309, 9,'17:05','17:20',1,7],[310,10,'17:05','17:20',3,6],
+  ];
+
   function buildInvitational(){
     const T=INVITE_CLUBS.map((c,i)=>mkTeam(c,'invite',INVITE_ROSTER[i][0],[INVITE_ROSTER[i][1],INVITE_ROSTER[i][2]]));
-    const ids=[0,1,2,3,4,5,6,7];const ms=[];
-    for(let r=0;r<7;r++){
-      for(let k=0;k<4;k++){const m=playMatch(T[ids[k]],T[ids[7-k]]);m.round=r+1;m.slot=r*4+k;ms.push(m);}
-      ids.splice(1,0,ids.pop());
-    }
+    const ms=INVITE_SCHEDULE.map((sc,i)=>{
+      const m=playMatch(T[sc[4]],T[sc[5]],sc[0]);
+      m.round=(i/4|0)+1;m.slot=i;m.court=sc[1];m.time=sc[2];m.tend=sc[3];m.code='曜請'+(i+1);
+      return m;
+    });
     const rank=rankGroup(T,ms);rank.forEach((t,i)=>{t.seedRank=i+1;t.tier='invite';});
-    return {teams:T,rank,matches:ms};
+    return {teams:T,rank,matches:ms,schedule:INVITE_SCHEDULE};
   }
 
   // ---- 108 隊統一清單（查詢頁 / 未來全站戰績卡共用真相）----
-  // ---- DEMO 球員暱稱池（示範用，正式名單確定後於此替換單一來源）----
-  const NICK_POOL=['阿明','小華','阿宏','建志','俊翔','家豪','宗翰','冠廷','柏翰','承恩',
-    '志明','雅婷','怡君','國豪','大頭','阿凱','小賴','阿德','昱翔','子軒',
-    '偉哲','孟儒','政緯','宥辰','翊誠','品睿','宸瑋','裕翔','俊宇','冠宇',
-    '阿龍','小傑','阿信','世偉','建宏','俊傑','明哲','宗霖','宇軒','柏宇'];
-  function demoPlayers(tid){
-    // 依 tid 穩定取兩個不重複暱稱
-    let seed=0;for(let i=0;i<tid.length;i++)seed=(seed*31+tid.charCodeAt(i))%99991;
-    const a=seed%NICK_POOL.length;let b=(seed*7+13)%NICK_POOL.length;if(b===a)b=(b+1)%NICK_POOL.length;
-    return [NICK_POOL[a],NICK_POOL[b]];
-  }
-
-  function buildAllTeams(seed){
-    const tn=buildTournament(seed);
+  function buildAllTeams(live){
+    const tn=buildTournament(live);
     const inv=buildInvitational();
     const out=[];
     function push(t,track,groupLabel){
-      const tm=t.tier==='invite'?{name:'曜請',en:'INVITATIONAL',col:'#ffc24b'}:TIER_META[t.tier];
+      // tier===null＝資格賽該組尚未完賽，分級待定（賽前的正常狀態）
+      const tm=t.tier==='invite'?{name:'曜請',en:'INVITATIONAL',col:'#ffc24b'}
+              :(TIER_META[t.tier]||{name:'待定',en:'PENDING',col:'#5b7089',base:0});
       out.push({
-        tid:t.tid,label:t.label,players:t.players||demoPlayers(t.tid),
+        tid:t.tid,label:t.label,players:t.players||['—','—'],
         clubKey:t.clubObj.key,club:t.clubObj.name,clubFull:t.clubObj.full||t.clubObj.name,clubColor:t.clubObj.c,
         track,group:groupLabel,
         tier:t.tier,tierName:tm.name,tierColor:tm.col,base:t.base||0,
@@ -303,7 +330,7 @@
   global.SolarCupData={
     CLUB_DATA,CLUB_BY_KEY,NINE,FREE,TIER_META,INVITE_CLUBS,
     ngon,pstr,EMB,embMini,embChip,
-    rankGroup,buildTournament,buildInvitational,buildAllTeams,demoPlayers,
-    rnd,resetSeed,
+    rankGroup,buildTournament,buildInvitational,buildAllTeams,
+    setLive,hasLive,liveResult,INVITE_SCHEDULE,QUAL_SCHEDULE,GROUP_MAP,
   };
 })(typeof window!=='undefined'?window:this);

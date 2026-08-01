@@ -321,7 +321,7 @@
   <div class="legend">
     <span class="lg"><span class="sw" style="border-color:var(--accent)"></span>循環賽（五角／三角 · 取前二）</span>
     <span class="lg"><span class="sw" style="border-color:var(--field)"></span>晉級光子流</span>
-    <span class="lg" style="margin-left:auto">◆ DEMO · 隊伍與戰績為模擬資料</span>
+    <span class="lg" style="margin-left:auto">◆ 資料來源：後端資料庫（每 45 秒同步）· 對戰組合由現場抽籤後填入</span>
   </div>
 
   <footer>
@@ -334,6 +334,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="tournament-data.js"></script>
+<script src="live-data.js"></script>
 <script>
 /* ---------- 背景 3D 資料流 ---------- */
 (function(){
@@ -402,8 +403,8 @@
     {key:'huanle',name:'歡樂',c:'#ff8a3c'},{key:'yuzhou',name:'小羽宙',c:'#22d3ee'},
     {key:'poli',name:'魄力',c:'#ff3ca6'},{key:'dachuan',name:'大船',c:'#6b6bff'},
     {key:'limao',name:'狸貓拳',c:'#2ee6c8'},{key:'dangdang',name:'蕩蕩',c:'#a3e635'},
-    {key:'yuguang',name:'羽光',c:'#a855f7'},{key:'solarA',name:'曜日A',c:'#ffb3d1'},
-    {key:'solarB',name:'曜日B',c:'#ff9ec4'},{key:'free',name:'自由',c:'#8a95a5'},
+    {key:'yuguang',name:'羽光',c:'#a855f7'},{key:'solarA',name:'曜日一',c:'#ffb3d1'},
+    {key:'solarB',name:'曜日二',c:'#ff9ec4'},{key:'free',name:'自由',c:'#8a95a5'},
   ];
   const CLUB_BY_NAME={};CLUB_DATA.forEach(c=>CLUB_BY_NAME[c.name]=c);
   const CLUBS=CLUB_DATA.map(c=>c.name);
@@ -550,13 +551,31 @@
 
   // 隊伍池：每階級唯一身分(球團+編號) + 戰績；十團盡量平均分布
   const REG={}; // tid -> team
-  // 資料層真隊快取（buildAllTeams 的 tiers，含初賽分流結果）
+  // ---- 雲端真相（後端資料庫）----
+  // 淘汰賽的對戰組合是現場抽籤後由賽務填入 4_淘汰賽成績，因此每一場的參賽隊伍
+  // 與比分都直接讀雲端；站上不再模擬任何抽籤或比分。
+  let LIVE=null, LIVE_M={}, BY_LABEL={};
   let _TD_TIERS=null;
   function tdTiers(){
     if(_TD_TIERS!==null)return _TD_TIERS;
-    try{ _TD_TIERS = (window.SolarCupData&&SolarCupData.buildTournament) ? SolarCupData.buildTournament().tiers : false; }
+    try{ _TD_TIERS = (window.SolarCupData&&SolarCupData.buildTournament) ? SolarCupData.buildTournament(LIVE).tiers : false; }
     catch(e){ _TD_TIERS=false; }
     return _TD_TIERS;
+  }
+  function setLiveData(d){
+    LIVE=d||null; LIVE_M=(d&&d.matches)||{}; _TD_TIERS=null; BY_LABEL={};
+    try{
+      if(window.SolarCupData&&SolarCupData.buildAllTeams){
+        SolarCupData.buildAllTeams(LIVE).teams.forEach(t=>{BY_LABEL[t.label]=t;});
+      }
+    }catch(e){}
+  }
+  // 待定佔位：抽籤尚未進行／上一輪未分出勝負時的空席
+  let _tbd=0;
+  function TBD(tier){
+    return {tid:'TBD'+(++_tbd),label:'待定',club:'',clubObj:{name:'',c:'#5b7089'},num:0,
+      tier:tier?tier.name:'',kind:tier?tier.kind:'',base:0,
+      matches:[],w:0,l:0,stage:'—',placePts:0,pending:true};
   }
   // 從資料層取該階級真隊，轉成 bracket 複賽用格式（保留身分，複賽戰績重置由 play 灌）
   function poolFromTD(tier,n){
@@ -572,45 +591,50 @@
   }
   function makePool(tier,n){
     const fromTD=poolFromTD(tier,n);
-    if(fromTD) return fromTD; // ✅ 優先用資料層真隊（跨頁同名同色同暱稱）
-    // ---- fallback：單檔預覽無資料層時自行生成 ----
-    const pool=[];const used=new Set();
-    // 平均分布：輪流指派十團，順序打散
-    const order=[];for(let i=0;i<n;i++)order.push(CLUB_DATA[i%CLUB_DATA.length]);
-    for(let i=order.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
-    for(let i=0;i<n;i++){
-      const club=order[i];let num,label,guard=0;
-      do{num=1+Math.floor(rnd()*(tier.kind==='競技'?4:6));label=club.name+tier.cr+num;guard++;}
-      while(used.has(label)&&guard<200);
-      used.add(label);
-      const tid=tier.key+'_'+i;
-      const t={tid,label,club:club.name,clubObj:club,num,tier:tier.name,kind:tier.kind,base:BASE[tier.name],
-        matches:[],w:0,l:0,stage:'初賽',placePts:0};
-      REG[tid]=t;pool.push(t);
-    }
+    if(fromTD&&fromTD.length===n) return fromTD;   // 資格賽已分流：真隊
+    // 資格賽未完賽 → 全部待定席，站上不生成任何假隊
+    const pool=[];for(let i=0;i<n;i++){const t=TBD(tier);REG[t.tid]=t;pool.push(t);}
     return pool;
   }
-  function score(win){return win?21:(11+Math.floor(rnd()*9));}
-  // 打一場：回填雙方戰績，回傳完整場次物件（含官方場次編號 no）
+  // 打一場：參賽隊伍與比分**全部**讀雲端該場次；沒有就是未開打
   function playM(a,b,round,no){
-    const aw=rnd()<0.5;const sa=aw?21:score(false),sb=aw?score(false):21;
-    a.matches.push({round,no,vs:b.label,sc:sa+'：'+sb,win:aw});
-    b.matches.push({round,no,vs:a.label,sc:sb+'：'+sa,win:!aw});
-    if(aw){a.w++;b.l++;}else{b.w++;a.l++;}
-    return {a,b,sa,sb,sc:sa+'：'+sb,winner:aw?a:b,loser:aw?b:a,no,round};
+    const r=LIVE_M[String(no)];
+    // 現場抽籤結果以雲端隊名為準；雲端還沒填就沿用結構帶入的席次
+    const A=(r&&r.a&&BY_LABEL[r.a]&&REG_OF(BY_LABEL[r.a],a))||a||TBD(null);
+    const B=(r&&r.b&&BY_LABEL[r.b]&&REG_OF(BY_LABEL[r.b],b))||b||TBD(null);
+    if(!r||!r.done){
+      return {a:A,b:B,sa:null,sb:null,sc:'',winner:null,loser:null,no,round,pending:true};
+    }
+    const sa=r.sa,sb=r.sb,aw=sa>sb;                 // 21 分單局，無平手
+    A.matches.push({round,no,vs:B.label,sc:sa+'：'+sb,win:aw});
+    B.matches.push({round,no,vs:A.label,sc:sb+'：'+sa,win:!aw});
+    if(aw){A.w++;B.l++;}else{B.w++;A.l++;}
+    return {a:A,b:B,sa,sb,sc:sa+'：'+sb,winner:aw?A:B,loser:aw?B:A,no,round,pending:false};
   }
-  function setPlace(t,pts,stage){t.placePts=pts;t.stage=stage;}
+  // 把資料層的隊轉成 bracket 用格式（沿用同一物件，維持戰績累加與 REG 註冊）
+  function REG_OF(src,fallback){
+    const key='L_'+src.label;
+    if(!REG[key]){
+      REG[key]={tid:key,label:src.label,club:src.club,clubObj:{name:src.club,c:src.clubColor},num:0,
+        tier:src.tierName,kind:src.track,base:src.base||0,
+        matches:[],w:0,l:0,stage:'初賽',placePts:0};
+    }
+    return REG[key];
+  }
+  function setPlace(t,pts,stage){if(!t||t.pending)return;t.placePts=pts;t.stage=stage;}
   // 循環賽名次（官方最新同分判定）：勝場 → 總得失分率（該循環全部場次）→ 兩隊對戰勝負 → 抽籤
   function rrRank(teams,matches){
     const st=new Map();
     teams.forEach((t,i)=>st.set(t.tid,{t,i,w:0,l:0,pf:0,pa:0,beat:new Set()}));
     matches.forEach(m=>{
+      if(m.pending)return;                                            // 未開打不計
       const A=st.get(m.a.tid),B=st.get(m.b.tid);if(!A||!B)return;
       A.pf+=m.sa;A.pa+=m.sb;B.pf+=m.sb;B.pa+=m.sa;
       if(m.winner===m.a){A.w++;B.l++;A.beat.add(m.b.tid);}else{B.w++;A.l++;B.beat.add(m.a.tid);}
     });
     const arr=[...st.values()];
-    arr.forEach(x=>x.rt=x.pa>0?x.pf/x.pa:x.pf);
+    // 失分率 sentinel 統一 999（與後端 MIN(IFERROR(...,999),999)、rankGroup 一致）
+    arr.forEach(x=>x.rt=x.pa>0?Math.min(x.pf/x.pa,999):999);
     arr.sort((x,y)=>{
       if(y.w!==x.w)return y.w-x.w;                                   // ① 勝場
       if(Math.abs(y.rt-x.rt)>1e-9)return y.rt-x.rt;                  // ② 總得失分率
@@ -681,7 +705,7 @@
       const e=d.eight,qfW=[];
       for(let i=0;i<4;i++){
         const m=playM(e[i*2],e[i*2+1],'8 強',M.qf[i]);qfW.push(m.winner);
-        if(m.loser.placePts<40)setPlace(m.loser,40,'8 強止步');
+        if(m.loser&&m.loser.placePts<40)setPlace(m.loser,40,'8 強止步');
       }
       d.qfW=qfW;
       ko.push({key:'qf',name:'8 強',head:'8 強 QUARTER',teams:e,winners:qfW,nos:M.qf});
@@ -694,9 +718,10 @@
     // 決賽（先打）→ 季軍賽（場次編號在後）
     const fm=playM(sfW[0],sfW[1],'決賽',M.final);
     d.champ=fm.winner;d.runner=fm.loser;
-    setPlace(d.champ,100,'冠軍');setPlace(d.runner,80,'亞軍');
+    if(d.champ)setPlace(d.champ,100,'冠軍');
+    if(d.runner)setPlace(d.runner,80,'亞軍');
     ko.push({key:'fin',name:'決賽',head:'決賽 FINAL',teams:sfW,winners:[d.champ],nos:[M.final]});
-    const sfL=semiIn.filter(t=>sfW.indexOf(t)<0);
+    const sfL=semiIn.filter(t=>t&&sfW.indexOf(t)<0);
     const tm=(sfL.length===2)?playM(sfL[0],sfL[1],'季軍賽',M.third):null;
     d.sfL=sfL;d.thirdM=tm;d.thirdW=tm?tm.winner:null;
     sfL.forEach(t=>setPlace(t,60,t===d.thirdW?'四強 · 季軍':'四強 · 殿軍'));
@@ -1035,7 +1060,7 @@
           <div class="remblem">${embFull(co,t.tier+' · '+t.kind)}</div>
           <div class="rhtext"><div class="rlabel">${t.label}</div>
             <div class="rclub">${co.name} 球團</div>
-            <div class="rplayers">隊員：${(window.SolarCupData&&SolarCupData.demoPlayers?SolarCupData.demoPlayers(t.tid):['—','—']).join(' · ')}</div>
+            <div class="rplayers">隊員：${((BY_LABEL[t.label]&&BY_LABEL[t.label].players)||['—','—']).join(' · ')}</div>
             <div class="rmeta"><span class="rtier ${TIERCLS[t.tier]}">${t.tier}</span><span>${t.kind}隊</span><span>·</span><span>編號 ${t.label.slice(-2)}</span></div></div></div>
         <div class="rstats">
           <div class="rst"><div class="rsv">${t.w}</div><div class="rsk">勝</div></div>
@@ -1177,7 +1202,22 @@
   const _wantKey=(location.hash||'').replace('#','').trim();
   const _startTier=TIERS.find(t=>t.key===_wantKey)||TIERS[0];
   (document.querySelector('.lane[data-key="'+_startTier.key+'"]')||document.querySelector('.lane')).classList.add('on');
+  let _curTier=_startTier;
+  const _origRenderDetail=renderDetail;
+  renderDetail=function(tr){_curTier=tr;return _origRenderDetail(tr);};
   renderDetail(_startTier);
+
+  // ---- 雲端即時同步（每 45 秒）：對戰組合與比分皆以後端為準 ----
+  if(window.SolarCupLive){
+    window.SolarCupLive.onUpdate(function(d){
+      setLiveData(d);
+      Object.keys(DATA).forEach(k=>delete DATA[k]);   // 清快取，用新資料重建四條樹
+      Object.keys(REG).forEach(k=>delete REG[k]);
+      renderDetail(_curTier);
+    },45000);
+  }else{
+    setLiveData(null);
+  }
 })();
 </script>
 </body>

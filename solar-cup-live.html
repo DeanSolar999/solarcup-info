@@ -217,7 +217,7 @@
     <div class="sh">
       <span class="idx">07</span>
       <h1>戰情看板 <span class="lv">LIVE</span></h1>
-      <span class="live-dot demo" id="liveBadge"><span class="d"></span><span id="liveTxt">示範預覽</span></span>
+      <span class="live-dot demo" id="liveBadge"><span class="d"></span><span id="liveTxt">尚未開賽</span></span>
     </div>
     <div class="meta">
       <span>📅 <b id="mDate">2026.08.15（六）</b></span><span>📍 <b id="mVenue">大安運動中心 · 10 面場</b></span>
@@ -262,7 +262,7 @@
 
   <div class="foot">
     ＳＯＬＡＲ ＣＵＰ ＴＷＯ · 戰情看板 LIVE · 場地×時間 310 場即時推進<br>
-    <b id="footState">◆ 示範預覽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往資格賽分流／淘汰樹／戰績查詢
+    <b id="footState">◆ 尚未開賽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往資格賽分流／淘汰樹／戰績查詢
   </div>
 </div>
 
@@ -501,7 +501,7 @@
     const b=document.getElementById('liveBadge'),t=document.getElementById('liveTxt'),f=document.getElementById('footState');
     const doneN=Object.keys(results).length;
     if(state==='live'){b.classList.remove('demo');t.textContent='LIVE 即時';f.textContent='◆ LIVE 即時賽況';}
-    else{b.classList.add('demo');t.textContent='示範預覽';f.textContent='◆ 示範預覽（待接即時比分 Sheet）';}
+    else{b.classList.add('demo');t.textContent='尚未開賽';f.textContent='◆ 尚未開賽 · 資料來源：後端資料庫';}
   }
 
   // ===== 控制列事件 =====
@@ -569,9 +569,12 @@
   function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
 
   // 初始渲染（手機預設清單，矩陣留給大螢幕）
-  updateLive('demo');
+  // 2026-08-01 起站上不再有示範模式：一開站即以後端資料庫為準，尚無比分就顯示「尚未開賽」
+  updateLive('live');
   if(window.innerWidth<760){mode='list';document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='list'));}
-  demoUpdate(); // 先以示範起步；接上 Sheet 後偵測到真分才由 goLive() 轉正式
+  const _demoRow=document.getElementById('demoRow'); if(_demoRow)_demoRow.style.display='none';
+  LIVE=true; setInterval(render,30000);
+  render();
   if(SHEET_CSV_URL){pollSheet();setInterval(pollSheet,45000);}
 })();
 </script>

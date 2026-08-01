@@ -127,7 +127,7 @@
   <header>
     <h1>戰績<span class="a">查詢</span></h1>
     <div class="sub">TEAM RECORD SEARCH · 108 TEAMS</div>
-    <div class="meta" id="srcMeta">◆ DEMO DATA ｜ 共 <b>108</b> 隊 ｜ 輸入隊名或球團即時搜尋 · 或點分頁籤瀏覽 ｜ 點隊伍看完整戰績卡</div>
+    <div class="meta" id="srcMeta">◆ 資料來源：後端資料庫（每 45 秒同步）｜ 共 <b>108</b> 隊 ｜ 輸入隊名或球團即時搜尋 · 或點分頁籤瀏覽 ｜ 點隊伍看完整戰績卡</div>
   </header>
 
   <div class="search">
@@ -180,7 +180,7 @@
 (function(){
   const D=window.SolarCupData;
   if(!D){document.getElementById('wall').innerHTML='<div class="empty">資料層未載入 · 請確認 tournament-data.js</div>';return;}
-  const {teams}=D.buildAllTeams();
+  const {teams}=D.buildAllTeams(null);   // 真實名單，戰績待雲端注入
 
   // 徽記
   function emb(t){

@@ -404,7 +404,7 @@ document.getElementById("tsToggle").addEventListener("click",function(){cur^=1;i
 
   <div class="dqbox kb kb-board board">
     <div class="bt">▼ FIELD RANKING ▼</div>
-    <div class="bt-sub" id="btSub">◆ 示範預覽 ｜ 賽事 8/15 開打，力場分數為模擬展示，當日更新真實戰績</div>
+    <div class="bt-sub" id="btSub">◆ 偵測未啟動 ｜ 力場於淘汰賽開打後啟動，資料同步後端資料庫</div>
     <div id="entries"></div>
   </div>
 
@@ -414,7 +414,7 @@ document.getElementById("tsToggle").addEventListener("click",function(){cur^=1;i
 
   <footer>
     ＡＴ ＦＩＥＬＤ ＡＲＥＮＡ ｜ 力場擂台 · 曜日盃 ＴＷＯ<br>
-    <span class="demo" id="demoFooter">◆ 示範預覽 · 隊伍／球團／組別為真實名單，力場分數為模擬（8/15 開賽後更新）</span><br>
+    <span class="demo" id="demoFooter">◆ 偵測未啟動 · 九大球團力場處於「絕」·  8/15 淘汰賽開打後亮起</span><br>
     <span class="demo" id="artCredit" style="display:none">◆ 團寵美術：Tuxemon Project（CC-BY-SA 3.0）· tuxemon.org ｜ UI 邊框：Kenney（CC0）· kenney.nl</span>
   </footer>
 </div>
@@ -592,7 +592,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   // ===== 資料 =====
   // ===== 資料：接 tournament-data.js 全站統一資料庫 =====
   const D=window.SolarCupData;
-  const _all=D.buildAllTeams();                          // 108 隊(固定種子,全站一致)
+  const _all=D.buildAllTeams(null);                      // 108 隊真實名單（無比分，待雲端注入）
   const WINPTS=20;                                       // 每勝場加分
   const TIERBASE={plat:300,gold:200,silver:100,bronze:0};
   const TIERKEYCLS={plat:'ut-p',gold:'ut-g',silver:'ut-s',bronze:'ut-b'};
@@ -926,12 +926,11 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     if(foot)foot.innerHTML=`◆ <b style="color:#ffcf33">偵測未啟動</b> · 九大球團力場處於「絕」・資格賽 ${done}/${total}`;
   }
 
-  // ── 三段狀態機:賽前 demo → 開賽後待機 → 淘汰賽開打 LIVE ──────────────
+  // ── 兩段狀態機（2026-08-01 起站上不再有 demo）：待機 → 淘汰賽開打 LIVE ──
   function onLiveTick(liveData){
     if(!liveData)return;
-    if(!liveData.hasReal)return;              // ① 完全無比分:維持示範展示,一切不變
-    if(!liveData.knockoutStarted&&!LIVE_ACTIVE){ enterStandby(liveData); return; } // ② 待機
-    applyLive(liveData);                      // ③ LIVE
+    if(!liveData.knockoutStarted&&!LIVE_ACTIVE){ enterStandby(liveData); return; } // ① 待機
+    applyLive(liveData);                                                          // ② LIVE
   }
 
   function applyLive(liveData){
@@ -974,7 +973,9 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     evolvedList.forEach((t,i)=>setTimeout(()=>playEvolve(t),i*260)); // 多團同時進化錯開播放,每團都有演出
     updateLiveBadge(liveData);
   }
+  STANDBY=true;TEAMS.forEach(t=>{t.field=0;t.peak=0;t.stage=1;t.spr=monsterSVG(t.idx,t.c,1);});render();
   if(window.SolarCupLive)window.SolarCupLive.onUpdate(onLiveTick,45000);
+  else{const sub=document.getElementById('btSub');if(sub)sub.textContent='◆ 雲端資料層未載入';}
 })();
 </script>
 

@@ -37,7 +37,9 @@
   .progbar{display:flex;align-items:center;gap:12px;margin:16px 0 22px;padding:12px 16px;
     border:1px solid var(--line);border-radius:6px;background:rgba(6,11,20,.6);flex-wrap:wrap}
   .progbar .lab{font-size:9.5px;letter-spacing:.14em;color:var(--dim)}
-  .progbar input{flex:1;min-width:180px;max-width:380px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+  .progbar .pbarwrap{flex:1;min-width:180px;max-width:380px;height:4px;border-radius:2px;background:rgba(120,140,170,.25);overflow:hidden}
+  .progbar .pbarwrap i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#22d3ee,#ffc24b);transition:width .6s ease}
+  .progbar input{display:none;flex:1;min-width:180px;max-width:380px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
     background:linear-gradient(90deg,var(--amber),rgba(255,255,255,.1));outline:none}
   .progbar input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
     background:var(--amber);box-shadow:0 0 12px var(--ag);cursor:pointer}
@@ -159,12 +161,12 @@
     <header>
     <h1>曜請<span class="a">全循環</span></h1>
     <div class="sub">INVITATIONAL · FULL ROUND ROBIN · 8 TEAMS</div>
-    <div class="meta">◆ 賽程為官方定案 · 比分為 DEMO ｜ <b>8</b> 隊全循環 <b>28</b> 場 · <b>7</b> 輪 ｜ 首場 <b>12:50</b> ｜ 依勝場取 <b>冠 · 亞 · 季</b> ｜ 獨立賽程 · 不分流 · 不計團體積分</div>
+    <div class="meta">◆ 賽程為官方定案 · 比分同步後端資料庫（每 45 秒）｜ <b>8</b> 隊全循環 <b>28</b> 場 · <b>7</b> 輪 ｜ 首場 <b>12:50</b> ｜ 依勝場取 <b>冠 · 亞 · 季</b> ｜ 獨立賽程 · 不分流 · 不計團體積分</div>
   </header>
 
   <div class="progbar">
     <span class="lab">賽程進度</span>
-    <input type="range" id="prog" min="0" max="28" step="1" value="16">
+    <div class="pbarwrap"><i id="progBar" style="width:0%"></i></div>
     <span class="st" id="progSt">第 4 輪結束</span>
   </div>
 
@@ -191,6 +193,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="tournament-data.js"></script>
+<script src="live-data.js"></script>
 <script>
 /* 背景 3D 光子流（琥珀基調） */
 (function(){
@@ -242,26 +245,34 @@
     [295, 7,'16:35','16:50',0,6],[296, 8,'16:35','16:50',3,5],[297, 9,'16:35','16:50',1,4],[298,10,'16:35','16:50',2,7],
     [307, 7,'17:05','17:20',0,5],[308, 8,'17:05','17:20',2,4],[309, 9,'17:05','17:20',1,7],[310,10,'17:05','17:20',3,6],
   ];
-  // ---- 28 場（賽程官方 · 比分為 DEMO，固定種子）----
-  const MATCHES=SCHED.map((s,i)=>{
-    const aWin=rnd()<0.5,lose=11+Math.floor(rnd()*9);
-    return {i,r:(i/4)|0,k:i%4,no:s[0],code:'曜請'+(i+1),court:s[1],time:s[2],tend:s[3],a:s[4],b:s[5],
-      sa:aWin?21:lose,sb:aWin?lose:21,w:aWin?s[4]:s[5]};
-  });
+  // ---- 28 場（賽程官方；比分由雲端 8_發布_戰情看板 依場次編號帶入）----
+  const MATCHES=SCHED.map((s,i)=>({
+    i,r:(i/4)|0,k:i%4,no:s[0],code:'曜請'+(i+1),court:s[1],time:s[2],tend:s[3],a:s[4],b:s[5],
+    sa:null,sb:null,w:null,done:false
+  }));
+  function applyCloud(d){
+    const M=(d&&d.matches)||{};
+    MATCHES.forEach(m=>{
+      const r=M[String(m.no)];
+      if(r&&r.done){m.sa=r.sa;m.sb=r.sb;m.w=(r.sa>r.sb)?m.a:m.b;m.done=true;}
+      else{m.sa=null;m.sb=null;m.w=null;m.done=false;}
+    });
+    return MATCHES.filter(m=>m.done).length;
+  }
   const ROUNDS=[0,1,2,3,4,5,6].map(r=>MATCHES.slice(r*4,r*4+4));
   const RTIME=ROUNDS.map(rd=>[...new Set(rd.map(m=>m.time))].join(' / '));
 
   // ---- 依進度計算戰績 ----
-  function calc(prog){
+  function calc(){
     const st=TEAMS.map(t=>({...t,w:0,l:0,gf:0,ga:0,ms:[]}));
     const played=[];
     MATCHES.forEach(m=>{
-      if(m.i>=prog)return;
+      if(!m.done)return;
       const A=st[m.a],B=st[m.b];
       A.gf+=m.sa;A.ga+=m.sb;B.gf+=m.sb;B.ga+=m.sa;
       if(m.w===m.a){A.w++;B.l++;}else{B.w++;A.l++;}
       A.ms.push(m);B.ms.push(m);
-      played.push({a:A,b:B,sa:m.sa,sb:m.sb,winner:st[m.w]});
+      played.push({a:A,b:B,sa:m.sa,sb:m.sb,winner:st[m.w],done:true});
     });
     // 同分判定走共用資料層（官方秩序冊第六章）：勝場 → ① 總得失分率（總得÷總失，計全部循環場次）② 兩隊對戰勝負 ③ 抽籤
     const rank=SolarCupData.rankGroup(st,played);
@@ -271,13 +282,13 @@
 
   // ---- 八角對戰網 ----
   const octoEl=document.getElementById('octo');
-  function drawOcto(prog){
+  function drawOcto(){
     const cx=260,cy=240,R=185,nr=24;
     const V=TEAMS.map((t,i)=>{const a=-Math.PI/2+i*2*Math.PI/8;return{x:cx+Math.cos(a)*R,y:cy+Math.sin(a)*R};});
     function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),ux=dx/d,uy=dy/d;return{x1:a.x+ux*nr,y1:a.y+uy*nr,x2:b.x-ux*nr,y2:b.y-uy*nr};}
     let links='',photons='',scores='',nodes='';
     MATCHES.forEach(m=>{
-      const done=m.i<prog,A=V[m.a],B=V[m.b],e=edge(A,B);
+      const done=m.done,A=V[m.a],B=V[m.b],e=edge(A,B);
       const wc=done?TEAMS[m.w].c:'rgba(120,140,170,.14)';
       links+=`<line class="olink" data-a="${m.a}" data-b="${m.b}" data-k="${m.i}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="${done?1.8:1}" opacity="${done?.6:.9}"/>`;
       if(done){
@@ -315,13 +326,14 @@
 
   // ---- 積分榜 ----
   const standEl=document.getElementById('stand');
-  function drawStand(prog){
-    const {rank}=calc(prog);
+  function drawStand(){
+    const allDone=MATCHES.every(m=>m.done);
+    const {rank}=calc();
     const medals=['🥇','🥈','🥉'];
     standEl.innerHTML=rank.map((t,i)=>{
       const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
       const ratio=t._r!=null&&t._r<90?('總得失分率 '+t._r.toFixed(2)):'';
-      return `<div class="row ${cls}"><span class="rk">${i+1}</span><span class="medal">${i<3&&prog>=28?medals[i]:''}</span>
+      return `<div class="row ${cls}"><span class="rk">${i+1}</span><span class="medal">${i<3&&allDone?medals[i]:''}</span>
         <span class="nm" style="color:${t.c}">${t.label}</span>
         <span class="wl">${t.w} 勝 ${t.l} 敗</span><span class="rt">${ratio}</span></div>`;
     }).join('');
@@ -329,15 +341,15 @@
 
   // ---- 賽程表 ----
   const roundsEl=document.getElementById('rounds');
-  function drawRounds(prog){
+  function drawRounds(){
     let html='';
     ROUNDS.forEach((rd,r)=>{
-      const dc=rd.filter(m=>m.i<prog).length;
+      const dc=rd.filter(m=>m.done).length;
       const state=dc===4?'done':(dc>0?'live':'wait');
       const tag=state==='done'?'<span class="tag done">✓ 完賽</span>':state==='live'?`<span class="tag live">● LIVE ${dc}/4</span>`:'<span class="tag wait">待賽</span>';
       html+=`<div class="round"><div class="rh"><b>第 ${r+1} 輪</b><span class="tm">${RTIME[r]}</span>${tag}</div><div class="mrow">`;
       rd.forEach(m=>{
-        const done=m.i<prog;
+        const done=m.done;
         const aw=done&&m.w===m.a,bw=done&&m.w===m.b;
         html+=`<div class="m ${done?'done':'wait'}">
           <span class="ct">${m.time} 場${m.court}</span>
@@ -400,13 +412,15 @@
   rmask.addEventListener('click',e=>{if(e.target===rmask){rmask.classList.remove('show');curRec=null;}});
 
   // ---- 進度連動 ----
-  const progEl=document.getElementById('prog'),progSt=document.getElementById('progSt');
+  const progSt=document.getElementById('progSt'),progBar=document.getElementById('progBar');
   function progLbl(p){if(p===0)return '尚未開打';if(p>=28)return '全部完賽 · 冠亞季確定';
-    const r=Math.floor((p-1)/4)+1;return `已完成 ${p} / 28 場 · 第 ${r} 輪${p%4===0?'結束':'進行中'}`;}
-  function render(){const p=+progEl.value;progSt.textContent=progLbl(p);drawOcto(p);drawStand(p);drawRounds(p);
+    return `已完成 ${p} / 28 場`;}
+  function render(p){progSt.textContent=progLbl(p);progBar.style.width=Math.round(p/28*100)+'%';
+    drawOcto();drawStand();drawRounds();
     if(curRec!=null&&rmask.classList.contains('show'))openRec(curRec);}
-  progEl.addEventListener('input',render);
-  render();
+  if(window.SolarCupLive){
+    window.SolarCupLive.onUpdate(d=>{render(applyCloud(d));},45000);
+  }else{ render(applyCloud(null)); progSt.textContent='雲端資料層未載入'; }
 })();
 </script>
 </body>
