@@ -168,30 +168,47 @@
     return m;
   }
 
-  // ---- 同分判定（官方秩序冊第六章）----
-  // 官方秩序冊第六章：1 勝場多者先；2 總得失分率＝該循環全部場次 總得分÷總失分，大者先；3 兩隊對戰勝負；4 抽籤（保持順序）
+  // 全站唯一的循環賽排序規則（官方秩序冊第六章）。bracket-tree 的五角/三角循環
+  // 也呼叫這支，不得各寫一套——兩套規則會讓同一份資料在不同頁面排出不同名次。
+  //   ① 勝場多者先
+  //   ② 總得失分率＝該循環「全部已完賽場次」總得÷總失，大者先（GA=0 → 999，同後端）
+  //   ③ 兩隊對戰勝負：僅在「恰好 2 隊同勝場同得失分率、且該場已完賽」時採用
+  //   ④ 3 隊以上完全同率 → 標記 _tied（待抽籤），順序不具意義
   function rankGroup(teams,matches){
-    // 先按勝場分群，同勝場者比總得失分率
-    const byW={};teams.forEach(t=>{(byW[t.w]=byW[t.w]||[]).push(t);});
-    const ranked=[];
-    Object.keys(byW).map(Number).sort((a,b)=>b-a).forEach(w=>{
-      const grp=byW[w];
-      if(grp.length===1){ranked.push(grp[0]);return;}
-      // 總得失分率：計該隊在此循環的所有場次得失分（非僅同分隊互相對戰）
-      // 只計已完賽場次；失分率 sentinel 統一 999（與後端 MIN(IFERROR(...,999),999) 一致）
-      grp.forEach(t=>{let gf=0,ga=0;
-        matches.forEach(m=>{if(!m.done)return;
-          if(m.a===t){gf+=m.sa;ga+=m.sb;}else if(m.b===t){gf+=m.sb;ga+=m.sa;}});
-        t._ratio=ga>0?Math.min(gf/ga,999):999;t._h2hgf=gf;t._h2hga=ga;});
-      grp.sort((x,y)=>{
-        if(y._ratio!==x._ratio)return y._ratio-x._ratio; // 總得失分率大者先
-        // 兩隊對戰勝負（僅兩隊同分同得失分率時）
-        if(grp.length===2){const dm=matches.find(m=>(m.a===x&&m.b===y)||(m.a===y&&m.b===x));
-          if(dm)return dm.winner===x?-1:1;}
-        return 0; // 三隊以上皆同→保持（現場抽籤）
-      });
-      grp.forEach(t=>ranked.push(t));
+    const order=new Map();
+    teams.forEach((t,i)=>{
+      let gf=0,ga=0;
+      matches.forEach(m=>{if(!m.done)return;
+        if(m.a===t){gf+=m.sa;ga+=m.sb;}else if(m.b===t){gf+=m.sb;ga+=m.sa;}});
+      t._ratio=ga>0?Math.min(gf/ga,999):999;t._h2hgf=gf;t._h2hga=ga;t._tied=false;
+      order.set(t,i);
     });
+    // 直接對戰：未完賽的場次不得拿來判勝
+    function h2h(x,y){
+      const dm=matches.find(m=>m.done&&m.winner&&
+        ((m.a===x&&m.b===y)||(m.a===y&&m.b===x)));
+      return dm?(dm.winner===x?-1:1):0;
+    }
+    const EPS=1e-9;
+    const ranked=[...teams].sort((x,y)=>{
+      if(y.w!==x.w)return y.w-x.w;                                  // ① 勝場
+      if(Math.abs(y._ratio-x._ratio)>EPS)return y._ratio-x._ratio;  // ② 得失分率
+      return order.get(x)-order.get(y);                             // 暫定，下面處理同率群
+    });
+    // 掃出「勝場＋得失分率完全相同」的連續群
+    let i=0;
+    while(i<ranked.length){
+      let j=i+1;
+      while(j<ranked.length&&ranked[j].w===ranked[i].w&&
+            Math.abs(ranked[j]._ratio-ranked[i]._ratio)<=EPS)j++;
+      const n=j-i;
+      if(n===2){
+        if(h2h(ranked[i],ranked[i+1])>0)[ranked[i],ranked[i+1]]=[ranked[i+1],ranked[i]];  // ③
+      }else if(n>2){
+        for(let k=i;k<j;k++)ranked[k]._tied=true;                   // ④ 待抽籤
+      }
+      i=j;
+    }
     return ranked;
   }
 

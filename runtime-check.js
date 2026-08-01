@@ -1,0 +1,155 @@
+/* 瀏覽器 runtime 預檢（node runtime-check.js）
+   補 predeploy-check.js 抓不到的那一類：未宣告變數、null dereference、
+   modal 互動錯誤。這輪的 P0-01（strict mode 未宣告賦值害整個 LIVE 層失效）
+   與 P1-05（曜請 modal 讀已移除的 progEl）都是靜態檢查全過、runtime 才炸。
+
+   做法：不引入 JSDOM 依賴，改用 Node VM 直接跑各檔的 inline script，
+   以最小 DOM stub 承接，只要拋例外就算失敗。 */
+const fs=require('fs'), path=require('path'), vm=require('vm');
+const DIR=__dirname;
+const bad=[];
+
+// ---- 最小 DOM stub ----
+function mkDoc(){
+  const mk=()=>{const e={style:{setProperty(){},},classList:{add(){},remove(){},toggle(){},contains:()=>false},
+    dataset:{},children:[],innerHTML:'',textContent:'',value:'0',
+    appendChild(){},removeChild(){},insertAdjacentHTML(){},addEventListener(){},
+    removeEventListener(){},querySelector:()=>mk(),querySelectorAll:()=>[],
+    getBoundingClientRect:()=>({left:0,top:0,width:100,height:100}),
+    setAttribute(){},getAttribute:()=>null,closest:()=>mk(),focus(){},offsetWidth:1};
+    return e;};
+  return {createElement:mk,createElementNS:mk,createTextNode:mk,
+    getElementById:()=>mk(),querySelector:()=>mk(),
+    querySelectorAll:()=>[],getElementsByClassName:()=>[],addEventListener(){},
+    body:mk(),documentElement:mk(),head:mk(),readyState:'complete'};
+}
+function sandbox(){
+  // 瀏覽器語意：window 就是全域物件，bare `innerWidth` / `SolarCupLive` 才找得到
+  const sb={
+    innerWidth:1280,innerHeight:800,devicePixelRatio:1,
+    addEventListener(){},removeEventListener(){},
+    location:{hash:'',href:''},matchMedia:()=>({matches:false,addEventListener(){}}),
+    document:mkDoc(),console:{log(){},warn(){},error(){}},
+    setTimeout:()=>0,setInterval:()=>0,clearInterval(){},clearTimeout(){},
+    requestAnimationFrame:()=>0,cancelAnimationFrame(){},
+    Date,Math,JSON,Promise,Set,Map,Array,Object,String,Number,Boolean,RegExp,Error,isNaN,parseInt,parseFloat,
+    fetch:()=>new Promise(()=>{}),navigator:{userAgent:'node'},performance:{now:()=>0},
+    getComputedStyle:()=>({getPropertyValue:()=>''}),
+    URLSearchParams:URLSearchParams,URL:URL,TextEncoder:TextEncoder,
+    history:{replaceState(){},pushState(){}},localStorage:{getItem:()=>null,setItem(){}},
+    THREE:undefined,SolarCupData:undefined,SolarCupLive:undefined,
+  };
+  sb.window=sb; sb.globalThis=sb; sb.self=sb;
+  return sb;
+}
+function inlineScripts(file){
+  const html=fs.readFileSync(path.join(DIR,file),'utf8');
+  return [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+}
+// ---- 逐頁首屏：載入 data layer + 該頁 inline script，任何拋例外即失敗 ----
+const PAGES=['solar-cup-two.html','qualifying.html','bracket-tree.html','invitational.html',
+             'team-search.html','at-field-ranking.html','solar-cup-live.html','club-emblems.html'];
+const dataLayer=fs.readFileSync(path.join(DIR,'tournament-data.js'),'utf8');
+const liveLayer=fs.readFileSync(path.join(DIR,'live-data.js'),'utf8');
+PAGES.forEach(f=>{
+  const sb=sandbox(); vm.createContext(sb);
+  try{ vm.runInContext(dataLayer,sb); vm.runInContext(liveLayer,sb); }
+  catch(e){ bad.push(`${f} 資料層載入失敗：${e.message}`); return; }
+  inlineScripts(f).forEach((code,i)=>{
+    try{ vm.runInContext(code,sb,{timeout:8000}); }
+    catch(e){
+      if(/THREE|WebGL|canvas|getContext/i.test(e.message))return;   // 3D 背景在 node 無法執行，略過
+      const at=(e.stack||'').split('\n').slice(1,3).map(x=>x.trim()).join(' ← ');
+      bad.push(`${f} script[${i}] 首屏拋例外：${e.message.slice(0,110)}\n        ${at.slice(0,150)}`);
+    }
+  });
+});
+
+// ---- LIVE 成功／失敗 兩情境 ----
+function liveScenario(fail){
+  const sb=sandbox(); vm.createContext(sb);
+  sb.fetch=(u)=>{
+    if(fail)return Promise.reject(new Error('模擬斷線'));
+    const name=decodeURIComponent(String(u).split('sheet=')[1]||'');
+    const body=name==='8_發布_戰情看板'?'場次編號,隊A,隊B,分A,分B\n1,A,B,21,15\n':'欄1\nx\n';
+    return Promise.resolve({ok:true,text:()=>Promise.resolve(body)});
+  };
+  vm.runInContext(liveLayer,sb);
+  return sb.window.SolarCupLive.load();
+}
+
+(async()=>{
+  const okD=await liveScenario(false);
+  if(okD.state!=='fresh'||!okD.updatedAt)bad.push(`LIVE 全成功應為 fresh，實得 ${okD.state}`);
+  const failD=await liveScenario(true);
+  if(failD.state!=='cold'||failD.updatedAt!==null)bad.push(`LIVE 首次失敗應為 cold 且無時間，實得 ${failD.state}/${failD.updatedAt}`);
+
+  // ---- 資料層三情境 + winner 空值巡檢 ----
+  const sb=sandbox(); vm.createContext(sb); vm.runInContext(dataLayer,sb);
+  const D=sb.window.SolarCupData;
+  const all=[];Object.keys(D.QUAL_SCHEDULE).forEach(g=>D.QUAL_SCHEDULE[g].forEach(s=>all.push(s)));
+  [0,0.4,1].forEach(frac=>{
+    const m={};all.forEach((s,k)=>{if(k<Math.round(all.length*frac))m[String(s.n)]={a:s.a,b:s.b,sa:21,sb:11+(k%9),done:true};});
+    try{
+      const r=D.buildAllTeams({matches:m,hasReal:frac>0,qualRank:{}});
+      r.teams.forEach(t=>t.matches.forEach(x=>{
+        if(x.done&&!x.winner)throw new Error('done 卻無 winner');
+        if(!x.done&&x.winner)throw new Error('pending 卻有 winner');
+        if(x.done)void x.winner.club.c;
+      }));
+    }catch(e){bad.push(`資料層 ${frac*100}% 情境：${e.message}`);}
+  });
+  // 全站 winner.* 守衛巡檢
+  const GUARD=/m\.winner&&|&&m\.winner|m\.winner\?|if\(m\.winner\)|\(m\.winner\b|m\.done\?|played\?|done\?|!m\.winner|!m\.done/;
+  ['qualifying.html','bracket-tree.html','team-search.html','invitational.html','at-field-ranking.html'].forEach(f=>{
+    const lines=fs.readFileSync(path.join(DIR,f),'utf8').split('\n');
+    lines.forEach((L,i)=>{
+      if(!/\w+\.winner\.\w+/.test(L))return;
+      // 守衛可能寫在同一行，也可能是前幾行的 early return（if(!m.done||!m.winner){...return}）
+      const ctx=lines.slice(Math.max(0,i-8),i+1).join('\n');
+      if(!GUARD.test(ctx))bad.push(`${f}:${i+1} winner.* 未加守衛`);
+    });
+  });
+
+  // ---- 重構殘留掃描：抓「宣告被刪、引用還在」這一類 ----
+  // 首屏跑不到的路徑（modal、點擊 handler）用執行驗不到，改用宣告/引用比對。
+  // P1-05（曜請 modal 讀已移除的 progEl）就屬於這一類。
+  const DOMISH=/\b([a-zA-Z_$][\w$]*(?:El|Elem|Node|Btn|Mask|Card|Box))\b/g;
+  ['qualifying.html','bracket-tree.html','invitational.html','team-search.html',
+   'at-field-ranking.html','solar-cup-live.html','solar-cup-two.html'].forEach(f=>{
+    inlineScripts(f).forEach((code,bi)=>{
+      // 先剝除字串／樣板／註解——SVG 屬性名、base64、HTML 片段不是變數
+      const src=code
+        .replace(/`(?:\\.|[^`\\])*`/g,'``')
+        .replace(/'(?:\\.|[^'\\])*'/g,"''")
+        .replace(/"(?:\\.|[^"\\])*"/g,'""')
+        .replace(/\/\*[\s\S]*?\*\//g,'')
+        .replace(/(^|[^:])\/\/[^\n]*/g,'$1');
+      const declared=new Set();
+      // 逗號串接宣告：const a=…,b=…,c=…
+      for(const m of code.matchAll(/\b(?:const|let|var)\s+([^;\n]+)/g))
+        m[1].split(',').forEach(seg=>{const k=(seg.split('=')[0]||'').trim();
+          if(/^[a-zA-Z_$][\w$]*$/.test(k))declared.add(k);});
+      for(const m of code.matchAll(/\b(?:const|let|var|function)\s+([a-zA-Z_$][\w$]*)/g))declared.add(m[1]);
+      for(const m of code.matchAll(/(?:const|let|var)\s*\{([^}]*)\}/g))
+        m[1].split(',').forEach(x=>{const k=x.split(':').pop().trim();if(k)declared.add(k);});
+      for(const m of code.matchAll(/\(([^)]*)\)\s*=>/g))
+        m[1].split(',').forEach(x=>{const k=x.trim();if(/^[a-zA-Z_$][\w$]*$/.test(k))declared.add(k);});
+      const seen=new Set();
+      for(const m of src.matchAll(DOMISH)){
+        const id=m[1];
+        if(declared.has(id)||seen.has(id))continue;
+        if(/^(document|window|HTMLElement|SVGElement)$/.test(id))continue;
+        if(new RegExp('\\.'+id+'\\b').test(src))continue;   // 屬性存取，非自由變數
+        seen.add(id);
+        bad.push(`${f} script[${bi}] 引用未宣告的 ${id}（重構殘留？）`);
+      }
+    });
+  });
+
+  if(bad.length){console.error('❌ runtime 預檢失敗：');bad.forEach(b=>console.error('   · '+b));process.exit(1);}
+  console.log(`✅ ${PAGES.length} 頁首屏 0 例外`);
+  console.log('✅ LIVE fresh／cold 兩情境正確');
+  console.log('✅ 資料層 0%／40%／100% 三情境 0 例外');
+  console.log('✅ 全站 winner.* 守衛無遺漏');
+})();

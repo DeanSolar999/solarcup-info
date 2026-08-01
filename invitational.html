@@ -224,7 +224,7 @@
 </script>
 <script>
 (function(){
-  // ---- 曜請 8 隊（受邀外部隊伍 · 佔位資料，正式名單確定後替換）----
+  // ---- 曜請 8 隊（受邀外部隊伍｜名單已與雲端 1_隊伍名冊 核對一致）----
   const TEAMS=[
     {id:0,label:'雷熊嗷嗷2',c:'#ffc24b',p:['熊','雷']},{id:1,label:'羽球次等生',c:'#ff8a3c',p:['康恩','恩尼']},
     {id:2,label:'慈母手聰線',c:'#22d3ee',p:['李慈','聰聰']},{id:3,label:'隨便取就好',c:'#2ee6c8',p:['凱文','和蒲']},
@@ -232,8 +232,6 @@
     {id:6,label:'哎呀呀呀呀',c:'#a3e635',p:['小曹','小宇']},{id:7,label:'甘巴爹',c:'#6b6bff',p:['馬特','下巴']},
   ];
   // ---- 固定種子亂數 ----
-  let _sd=20260815;
-  function rnd(){_sd=(_sd*9301+49297)%233280;return _sd/233280;}
   // ---- 官方賽程表（雲端「5_曜請成績」實抓 28 場 · 場次 / 場地 / 時間 / 對戰組合為官方定案，不再由程式推算）----
   // 每筆：[場次編號, 場地, 開始, 結束, 隊A, 隊B]；隊為 TEAMS 索引（官方隊伍編號 101→0 … 108→7）
   const SCHED=[
@@ -373,13 +371,14 @@
   }
   function openRec(i){
     curRec=i;
-    const p=+progEl.value,t=TEAMS[i],{rank}=calc(p);
+    const t=TEAMS[i],{rank}=calc();
+    const allDone=MATCHES.every(m=>m.done);
     const me=rank.find(x=>x.id===i),pos=rank.indexOf(me)+1;
     rcard.style.setProperty('--rc',t.c);rcard.style.setProperty('--rg','color-mix(in srgb,'+t.c+' 30%,transparent)');
     // 該隊 7 場(按輪序)
     const mine=MATCHES.filter(m=>m.a===i||m.b===i);
     const logs=mine.map(m=>{
-      const done=m.i<p,opp=TEAMS[m.a===i?m.b:m.a];
+      const done=m.done,opp=TEAMS[m.a===i?m.b:m.a];
       const my=m.a===i?m.sa:m.sb,op=m.a===i?m.sb:m.sa,win=done&&m.w===i;
       return `<div class="lr ${done?'':'pend'}"><span class="st">第 ${m.r+1} 輪 ${m.time}</span>
         <span class="op">vs <b style="color:${opp.c}">${opp.label}</b></span>
@@ -387,7 +386,7 @@
         <span class="bdg ${done?(win?'w':'l'):'p'}">${done?(win?'勝':'負'):'待賽'}</span></div>`;
     }).join('');
     const medals=['🥇 冠軍','🥈 亞軍','🥉 季軍'];
-    const foot=p>=28
+    const foot=allDone
       ?(pos<=3?`最終名次：<b>${medals[pos-1]}</b> · ${me.w} 勝 ${me.l} 敗`:`最終名次：<b>第 ${pos} 名</b> · ${me.w} 勝 ${me.l} 敗`)
       :`目前排名：<b>第 ${pos} 名</b> · 已賽 ${me.w+me.l} / 7 場 · 賽果陸續更新`;
     rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${octoEmb(t.c)}</div>

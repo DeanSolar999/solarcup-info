@@ -160,11 +160,14 @@
       var allOk = ['8_發布_戰情看板','3_資格賽積分榜','6_積分總表','7_球團積分']
         .every(function (n) { return _cache[n] && _cache[n].ok; });
       if (allOk) _lastGood = new Date();
+      // 三態：fresh（allOk）／stale（有 last-good 但本次未全成功）／cold（從未成功過）
+      var state = allOk ? 'fresh' : (_lastGood ? 'stale' : 'cold');
       return {
         matches: matches, qualRank: qualRank, teamScores: teamScores,
         clubScores: clubScores, hasReal: hasReal,
         qualDone: qualDone, qualTotal: QUAL_LAST, knockoutStarted: knockoutStarted,
-        stale: !allOk, updatedAt: _lastGood || new Date(),
+        // cold 時 updatedAt 為 null——沒有成功過就不該顯示任何時間
+        state: state, stale: !allOk, updatedAt: _lastGood,
       };
     }).catch(function (err) {
       console.warn('[SolarCupLive] load 失敗：', err);
@@ -183,10 +186,24 @@
     return function stop() { clearInterval(timer); };
   }
 
+  // ---- 各頁共用的狀態文字（三態一致呈現）----
+  function fmtTime(d){
+    try { return d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',hour12:false}); }
+    catch(e){ return ''; }
+  }
+  function statusText(d){
+    if (!d || d.state === 'cold') return { cls:'err', text:'連線失敗 · 尚無可用資料' };
+    if (d.state === 'stale') return { cls:'warn',
+      text:'連線異常 · 暫用上次成功資料（' + fmtTime(d.updatedAt) + '）' };
+    return { cls:'ok', text:'更新於 ' + fmtTime(d.updatedAt) };
+  }
+
   global.SolarCupLive = {
     SHEET_ID: SHEET_ID,
     fetchSheet: fetchSheet,
     load: load,
     onUpdate: onUpdate,
+    statusText: statusText,
+    fmtTime: fmtTime,
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -623,26 +623,25 @@
   }
   function setPlace(t,pts,stage){if(!t||t.pending)return;t.placePts=pts;t.stage=stage;}
   // 循環賽名次（官方最新同分判定）：勝場 → 總得失分率（該循環全部場次）→ 兩隊對戰勝負 → 抽籤
+  // 循環賽名次：排序規則一律委派資料層的唯一實作 SolarCupData.rankGroup，
+  // 本檔不得自帶第二套。此處只負責建「本循環專屬」的統計代理物件——
+  // 隊伍的 w/l 是跨輪次累加的，五角循環必須只算這 10 場。
   function rrRank(teams,matches){
-    const st=new Map();
-    teams.forEach((t,i)=>st.set(t.tid,{t,i,w:0,l:0,pf:0,pa:0,beat:new Set()}));
+    const px=new Map();
+    (teams||[]).forEach((t,i)=>{if(t)px.set(t,{t,i,label:t.label,w:0,l:0});});
+    const pms=[];
     matches.forEach(m=>{
-      if(m.pending)return;                                            // 未開打不計
-      const A=st.get(m.a.tid),B=st.get(m.b.tid);if(!A||!B)return;
-      A.pf+=m.sa;A.pa+=m.sb;B.pf+=m.sb;B.pa+=m.sa;
-      if(m.winner===m.a){A.w++;B.l++;A.beat.add(m.b.tid);}else{B.w++;A.l++;B.beat.add(m.a.tid);}
+      if(m.pending||!m.done||!m.winner)return;                       // 未開打不計
+      const A=px.get(m.a),B=px.get(m.b);if(!A||!B)return;
+      if(m.winner===m.a){A.w++;B.l++;}else{B.w++;A.l++;}
+      pms.push({a:A,b:B,sa:m.sa,sb:m.sb,done:true,winner:m.winner===m.a?A:B});
     });
-    const arr=[...st.values()];
-    // 失分率 sentinel 統一 999（與後端 MIN(IFERROR(...,999),999)、rankGroup 一致）
-    arr.forEach(x=>x.rt=x.pa>0?Math.min(x.pf/x.pa,999):999);
-    arr.sort((x,y)=>{
-      if(y.w!==x.w)return y.w-x.w;                                   // ① 勝場
-      if(Math.abs(y.rt-x.rt)>1e-9)return y.rt-x.rt;                  // ② 總得失分率
-      if(x.beat.has(y.t.tid))return -1;                              // ③ 兩隊對戰勝負
-      if(y.beat.has(x.t.tid))return 1;
-      return x.i-y.i;                                                // ④ 抽籤（此處以抽籤序遞補，保證穩定）
-    });
-    return arr;
+    const D=(typeof window!=='undefined')&&window.SolarCupData;
+    const arr=[...px.values()];
+    const sorted=(D&&D.rankGroup)?D.rankGroup(arr,pms):arr;
+    // 回填顯示用欄位（rt＝總得失分率、pf/pa＝本循環總得/總失、tied＝三隊以上同率待抽籤）
+    sorted.forEach(x=>{x.rt=x._ratio;x.pf=x._h2hgf;x.pa=x._h2hga;x.tied=!!x._tied;});
+    return sorted;
   }
 
   // 快取各階級資料
@@ -659,7 +658,7 @@
         m.seat=SEATS[i];if(m.winner)m.winner.seat=SEATS[i];   // 未開打無勝方，不寫 seat
         setPlace(m.loser,0,'初賽止步');preMatches.push(m);
       }
-      const adv=preMatches.map(m=>m.winner);
+      const adv=preMatches.map(m=>m.winner||TBD(tier));   // 未開打 → TBD 佔位，維持樹形
       // ── 複賽：A／B 兩組各 5 隊五角全循環（每組 10 場）→ 各取前二 ──
       const groups=[adv.slice(0,5),adv.slice(5,10)];
       const groupNos=[M.rrA,M.rrB];
@@ -682,7 +681,7 @@
         const m=playM(pool[i*2],pool[i*2+1],'初賽',M.pre[i]);
         setPlace(m.loser,0,'初賽止步');preMatches.push(m);
       }
-      const adv=preMatches.map(m=>m.winner);
+      const adv=preMatches.map(m=>m.winner||TBD(tier));   // 未開打 → TBD 佔位，維持樹形
       // ── 複賽：3 隊三角循環取 2 ＋ 12 隊單淘汰 6 場取 6 ＝ 8 強 ──
       const tri=adv.slice(0,3),koPool=adv.slice(3,15);
       const triMatches=TRI_PAIRS.map((p,k)=>playM(tri[p[0]],tri[p[1]],'複賽 三角循環',M.tri[k]));
@@ -694,7 +693,7 @@
         const m=playM(koPool[i*2],koPool[i*2+1],'複賽',M.ko[i]);
         setPlace(m.loser,20,'複賽止步');koMatches.push(m);
       }
-      const koWin=koMatches.map(m=>m.winner);
+      const koWin=koMatches.map(m=>m.winner||TBD(tier));
       // 8 強席次：三角前二拆開分置兩端，避免同循環兩隊立刻碰頭
       const eight=[triTop2[0],koWin[0],koWin[1],koWin[2],koWin[3],koWin[4],koWin[5],triTop2[1]];
       d={pool,preMatches,adv,tri,triMatches,triRank,triTop2,koPool,koMatches,koWin,eight};
@@ -704,7 +703,7 @@
     if(tier.type==='cas'){
       const e=d.eight,qfW=[];
       for(let i=0;i<4;i++){
-        const m=playM(e[i*2],e[i*2+1],'8 強',M.qf[i]);qfW.push(m.winner);
+        const m=playM(e[i*2],e[i*2+1],'8 強',M.qf[i]);qfW.push(m.winner||TBD(tier));
         if(m.loser&&m.loser.placePts<40)setPlace(m.loser,40,'8 強止步');
       }
       d.qfW=qfW;
@@ -712,7 +711,7 @@
     }
     const semiIn=(tier.type==='cas')?d.qfW:d.four;
     const sfW=[];
-    for(let i=0;i<2;i++)sfW.push(playM(semiIn[i*2],semiIn[i*2+1],'準決賽',M.sf[i]).winner);
+    for(let i=0;i<2;i++)sfW.push(playM(semiIn[i*2],semiIn[i*2+1],'準決賽',M.sf[i]).winner||TBD(tier));
     d.sfW=sfW;
     ko.push({key:'sf',name:'準決賽',head:'準決賽 SEMI',teams:semiIn,winners:sfW,nos:M.sf});
     // 決賽（先打）→ 季軍賽（場次編號在後）
@@ -853,7 +852,8 @@
     const RN=d.ko.length;                                  // 決勝輪數（競技 2／休閒 3）
     prog=(prog==null?RN+2:prog);
     const done=Math.max(0,Math.min(prog-1,RN));            // 已打完的決勝輪數
-    const seeded=prog>=1, crowned=done>=RN, thirdDone=prog>=RN+2;
+    // crowned 需同時「輪次跑完」且「冠軍是真隊」——TBD 佔位（決賽未打）不得加冕
+    const seeded=prog>=1, crowned=(done>=RN)&&!!(d.champ&&!d.champ.pending&&d.champ.clubObj), thirdDone=prog>=RN+2;
     const TC=tr.col,T=2.6; // T=光子/注滿同步週期
     const N0=d.ko[0].teams.length;
     const FW=182,FH=42,GAPY=(N0<=4?34:14),TOP=12;
@@ -951,7 +951,7 @@
     if(!crowned){champ=`<g><polygon points="${octPts}" fill="rgba(255,255,255,.03)" stroke="rgba(255,255,255,.14)" stroke-width="1.6" stroke-dasharray="4 4"/>
       <text x="${chc}" y="${chCy+5}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="20" fill="#3f4d61">?</text>
       <text x="${chc}" y="${chCy+52}" text-anchor="middle" font-family="Share Tech Mono" font-size="8" letter-spacing="2" fill="#3f4d61">CHAMPION</text></g>`;}
-    else{const chco=CH.clubObj||{c:TC,key:''},cc=chco.c;
+    else{const chco=(CH&&CH.clubObj)||{c:TC,key:''},cc=chco.c;
       const mob=typeof innerWidth!=='undefined'&&innerWidth<640;
       const NR=mob?8:16; // 星芒道數(手機減半)
       let rays='';for(let i=0;i<NR;i++){const a=i*2*Math.PI/NR;const L=i%2?52:78,w=i%2?1.1:1.9;

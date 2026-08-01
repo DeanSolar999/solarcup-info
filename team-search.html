@@ -325,10 +325,13 @@
           t.tierColor=TM[s.tier]||t.tierColor;}}
     });
     LIVE=true;
+    // 三態顯示：fresh／stale（暫用上次成功資料）／cold（從未成功，不顯示時間）
     const meta=document.getElementById('srcMeta');
-    const _t=d.updatedAt?new Date(d.updatedAt):null;
-    const _ts=_t&&!isNaN(_t)?String(_t.getHours()).padStart(2,'0')+':'+String(_t.getMinutes()).padStart(2,'0'):'—';
-    if(meta)meta.innerHTML='● LIVE ｜ 資料來源：後端資料庫 ｜ 更新於 <b>'+_ts+'</b> ｜ 共 <b>108</b> 隊 ｜ 點隊伍看完整戰績卡';
+    const st=(window.SolarCupLive&&SolarCupLive.statusText)?SolarCupLive.statusText(d)
+             :{cls:'ok',text:''};
+    const col=st.cls==='ok'?'#4ade80':(st.cls==='warn'?'#ffcf33':'#ff6a6a');
+    const tag=st.cls==='ok'?'LIVE':(st.cls==='warn'?'LIVE · 資料延遲':'連線異常');
+    if(meta)meta.innerHTML=`<b style="color:${col}">● ${tag}</b> ｜ 資料來源：後端資料庫 ｜ ${st.text} ｜ 共 <b>108</b> 隊 ｜ 點隊伍看完整戰績卡`;
     render();
   }
   if(window.SolarCupLive&&SolarCupLive.onUpdate)SolarCupLive.onUpdate(applyLive);

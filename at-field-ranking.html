@@ -902,10 +902,15 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   // 團寵進化仍走 peak(歷史峰值單向、不退化)+ stage() 判斷,只是門檻換成 EVO_T_LIVE
   function fmtTime(d){try{return d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}}
   function updateLiveBadge(liveData){
+    // 三態：fresh 綠 LIVE／stale 黃「暫用上次成功資料」／cold 紅連線失敗
+    const st=(window.SolarCupLive&&SolarCupLive.statusText)?SolarCupLive.statusText(liveData)
+             :{cls:'ok',text:'更新於 '+fmtTime(liveData.updatedAt)};
+    const col=st.cls==='ok'?'#4ade80':(st.cls==='warn'?'#ffcf33':'#ff6a6a');
+    const tag=st.cls==='ok'?'LIVE':(st.cls==='warn'?'LIVE · 資料延遲':'連線異常');
     const sub=document.getElementById('btSub');
-    if(sub)sub.innerHTML=`◆ <b style="color:#4ade80">LIVE</b> ｜ 力場分數已連動官方即時積分・更新於 ${fmtTime(liveData.updatedAt)}`;
+    if(sub)sub.innerHTML=`◆ <b style="color:${col}">${tag}</b> ｜ 力場分數連動官方即時積分・${st.text}`;
     const foot=document.getElementById('demoFooter');
-    if(foot)foot.innerHTML=`◆ <b style="color:#4ade80">LIVE</b> · 力場分數為官方即時積分（每 45 秒同步）・更新於 ${fmtTime(liveData.updatedAt)}`;
+    if(foot)foot.innerHTML=`◆ <b style="color:${col}">${tag}</b> · 官方即時積分（每 45 秒同步）・${st.text}`;
   }
   // ── 待機（「絕」）:賽事已開打、淘汰賽尚未落下第一筆分數 ──────────────
   // 此期間資格賽名次仍在洗牌,級別（底分）會上下跳動,球團總分不是單調遞增,
@@ -940,12 +945,19 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     // 淘汰賽隊名是抽籤後才填的,因此只誤觸一格分數的空白列不會提早開閘。
     if(!liveData.knockoutStarted)return;
     const firstActivation=!LIVE_ACTIVE;
-    STANDBY=false;
     const clubTotalByFull={};(liveData.clubScores||[]).forEach(c=>{clubTotalByFull[c.club]=c.total;});
-    // 全有全無：只要有球團名對不上（賽務改了一個字），整頁維持 demo；
-    // 否則該團會停在 demo 分數混進 LIVE 排行、戴著皇冠穩坐第一而畫面看不出異常
+    // 全有全無：9 個球團全部對得上才放行。缺任何一個就維持待機——
+    // 否則該團會停在 0 分混進 LIVE 排行、畫面卻看不出異常。
+    // ⚠️ STANDBY 必須等通過守衛後才解除，否則會出現「DOM 還是待機、內部狀態已 LIVE」的不一致
     const missing=TEAMS.filter(t=>typeof clubTotalByFull[t.full]!=='number');
-    if(missing.length){console.error('[力場] 球團名對不上雲端，維持 demo：',missing.map(t=>t.full));return;}
+    if(missing.length){
+      console.error('[力場] 球團名對不上雲端，維持待機：',missing.map(t=>t.full));
+      const sub=document.getElementById('btSub');
+      if(sub)sub.innerHTML=`◆ <b style="color:#ff6a6a">資料異常</b> ｜ 球團名對不上雲端（${missing.map(t=>t.full).join('、')}），維持待機`;
+      enterStandby(liveData);   // 明確重繪回待機，狀態與畫面一致
+      return;
+    }
+    STANDBY=false;
     LIVE_ACTIVE=true;
     MSGS[1]='力場 ＝ 官方即時積分（底分＋名次分）加總'; // demo 敘述換成 LIVE 敘述,訊息輪播同步更新
     const teamByName={};Object.keys(liveData.teamScores||{}).forEach(id=>{const ts=liveData.teamScores[id];teamByName[ts.name]=ts;});
