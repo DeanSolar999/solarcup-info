@@ -644,7 +644,8 @@
         RR_PAIRS.forEach((p,k)=>groupMatches[gi].push(
           playM(g[p[0]],g[p[1]],'複賽 '+'AB'[gi]+'組',groupNos[gi][k])));
         const rk=rrRank(g,groupMatches[gi]);standings.push(rk);
-        rk.forEach((r,i)=>{if(i>=2)setPlace(r.t,0,'複賽止步');});
+        // 競技組無八強賽制，五角循環未晉級之 6 隊即「十強」，名次分 40（等同休閒八強層）
+        rk.forEach((r,i)=>{if(i>=2)setPlace(r.t,40,'複賽止步');});
       });
       // 準決賽配對：A1×B2、B1×A2
       const four=[standings[0][0].t,standings[1][1].t,standings[1][0].t,standings[0][1].t];
