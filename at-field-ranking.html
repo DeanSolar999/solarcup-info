@@ -593,7 +593,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   // ===== 資料：接 tournament-data.js 全站統一資料庫 =====
   const D=window.SolarCupData;
   const _all=D.buildAllTeams(null);                      // 108 隊真實名單（無比分，待雲端注入）
-  const WINPTS=20;                                       // 每勝場加分
+  // 名次分要等淘汰賽止步才知道；LIVE 前一律 0，不再用舊 demo 的「每勝 20 分」尺度
   const TIERBASE={plat:300,gold:200,silver:100,bronze:0};
   const TIERKEYCLS={plat:'ut-p',gold:'ut-g',silver:'ut-s',bronze:'ut-b'};
   const STAGE_NAMES={1:'幼體',2:'成長體',3:'成熟體'};
@@ -602,7 +602,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   _all.teams.forEach(tm=>{if(_ct[tm.clubKey])_ct[tm.clubKey].push(tm);});
   const TEAMS=D.NINE.map((club,i)=>{
     let field=0;
-    const units=_ct[club.key].map(tm=>{const base=TIERBASE[tm.tier]||0,wp=tm.w*WINPTS,pts=base+wp;field+=pts;
+    const units=_ct[club.key].map(tm=>{const base=TIERBASE[tm.tier]||0,wp=0,pts=base;field+=pts;
       return {label:tm.label,tier:tm.tier,tierName:tm.tierName,group:tm.group,track:tm.track,w:tm.w,l:tm.l,gf:tm.gf,ga:tm.ga,base,wp,pts};});
     return {name:club.name,full:club.full||club.name,code:'U-0'+(i+1),c:club.c,clubKey:club.key,units,field};
   });
@@ -860,7 +860,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
         <div class="mc">${t.job.names[t.stage-1]} · LV.${lv(t)} · ${STAGE_NAMES[t.stage]} · 第 ${rk} 名 · 力場 ${t.field} AT</div></div></div>
       <a class="mlink" href="team-search.html?club=${t.clubKey}">▸ 查看 ${t.full} 全部 ${t.units.length} 隊戰績卡</a>
       ${trackBlock('競技')}${trackBlock('休閒')}
-      <div class="mnote">${LIVE_ACTIVE?'力場 ＝ 官方即時積分（底分＋名次分）加總，每 45 秒同步':'力場 ＝ 各隊（階級底分＋每勝 '+WINPTS+' 分）加總'}｜點<b style="color:#8fd3ff">階級</b>進淘汰樹、點<b style="color:#8fd3ff">組別</b>看資格賽戰況</div>`;
+      <div class="mnote">${LIVE_ACTIVE?'力場 ＝ 官方即時積分（底分＋名次分）加總，每 45 秒同步':'偵測未啟動 · 名次分於淘汰賽開打後同步'}｜點<b style="color:#8fd3ff">階級</b>進淘汰樹、點<b style="color:#8fd3ff">組別</b>看資格賽戰況</div>`;
     modal.classList.add('show');
     document.getElementById('mx').onclick=()=>modal.classList.remove('show');
   }
@@ -868,7 +868,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
 
   // ===== 訊息捲軸 =====
   const msgbox=document.getElementById('msgbox');
-  const MSGS=['點神獸釋放招式・點球團看各隊組別戰況','力場 ＝ 各隊階級底分＋勝場加分','九大球團・力場強度天梯','曜日盃 TWO・2026.08.15・大安運動中心','資料連動：組別→資格賽戰況，階級→淘汰樹'];
+  const MSGS=['點神獸釋放招式・點球團看各隊組別戰況','力場 ＝ 官方積分（階級底分＋名次分）加總','九大球團・力場強度天梯','曜日盃 TWO・2026.08.15・大安運動中心','資料連動：組別→資格賽戰況，階級→淘汰樹'];
   function msg(txt){msgbox.innerHTML=`<span class="ms">＊</span> ${txt}<span class="arrow">▼</span>`;}
 
   if(window.SC2_ART||REAL_ART.some(x=>x)){const ac=document.getElementById('artCredit');if(ac)ac.style.display='inline';}
