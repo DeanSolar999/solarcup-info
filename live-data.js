@@ -62,7 +62,6 @@
       })
       .then(function (text) {
         var rows = parseCSV(text);
-        ok = true;
         if (_cache[sheetName]) { _cache[sheetName].data = rows; _cache[sheetName].ok = true; }
         return rows;
       })

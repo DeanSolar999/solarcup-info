@@ -116,6 +116,8 @@
     opacity:.3;animation:sc2LogoPulse 4.6s ease-in-out infinite}
   @keyframes sc2LogoPulse{0%,100%{opacity:.22}50%{opacity:.48}}
   @media(max-width:640px){body::after{width:54px;height:54px;right:10px;bottom:10px}}
+  .lr.pend{opacity:.6}
+  .bdg.p{background:rgba(120,140,170,.18);color:#93a3b8}
 </style>
 <link rel="stylesheet" href="design-tokens.css">
 </head>
@@ -253,9 +255,17 @@
           <span class="sc">${m.sc.replace('：',' : ')}</span>
           <span class="bdg ${m.win?'w':'l'}">${m.win?'勝':'負'}</span></div>`;
       }
-      const isA=m.a.tid===t.tid,opp=isA?m.b:m.a,my=isA?m.sa:m.sb,op=isA?m.sb:m.sa,win=m.winner.tid===t.tid;
+      // 未開打（m.done===false）時 winner/sa/sb 皆為 null，只顯示對戰組合與「待賽」
+      const isA=m.a.tid===t.tid,opp=isA?m.b:m.a;
       const stg=t.tier==='invite'?('第 '+m.round+' 輪'):(t.group+' 資格賽');
-      return `<div class="lr"><span class="st">${stg}</span>
+      if(!m.done||!m.winner){
+        return `<div class="lr pend"><span class="st">${stg}${m.time?' · '+m.time:''}</span>
+          <span class="op">vs <b style="color:${opp.clubObj.c}">${opp.label}</b></span>
+          <span class="sc">—</span>
+          <span class="bdg p">待賽</span></div>`;
+      }
+      const my=isA?m.sa:m.sb,op=isA?m.sb:m.sa,win=m.winner.tid===t.tid;
+      return `<div class="lr"><span class="st">${stg}${m.time?' · '+m.time:''}</span>
         <span class="op">vs <b style="color:${opp.clubObj.c}">${opp.label}</b></span>
         <span class="sc">${my} : ${op}</span>
         <span class="bdg ${win?'w':'l'}">${win?'勝':'負'}</span></div>`;

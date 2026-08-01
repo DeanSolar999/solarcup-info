@@ -441,8 +441,10 @@ if(!window.SolarCupData){
     let lines='',pads='';
     // 6 場對戰連線：勝方球團色（電路走線感）
     group.matches.forEach(m=>{
-      const ai=idx.get(m.a),bi=idx.get(m.b),wc=m.winner.club.c;
-      lines+=`<line x1="${V[ai][0]}" y1="${V[ai][1]}" x2="${V[bi][0]}" y2="${V[bi][1]}" stroke="${wc}" stroke-width="1.3" opacity=".42"/>`;
+      // 未開打時 m.winner 為 null —— 用中性色虛線，不可讀取 winner.club
+      const ai=idx.get(m.a),bi=idx.get(m.b);
+      const wc=(m.done&&m.winner)?m.winner.club.c:'rgba(120,140,170,.28)';
+      lines+=`<line x1="${V[ai][0]}" y1="${V[ai][1]}" x2="${V[bi][0]}" y2="${V[bi][1]}" stroke="${wc}" stroke-width="1.3" opacity="${(m.done&&m.winner)?'.42':'.3'}" ${(m.done&&m.winner)?'':'stroke-dasharray="2 2"'}/>`;
     });
     // 頂點焊盤：前二亮球團色+發光呼吸環，後二暗框
     group.teams.forEach((t,i)=>{

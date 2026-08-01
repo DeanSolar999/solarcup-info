@@ -656,7 +656,7 @@
       const preMatches=[];
       for(let i=0;i<10;i++){
         const m=playM(pool[i*2],pool[i*2+1],'初賽',M.pre[i]);
-        m.seat=SEATS[i];m.winner.seat=SEATS[i];
+        m.seat=SEATS[i];if(m.winner)m.winner.seat=SEATS[i];   // 未開打無勝方，不寫 seat
         setPlace(m.loser,0,'初賽止步');preMatches.push(m);
       }
       const adv=preMatches.map(m=>m.winner);
@@ -809,7 +809,7 @@
     RR_PAIRS.forEach((p,k)=>{
       const A=V[p[0]],B=V[p[1]],m=ms[k],no=nos[k];
       const adj=(p[1]-p[0]===1)||(p[0]===0&&p[1]===4); // 外框邊（相鄰）／內部對角線
-      const wc=(m.winner.clubObj||{c:TC}).c;
+      const wc=((m.winner&&m.winner.clubObj)||{c:TC}).c;
       lines+=`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}"
         stroke="${played?wc:'rgba(120,140,170,.3)'}" stroke-width="${played?(adj?2.4:1.6):1.1}" opacity="${played?.8:1}"/>`;
       const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,dx=mx-CX,dy=my-CY,dd=Math.hypot(dx,dy)||1;
@@ -1094,8 +1094,10 @@
       function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,dd=Math.hypot(dx,dy),ux=dx/dd,uy=dy/dd;return {x1:a.x+ux*nodeR,y1:a.y+uy*nodeR,x2:b.x-ux*nodeR,y2:b.y-uy*nodeR};}
       let defs='',links='',photons='',labels='',nodes='';
       gm.forEach((m,k)=>{
-        const ai=idx.get(m.a),bi=idx.get(m.b),wi=idx.get(m.winner),li=wi===ai?bi:ai;
-        const A=V[ai],B=V[bi],wv=V[wi],lv=V[li],wc=(m.winner.clubObj||{c:TC}).c;
+        const ai=idx.get(m.a),bi=idx.get(m.b);
+        const wi=m.winner?idx.get(m.winner):ai, li=wi===ai?bi:ai;
+        const A=V[ai],B=V[bi],wv=V[wi],lv=V[li];
+        const wc=((m.winner&&m.winner.clubObj)||{c:TC}).c;
         const e=edge(A,B),le=edge(lv,wv);
         // 連線用勝方球團色（實色，非漸層）
         links+=`<line class="glink" data-k="${k}" data-i="${ai}" data-j="${bi}" x1="${e.x1.toFixed(1)}" y1="${e.y1.toFixed(1)}" x2="${e.x2.toFixed(1)}" y2="${e.y2.toFixed(1)}" stroke="${wc}" stroke-width="2" opacity=".72"/>`;
