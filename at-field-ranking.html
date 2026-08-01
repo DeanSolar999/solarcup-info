@@ -366,6 +366,12 @@
     color:#0a0e2a;background:#ffd24a;border:2px solid #5a2f08;border-radius:4px;padding:6px 11px;cursor:pointer;
     box-shadow:2px 2px 0 rgba(0,0,0,.35)}
   /* ===== /融合標題 ===== */
+  /* ── 待機（「絕」）：淘汰賽開打前，力場歸零不排名 ── */
+  .fighter.standby .spr,.entry.standby .esp{filter:grayscale(.85) brightness(.55);opacity:.7}
+  .fighter.standby .pedestal,.entry.standby .er{color:#7f8ea3;background:rgba(127,142,163,.14);border-color:rgba(127,142,163,.3)}
+  .fighter.standby .fat,.entry.standby .eat{color:#7f8ea3}
+  .entry.standby{opacity:.82}
+  .entry.standby .estage{background:rgba(127,142,163,.18);color:#93a3b8}
 </style>
 <link rel="stylesheet" href="design-tokens.css">
 <script src="tournament-data.js"></script>
@@ -603,7 +609,16 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   // 力場＝各隊(階級底分＋勝場加分)加總;進化門檻依實際分佈動態三等分(示範模式用)
   const _fs=TEAMS.map(t=>t.field),_lo=Math.min(..._fs),_hi=Math.max(..._fs);
   let EVO_T=[Math.round(_lo+(_hi-_lo)*0.34),Math.round(_lo+(_hi-_lo)*0.67)];
-  // ===== LIVE 進化門檻校準(小傑・2026-07-31)=====
+  // ===== LIVE 進化門檻校準(2026-08-01 重校)=====
+  // 規則改版(競技組複賽止步 +40)後,球團總分整體上移,舊門檻 [1490,1570] 失準。
+  // 重校方式:本機以 10 組隨機種子跑完整 310 場賽事(sim_seed.py),經 formulas 套件
+  // 展開工作簿公式驗證規則無誤後,統計九團總分分佈:
+  //   開閘瞬間(僅底分)  900 ~ 1700   中位 1300
+  //   全場結束(含名次分) 1020 ~ 2020   中位 1540
+  // 於 [1300,1600]×[t1+100,1900] 網格搜尋,以「開場即滿階比例最低 ＋ 結束三階俱全比例最高」
+  // 為準則選出 [1420,1640]:開場 80% 幼體、僅 2.2% 一開場就鎖在成熟體,
+  // 且 10/10 場次結束時九隻神獸都同時存在三種形態(平均每場 7.1 次進化演出)。
+  // ===== 舊版註記(保留供追溯)=====
   // 舊版 [800,1600] 是「階級底分＋每勝 20 分」demo 尺度;LIVE 改吃官方 7_球團積分!C 欄
   // (＝6_積分總表 底分+名次分 依球團 SUMIFS 加總),尺度完全不同,需重新校準。
   // 驗算方式:python3 + openpyxl 讀「曜日盃TWO_後端資料庫_推演版.xlsx」(全 310 場擬真分數
@@ -613,8 +628,9 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   //   1600(魄力) 1680(大船) 1800(小羽宙)　→ 實際落在 1040–1800 區間,與團長提供的估算一致。
   // 9 團取「等隊數三等分」(每階 3 團),門檻取相鄰組距中點,比單純等距切分更貼合實際分佈:
   //   幼體→成長體 = (1460+1520)/2 = 1490　成長體→成熟體 = (1540+1600)/2 = 1570
-  const EVO_T_LIVE=[1490,1570];
-  let LIVE_ACTIVE=false; // true 起 stage() 改用 EVO_T_LIVE(由 applyLive() 於 hasReal 時開啟)
+  const EVO_T_LIVE=[1420,1640];
+  let LIVE_ACTIVE=false; // true 起 stage() 改用 EVO_T_LIVE(由 applyLive() 於淘汰賽開打後開啟)
+  let STANDBY=false;     // 賽事已開打但淘汰賽未開始:力場歸零、不排名(「絕」)
   function stage(peak){const T=LIVE_ACTIVE?EVO_T_LIVE:EVO_T;return peak>=T[1]?3:peak>=T[0]?2:1;}
   TEAMS.forEach((t,i)=>{t.prev=t.field;t.peak=t.field;t.idx=i;t.job=CLASSES[i%CLASSES.length];t.stage=stage(t.peak);t.spr=monsterSVG(i,t.c,t.stage);t._rank=null;});
   function maxField(){return Math.max(...TEAMS.map(t=>t.field));}
@@ -626,18 +642,19 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
   const HEIGHTS=[74,58,58,42,42,30,30,22,22];
 
   function render(changedCode){
-    const sorted=[...TEAMS].sort((a,b)=>b.field-a.field);
-    const mx=maxField()*1.02;
+    // STANDBY＝賽事已開打、但淘汰賽尚未落下第一筆分數：力場處於「絕」，一律歸零不排名
+    const sorted=STANDBY?[...TEAMS].sort((a,b)=>a.idx-b.idx):[...TEAMS].sort((a,b)=>b.field-a.field);
+    const mx=STANDBY?1:maxField()*1.02;
     const podiumOrder=[3,1,0,2,4].map(k=>sorted[k]).filter(Boolean);
     podiumEl.innerHTML=podiumOrder.map(t=>{
       const rk=sorted.indexOf(t);
-      return `<div class="fighter ${rk===0?'champ':''}" data-code="${t.code}">
-        ${rk===0?`<div class="champ-rays"></div><div class="champ-glow"></div><span class="champ-spark" style="left:12%;top:6%"></span><span class="champ-spark" style="right:10%;top:20%;animation-delay:.6s"></span><span class="champ-spark" style="left:18%;top:42%;animation-delay:1.1s"></span><span class="champ-spark" style="right:16%;top:52%;animation-delay:.3s"></span><div class="crown">${crownSVG}</div>`:''}
+      return `<div class="fighter ${(!STANDBY&&rk===0)?'champ':''}${STANDBY?' standby':''}" data-code="${t.code}">
+        ${(!STANDBY&&rk===0)?`<div class="champ-rays"></div><div class="champ-glow"></div><span class="champ-spark" style="left:12%;top:6%"></span><span class="champ-spark" style="right:10%;top:20%;animation-delay:.6s"></span><span class="champ-spark" style="left:18%;top:42%;animation-delay:1.1s"></span><span class="champ-spark" style="right:16%;top:52%;animation-delay:.3s"></span><div class="crown">${crownSVG}</div>`:''}
         <div class="spr evo${t.stage}">${t.spr}</div>
-        <div class="pedestal">${rk+1}</div>
-        <div class="fname" style="color:${t.c}">${t.name}<span class="elv">LV.${lv(t)}</span></div>
+        <div class="pedestal">${STANDBY?'—':rk+1}</div>
+        <div class="fname" style="color:${t.c}">${t.name}<span class="elv">LV.${STANDBY?0:lv(t)}</span></div>
         <div class="fjob">${t.job.names[t.stage-1]}</div>
-        <div class="fat">${t.field} AT</div></div>`;
+        <div class="fat">${STANDBY?0:t.field} AT</div></div>`;
     }).join('');
     podiumEl.querySelectorAll('.fighter').forEach(f=>f.addEventListener('click',()=>{
       const t=TEAMS.find(x=>x.code===f.dataset.code);if(t)openModal(t);}));
@@ -647,16 +664,16 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     });
 
     entriesEl.innerHTML=sorted.map((t,i)=>{
-      const cells=12,on=Math.round((t.field/mx)*cells);
-      const hpc=i===0?'#ffd24a':(t.field/mx>.66?'#4ade80':t.field/mx>.33?'#ffcf33':'#ff6a6a');
+      const cells=12,on=STANDBY?0:Math.round((t.field/mx)*cells);
+      const hpc=STANDBY?'#3a4a5c':i===0?'#ffd24a':(t.field/mx>.66?'#4ade80':t.field/mx>.33?'#ffcf33':'#ff6a6a');
       const anim=Array.isArray(changedCode)?changedCode.includes(t.code):t.code===changedCode; // 支援單一 code 或多筆 code 陣列(LIVE 多團同時更新)
       let bar='';for(let k=0;k<cells;k++)bar+=`<div class="cell ${k<on?'on':''} ${anim&&k<on?'pop':''}" style="--hpc:${hpc};${anim?`animation-delay:${k*45}ms`:''}"></div>`;
-      return `<div class="entry c${i+1<=3?i+1:''}" data-code="${t.code}">
-        <span class="er">${i+1}</span>
+      return `<div class="entry ${STANDBY?'standby':'c'+(i+1<=3?i+1:'')}" data-code="${t.code}">
+        <span class="er">${STANDBY?'—':i+1}</span>
         <span class="esp evo${t.stage}">${t.spr}</span>
-        <span class="enm" style="color:${t.c}">${t.name}<span class="elv">LV.${lv(t)}</span><span class="estage s${t.stage}">${STAGE_NAMES[t.stage]}</span><span class="ecode">${t.code}</span><span class="ejob">${t.job.names[t.stage-1]}</span></span>
+        <span class="enm" style="color:${t.c}">${t.name}<span class="elv">LV.${STANDBY?0:lv(t)}</span><span class="estage s${t.stage}">${STAGE_NAMES[t.stage]}</span><span class="ecode">${t.code}</span><span class="ejob">${t.job.names[t.stage-1]}</span></span>
         <span class="hpbar">${bar}</span>
-        <span class="eat">${t.field}</span></div>`;
+        <span class="eat">${STANDBY?0:t.field}</span></div>`;
     }).join('');
     entriesEl.querySelectorAll('.entry').forEach(e=>{
       e.addEventListener('click',()=>{const t=TEAMS.find(x=>x.code===e.dataset.code);if(t)openModal(t);});
@@ -665,7 +682,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
       const t=TEAMS.find(x=>x.code===s.closest('.entry').dataset.code);
       s.addEventListener('click',e=>{e.stopPropagation();castSkill(s,t);});
     });
-    sorted.forEach((t,i)=>{if(t._rank!=null&&t._rank!==i){
+    sorted.forEach((t,i)=>{if(!STANDBY&&t._rank!=null&&t._rank!==i){
       const e=entriesEl.querySelector(`.entry[data-code="${t.code}"] .er`);
       if(e){e.classList.remove('hop');void e.offsetWidth;e.classList.add('hop');}
     }t._rank=i;});
@@ -890,17 +907,41 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     const foot=document.getElementById('demoFooter');
     if(foot)foot.innerHTML=`◆ <b style="color:#4ade80">LIVE</b> · 力場分數為官方即時積分（每 45 秒同步）・更新於 ${fmtTime(liveData.updatedAt)}`;
   }
+  // ── 待機（「絕」）:賽事已開打、淘汰賽尚未落下第一筆分數 ──────────────
+  // 此期間資格賽名次仍在洗牌,級別（底分）會上下跳動,球團總分不是單調遞增,
+  // 一旦提早採用會讓 peak（歷史峰值單向不退化）記住一個從未真正達到的分數,
+  // 團寵形態被錯誤定格。故一律歸零、不排名,只顯示資格賽進度。
+  function enterStandby(liveData){
+    if(LIVE_ACTIVE)return;                    // 已開閘就不再回頭
+    const first=!STANDBY; STANDBY=true;
+    if(first){
+      TEAMS.forEach(t=>{if(t.stage!==1){t.stage=1;t.spr=monsterSVG(t.idx,t.c,1);}t._rank=null;});
+      MSGS[1]='力場偵測未啟動・淘汰賽開打後全面展開';
+      render();
+    }
+    const done=liveData.qualDone||0,total=liveData.qualTotal||150;
+    const txt=`◆ <b style="color:#ffcf33">偵測未啟動</b> ｜ 資格賽進行中 ${done} / ${total}・淘汰賽開打後啟動力場偵測`;
+    const sub=document.getElementById('btSub'); if(sub)sub.innerHTML=txt;
+    const foot=document.getElementById('demoFooter');
+    if(foot)foot.innerHTML=`◆ <b style="color:#ffcf33">偵測未啟動</b> · 九大球團力場處於「絕」・資格賽 ${done}/${total}`;
+  }
+
+  // ── 三段狀態機:賽前 demo → 開賽後待機 → 淘汰賽開打 LIVE ──────────────
+  function onLiveTick(liveData){
+    if(!liveData)return;
+    if(!liveData.hasReal)return;              // ① 完全無比分:維持示範展示,一切不變
+    if(!liveData.knockoutStarted&&!LIVE_ACTIVE){ enterStandby(liveData); return; } // ② 待機
+    applyLive(liveData);                      // ③ LIVE
+  }
+
   function applyLive(liveData){
-    if(!liveData||!liveData.hasReal)return; // 賽前無真實分數,維持示範展示,完全不變
-    // ── P0 閘門(酷拉皮卡審查,2026-07-31)───────────────────────────────
-    // 資格賽尚未完賽時,3_資格賽積分榜 因無分數導致組內排名全部並列第1,
-    // 6_積分總表 採用晉級 全數落回預設白金/白銀,每團底分恆為 4×300+6×100=1800,
-    // 力場全員同分、9 團同時判定 stage=3(peak 單向不退化,會讓團寵整場提前成熟體)。
-    // 用後端自身不變量守門:資格賽定案後,40 競技隊必為 白金20/黃金20,
-    // 60 休閒隊必為 白銀30/青銅30(曜請 8 隊另計,不影響此判斷)。未達標前直接跳過,維持 demo。
-    const tc={};Object.values(liveData.teamScores||{}).forEach(s=>{tc[s.tier]=(tc[s.tier]||0)+1;});
-    if(tc['白金']!==20||tc['黃金']!==20||tc['白銀']!==30||tc['青銅']!==30)return;
+    if(!liveData||!liveData.hasReal)return;
+    // ── 閘門:場次 ≥151（淘汰賽）出現第一筆完整紀錄才開 ───────────────
+    // 要求該場雙方隊名＋雙方分數都在（見 live-data.js knockoutStarted）,
+    // 淘汰賽隊名是抽籤後才填的,因此只誤觸一格分數的空白列不會提早開閘。
+    if(!liveData.knockoutStarted)return;
     const firstActivation=!LIVE_ACTIVE;
+    STANDBY=false;
     const clubTotalByFull={};(liveData.clubScores||[]).forEach(c=>{clubTotalByFull[c.club]=c.total;});
     // 全有全無：只要有球團名對不上（賽務改了一個字），整頁維持 demo；
     // 否則該團會停在 demo 分數混進 LIVE 排行、戴著皇冠穩坐第一而畫面看不出異常
@@ -933,7 +974,7 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     evolvedList.forEach((t,i)=>setTimeout(()=>playEvolve(t),i*260)); // 多團同時進化錯開播放,每團都有演出
     updateLiveBadge(liveData);
   }
-  if(window.SolarCupLive)window.SolarCupLive.onUpdate(applyLive,45000);
+  if(window.SolarCupLive)window.SolarCupLive.onUpdate(onLiveTick,45000);
 })();
 </script>
 

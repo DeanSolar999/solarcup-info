@@ -8,6 +8,7 @@
 
   var SHEET_ID = '1KqX0AJKHU8TR-t0hUZLqB6jib0tL7BbR';
   var CACHE_MS = 45000;
+  var QUAL_LAST = 150;   // 資格賽最後一場的場次編號
 
   // sheetName -> {t:抓取時間戳, promise:進行中/已完成的 Promise<rows>, data:最後一次成功結果}
   var _cache = {};
@@ -95,16 +96,25 @@
       var cRows = results[3] || [];
 
       // 8_發布_戰情看板：場次編號,隊A,隊B,分A,分B
+      // 場次 1–150＝資格賽，151–310＝淘汰賽＋曜請組（見 0_賽事設定 賽程表）
       var matches = {};
       var hasReal = false;
+      var qualDone = 0;
+      var knockoutStarted = false;
       mRows.slice(1).forEach(function (r) {
         if (!r || !r[0]) return;
         var id = str(r[0]);
         if (!id) return;
+        var a = str(r[1]), b = str(r[2]);
         var sa = num(r[3]), sb = num(r[4]);
         var done = sa !== null && sb !== null;
         if (done) hasReal = true;
-        matches[id] = { a: str(r[1]), b: str(r[2]), sa: sa, sb: sb, done: done };
+        var n = parseInt(id, 10);
+        if (done && n >= 1 && n <= QUAL_LAST) qualDone++;
+        // 淘汰賽隊名是抽籤後才填的；要求雙方隊名＋雙方分數都在，
+        // 才不會被「只誤觸一格分數」的空白列提早觸發力場閘門
+        if (done && n > QUAL_LAST && a && b) knockoutStarted = true;
+        matches[id] = { a: a, b: b, sa: sa, sb: sb, done: done };
       });
 
       // 3_資格賽積分榜：編號,隊名,賽別,組別,勝場,總得分,總失分,得失分差,失分率,組內排名,自動晉級
@@ -144,7 +154,9 @@
 
       return {
         matches: matches, qualRank: qualRank, teamScores: teamScores,
-        clubScores: clubScores, hasReal: hasReal, updatedAt: new Date(),
+        clubScores: clubScores, hasReal: hasReal,
+        qualDone: qualDone, qualTotal: QUAL_LAST, knockoutStarted: knockoutStarted,
+        updatedAt: new Date(),
       };
     }).catch(function (err) {
       console.warn('[SolarCupLive] load 失敗：', err);
