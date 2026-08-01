@@ -6,7 +6,7 @@
 (function (global) {
   'use strict';
 
-  var SHEET_ID = '1KqX0AJKHU8TR-t0hUZLqB6jib0tL7BbR';
+  var SHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
   var CACHE_MS = 45000;
   var QUAL_LAST = 150;   // 資格賽最後一場的場次編號
 
