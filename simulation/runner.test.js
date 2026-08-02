@@ -4,13 +4,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { execFileSync } = require('node:child_process');
 const test = require('node:test');
 const { SimulationRunner, EXPECTED_SPREADSHEET_ID, cellForNumber, parseArgs, parseProjectionBaselines } = require('./runner');
 const { MockAdapter } = require('./mock-adapter');
 const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
-const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError } = require('./lib');
-const marker = require('./marker');
+const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError, fullPlan } = require('./lib');
 
 function temp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'solarcup-sim-')); }
 function plan(n = 3, stage = 'qualification') {
@@ -122,6 +122,19 @@ test('正式 adapter：解析 Google API cell response 並只以 userEnteredValu
   assert.equal(body.requests[0].updateCells.range.startColumnIndex, 10);
 });
 
+test('Sheets readCells：超過 50 個 range 依 sheet 分批請求且保留 ref 對應', async () => {
+  const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' }); const calls = [];
+  const refs = Array.from({ length: 60 }, (_, i) => `2_資格賽成績!K${i + 2}`);
+  adapter.request = async (url) => {
+    const ranges = new URL(url).searchParams.getAll('ranges'); calls.push(ranges);
+    return { sheets: [{ data: ranges.map((ref, i) => ({ rowData: [{ values: [{ userEnteredValue: { numberValue: Number(ref.match(/\d+$/)[0]) }, effectiveValue: { numberValue: i }, formattedValue: String(i) }] }] })) }] };
+  };
+  const values = await adapter.readCells(refs);
+  assert.deepEqual(calls.map((batch) => batch.length), [50, 10]);
+  assert.equal(values['2_資格賽成績!K2'].userEnteredValue.numberValue, 2);
+  assert.equal(values['2_資格賽成績!K61'].userEnteredValue.numberValue, 61);
+});
+
 test('adapter allowlist、armed-fast 與無持久 lease 均拒絕', async () => {
   const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' });
   assert.throws(() => adapter.assertAllowedRef('2_資格賽成績!A2'), /allowlist/);
@@ -131,6 +144,100 @@ test('adapter allowlist、armed-fast 與無持久 lease 均拒絕', async () => 
   assert.throws(() => parseArgs(['run', '--armed', '--fast']), /不可同時/);
   const r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true });
   assert.throws(() => r.assertArmed(), /持久化 external lease/);
+  assert.throws(() => parseArgs(['dry-run', '--phase', 'qualification']), /未知參數/);
+});
+
+test('ci-dry-run：缺 production env 仍只驗證完整 310 場，且不建立外部 adapter', () => {
+  const output = execFileSync(process.execPath, ['runner.js', 'ci-dry-run', '--run-id', 'ci-local'], { cwd: __dirname, env: {} }).toString();
+  const result = JSON.parse(output);
+  assert.equal(result.state, STATES.COMPLETE);
+  assert.equal(result.matches, 310);
+  assert.equal(result.dry_run, true);
+});
+
+test('production resume：approval 先讀取、取得 lease 後再讀取核對；錯誤 hash 不取得 lease', async () => {
+  const calls = [];
+  const manifest = { schema: 2, run_id: 'approval-order', spreadsheet_id: EXPECTED_SPREADSHEET_ID, state: STATES.CANARY_WAITING_APPROVAL, allowlist: [], pre_canonical_hash: 'p' };
+  let r;
+  const store = { async read(_runId, name) { calls.push(name || 'manifest'); return name === 'approval' ? { run_id: 'approval-order', manifest_hash: r.manifestHash(manifest) } : manifest; } };
+  const lease = { async acquire() { calls.push('acquire'); return { fencingToken: 'fence' }; }, async assertHeld() {}, async release() { calls.push('release'); } };
+  r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'dry-run', resumeOnly: true, stateStore: store, lease, plan: [] });
+  const result = await r.start('approval-order');
+  assert.equal(result.state, STATES.CANARY_WAITING_APPROVAL);
+  assert.deepEqual(calls.slice(0, 5), ['manifest', 'approval', 'acquire', 'manifest', 'approval']);
+  const badCalls = [];
+  const bad = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'dry-run', resumeOnly: true, stateStore: { async read(_id, name) { return name === 'approval' ? { run_id: 'approval-order', manifest_hash: '0'.repeat(64) } : manifest; } }, lease: { async acquire() { badCalls.push('acquire'); } }, plan: [] });
+  await assert.rejects(() => bad.start('approval-order'), /APPROVAL_PRELEASE_INVALID/);
+  assert.deepEqual(badCalls, []);
+});
+
+test('5 個 segment 依 checkpoint 累積比分，亂序拒絕，僅最後一段 restore 全部 310 場', async () => {
+  const dir = temp(); const adapter = new MockAdapter();
+  const r = new SimulationRunner({ adapter, stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], fast: true, segment: 1 });
+  const manifest = await r.snapshot('five-segments'); manifest.state = STATES.CANARY_WAITING_APPROVAL; r.save(manifest);
+  const one = await r.start('five-segments');
+  assert.equal(one.state, STATES.SEGMENT_WAITING); assert.equal(one.checkpoint.completed.length, 75); assert.ok((await adapter.readCells([one.plan[0].cells[0]]))[one.plan[0].cells[0]]);
+  r.segment = 3;
+  await assert.rejects(() => r.start('five-segments'), /SEGMENT_ORDER_INVALID/);
+  for (const segment of [2, 3, 4]) { r.segment = segment; const waiting = await r.start('five-segments'); assert.equal(waiting.state, STATES.SEGMENT_WAITING); }
+  r.segment = 5;
+  const final = await r.start('five-segments');
+  assert.equal(final.state, STATES.COMPLETE);
+  const values = await adapter.readCells(final.allowlist);
+  assert.ok(Object.values(values).every((value) => value === null));
+});
+
+test('segment 2 僅驗證 timezone/sheetId/B12，末段 restore 後才驗完整 projection baseline', async () => {
+  const checks = []; const gate = { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } };
+  const lease = { persistent: true, async acquire() { return { fencingToken: 'segment-fence' }; }, async assertHeld() {}, async release() {} };
+  const adapter = new MockAdapter({}, { armedGateResult: (request) => { checks.push(request.requiredProjections); return gate; } });
+  const r = new SimulationRunner({ adapter, stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, stateStore: { async persistManifest() {} }, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], fast: false, sleepFn: async () => {}, segment: 2 });
+  const manifest = await r.snapshot('gate-segment'); manifest.state = STATES.SEGMENT_WAITING; manifest.checkpoint.completed = manifest.plan.slice(0, 75).map((match) => match.id); manifest.checkpoint.next_segment = 2; r.save(manifest);
+  const waiting = await r.start('gate-segment');
+  assert.equal(waiting.state, STATES.SEGMENT_WAITING);
+  assert.deepEqual(checks, [[]]);
+  const resumed = require('./lib').readJson(r.manifestPath('gate-segment'));
+  r.segment = 5; resumed.state = STATES.SEGMENT_WAITING; resumed.checkpoint.completed = resumed.plan.slice(0, 282).map((match) => match.id); resumed.checkpoint.next_segment = 5; r.save(resumed);
+  const final = await r.start('gate-segment');
+  assert.equal(final.state, STATES.COMPLETE);
+  assert.deepEqual(checks.at(-1), ['8', '3', '6', '7']);
+});
+
+test('取消 canary 時先持久化 CANCELLED_RESTORE_REQUIRED 與 cancel journal', async () => {
+  const writes = [];
+  const store = { async persistManifest(manifest) { writes.push(manifest.state); } };
+  const r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease: { persistent: true }, stateStore: store });
+  r.leaseHandle = { fencingToken: 'fence' };
+  r.activeManifest = { run_id: 'cancel-canary', state: STATES.CANARY, checkpoint: {}, allowlist: [], pre_image: {}, pre_canonical_hash: 'x' };
+  await r.requestCancel();
+  assert.equal(r.activeManifest.state, STATES.CANCELLED_RESTORE_REQUIRED);
+  assert.deepEqual(writes, [STATES.CANCELLED_RESTORE_REQUIRED]);
+});
+
+test('canary 收到取消後復原且不產生 immutable report，也不回到等待核准', async () => {
+  let reports = 0;
+  const store = { async read() { throw Object.assign(new Error('missing'), { status: 404 }); }, async persistManifest() {}, async writeCanaryReport() { reports += 1; } };
+  const lease = { persistent: true, async acquire() { return { fencingToken: 'cancel-fence' }; }, async assertHeld() {}, async release() {} };
+  const adapter = new MockAdapter({}, { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } });
+  const r = new SimulationRunner({ adapter, stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, stateStore: store, plan: plan(), allowedStages: ['qualification'] });
+  r.stopRequested = true;
+  const result = await r.start('cancel-canary-run');
+  assert.notEqual(result.state, STATES.CANARY_WAITING_APPROVAL);
+  assert.equal(reports, 0);
+  assert.deepEqual(await adapter.readCells(plan().flatMap((match) => match.cells)), Object.fromEntries(plan().flatMap((match) => match.cells.map((cell) => [cell, null]))));
+});
+
+test('restore-only：僅 LEASE_BUSY 重試並可 takeover；其他 acquire 錯誤立即停止', async () => {
+  let attempts = 0; let sleeps = 0;
+  const busy = Object.assign(new Error('busy'), { code: 'LEASE_BUSY' });
+  const lease = { persistent: true, async acquire() { attempts += 1; if (attempts === 1) throw busy; return { fencingToken: 'takeover' }; }, async assertHeld() {}, async release() {} };
+  const gate = { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } };
+  const r = new SimulationRunner({ adapter: new MockAdapter({}, gate), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, plan: [], sleepFn: async () => { sleeps += 1; } });
+  await r.snapshot('retry-restore');
+  assert.equal((await r.restoreOnly('retry-restore')).state, STATES.COMPLETE);
+  assert.equal(attempts, 2); assert.equal(sleeps, 1);
+  const forbidden = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease: { persistent: true, async acquire() { throw Object.assign(new Error('forbidden'), { code: 'LEASE_ACQUIRE_FAILED', status: 403 }); } } });
+  await assert.rejects(() => forbidden.restoreOnly('no-retry'), (error) => error.code === 'LEASE_ACQUIRE_FAILED');
 });
 
 test('armed precheck：projection 3/6/7/8 與 LIVE B12 證據缺失即拒絕', async () => {
@@ -150,22 +257,6 @@ test('LIVE gate 明確只讀 B12，B11 總場次與 B13 最後更新不會成為
   assert.notEqual(received.liveCell, '0_賽事設定!B13');
 });
 
-test('正式 resume：持有新 lease 等待帶新 fencing token 的 run-scoped marker', async () => {
-  const dir = temp();
-  const lease = { persistent: true, async acquire() { return { fencingToken: 'new-fence' }; }, async assertHeld() {}, async release() {} };
-  const adapter = new MockAdapter({}, { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } });
-  let r;
-  const sleepFn = async () => {
-    const manifest = require('./lib').readJson(r.manifestPath('sim-resume'));
-    const marker = { run_id: 'sim-resume', fencing_token: 'new-fence', manifest_hash: r.manifestHash(manifest), expires_at: new Date(Date.now() + 60_000).toISOString() };
-    writeJson(r.markerPath('sim-resume', 'canary-observed'), marker);
-    writeJson(r.markerPath('sim-resume', 'canary-approved'), marker);
-  };
-  r = new SimulationRunner({ adapter, stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, plan: [], sleepFn, markerWaitMs: 1_000 });
-  const manifest = await r.snapshot('sim-resume'); manifest.state = STATES.CANARY_WAITING_APPROVAL; r.save(manifest);
-  const result = await r.start('sim-resume');
-  assert.equal(result.state, STATES.COMPLETE);
-});
 
 test('Sheets request timeout 轉為 ETIMEDOUT', async () => {
   const original = global.fetch;
@@ -235,10 +326,9 @@ test('safe error：token、email、Spreadsheet ID、URL 與遠端 body 不會寫
   await assert.rejects(() => client.get('bucket', 'object'), (error) => error.status === 412 && !error.message.includes('secret'));
 });
 
-test('GCS timeout 與 marker state root：均 fail closed', async () => {
+test('GCS timeout：fail closed', async () => {
   const client = new GcsJsonClient({ accessToken: 'token', timeoutMs: 1, fetchImpl: (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })))) });
   await assert.rejects(() => client.create('bucket', 'object', {}, { ifGenerationMatch: 0 }), (error) => error.code === 'ETIMEDOUT');
-  assert.throws(() => marker.main(['observer-heartbeat', '--state-dir', temp(), '--run-id', 'safe-run', '--fencing-token', 'f', '--manifest-hash', 'h']), /固定 state root/);
 });
 
 test('long wait：假時鐘下固定 heartbeat 續約，40 秒 jitter 不會耗盡 60 秒 lease', async () => {
@@ -250,30 +340,7 @@ test('long wait：假時鐘下固定 heartbeat 續約，40 秒 jitter 不會耗�
   assert.ok(renews >= 1); assert.ok(r.leaseHandle.expiresAt > clock); assert.equal(manifest.lease_session.fencing_token, 'f2');
 });
 
-test('marker wait：ENOENT 僅視為 pending，等待期間 heartbeat renew 後完成並保留 NORMAL_RESTORED reason', async () => {
-  let clock = 0; const dir = temp(); let r;
-  const lease = { persistent: true, async acquire() { return { fencingToken: 'new-fence', generation: '1', expiresAt: 60_000 }; }, async assertHeld() {}, async renew(handle) { return { ...handle, generation: '2', fencingToken: 'new-fence-2', expiresAt: clock + 60_000 }; }, async release() {} };
-  const adapter = new MockAdapter({}, { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } });
-  const sleepFn = async (ms) => {
-    clock += ms;
-    if (clock === 50_000) {
-      const manifest = require('./lib').readJson(r.manifestPath('delayed-marker'));
-      const value = { run_id: 'delayed-marker', fencing_token: r.leaseHandle.fencingToken, manifest_hash: r.manifestHash(manifest), expires_at: new Date(clock + 60_000).toISOString() };
-      writeJson(r.markerPath('delayed-marker', 'canary-observed'), value); writeJson(r.markerPath('delayed-marker', 'canary-approved'), value);
-    }
-  };
-  r = new SimulationRunner({ adapter, stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, plan: [], now: () => clock, sleepFn, markerWaitMs: 70_000 });
-  const manifest = await r.snapshot('delayed-marker'); manifest.state = STATES.CANARY_WAITING_APPROVAL; r.save(manifest);
-  const result = await r.start('delayed-marker');
-  assert.equal(result.state, STATES.COMPLETE); assert.equal(result.reason, 'NORMAL_RESTORED'); assert.equal(r.leaseHandle.fencingToken, 'new-fence-2');
-});
-
-test('expires_at、projection boundary 與 baseline parser 均 fail closed', async () => {
-  const dir = temp(); const lease = { persistent: true, async acquire() { return { fencingToken: 'fence', expiresAt: Date.now() + 60_000 }; }, async assertHeld() {}, async release() {} };
-  const r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease });
-  await r.acquireLease('bad-expiry'); const manifest = await r.snapshot('bad-expiry');
-  writeJson(r.markerPath('bad-expiry', 'observer-heartbeat'), { run_id: 'bad-expiry', fencing_token: 'fence', manifest_hash: r.manifestHash(manifest), expires_at: 'not-a-date' });
-  assert.throws(() => r.requireMarker(manifest, 'observer-heartbeat'), (error) => error.code === 'MARKER_INVALID');
+test('projection boundary 與 baseline parser 均 fail closed', async () => {
   assert.equal(PROJECTION_RANGES['8'], '8_發布_戰情看板!A1:Z311');
   const values = Array.from({ length: 311 }, (_, i) => [i]); const baseline = require('./lib').hash(values); const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test', projectionBaselines: { 3: baseline, 6: baseline, 7: baseline, 8: baseline } });
   const ranges = []; adapter.values = async (range) => { ranges.push(range); return range === '0_賽事設定!B12' ? [[0]] : values; };
@@ -283,18 +350,9 @@ test('expires_at、projection boundary 與 baseline parser 均 fail closed', asy
   assert.throws(() => parseProjectionBaselines('{"8":{"range":"bad"}}'), /hash map|baseline/);
 });
 
-test('marker：root/run/markers/manifest symlink 全部拒絕', () => {
-  const base = temp(); const external = temp(); const runId = 'marker-safe';
-  const invoke = (root) => marker.main(['observer-heartbeat', '--state-dir', root, '--run-id', runId, '--fencing-token', 'f', '--manifest-hash', 'h'], { root });
-  const rootLink = path.join(base, 'root-link'); fs.symlinkSync(external, rootLink); assert.throws(() => invoke(rootLink), /UNSAFE_DIRECTORY/);
-  const root = path.join(base, 'root'); fs.mkdirSync(root); fs.symlinkSync(external, path.join(root, runId)); assert.throws(() => invoke(root), /UNSAFE_DIRECTORY/);
-  fs.unlinkSync(path.join(root, runId)); fs.mkdirSync(path.join(root, runId)); const manifest = { schema: 2, run_id: runId, allowlist: [], pre_canonical_hash: 'x' }; writeJson(path.join(root, runId, 'manifest.json'), manifest); const digest = require('./lib').hash(manifest);
-  fs.symlinkSync(external, path.join(root, 'markers')); assert.throws(() => marker.main(['observer-heartbeat', '--state-dir', root, '--run-id', runId, '--fencing-token', 'f', '--manifest-hash', digest], { root }), /UNSAFE_DIRECTORY/);
-  fs.unlinkSync(path.join(root, 'markers')); fs.unlinkSync(path.join(root, runId, 'manifest.json')); writeJson(path.join(external, 'manifest.json'), manifest); fs.symlinkSync(path.join(external, 'manifest.json'), path.join(root, runId, 'manifest.json'));
-  assert.throws(() => marker.main(['observer-heartbeat', '--state-dir', root, '--run-id', runId, '--fencing-token', 'f', '--manifest-hash', digest], { root }), /UNSAFE_FILE/);
-});
 
 test('比分與配對 jitter 規格', () => {
+  assert.equal(fullPlan().length, 310);
   [[21, 0], [19, 21], [21, 19]].forEach(assertLegalScore);
   assert.throws(() => assertLegalScore([20, 20]));
   const values = pairedJitter(150, () => 0.25);

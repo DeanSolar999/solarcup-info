@@ -1,0 +1,16 @@
+name: Solar Cup dry run
+on: { workflow_dispatch: { inputs: { run_id: { required: true, type: string } } } }
+permissions: { contents: read }
+jobs:
+  dry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - id: safe
+        env:
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if ! [[ "$INPUT_RUN_ID" =~ ^[A-Za-z][A-Za-z0-9_-]{1,72}$ ]]; then exit 2; fi
+          printf 'RUN_ID=%s\n' "$INPUT_RUN_ID" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: node simulation/runner.js ci-dry-run --run-id "$RUN_ID"

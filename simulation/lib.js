@@ -6,10 +6,10 @@ const path = require('node:path');
 
 const STATES = Object.freeze({
   PRECHECK: 'PRECHECK', SNAPSHOT: 'SNAPSHOT', CANARY: 'CANARY',
-  CANARY_WAITING_APPROVAL: 'CANARY_WAITING_APPROVAL', WAITING_MARKERS: 'WAITING_MARKERS',
+  CANARY_WAITING_APPROVAL: 'CANARY_WAITING_APPROVAL', SEGMENT_WAITING: 'SEGMENT_WAITING',
   RUNNING: 'RUNNING', VERIFY: 'VERIFY', RESTORING: 'RESTORING',
   RESTORE_VERIFY: 'RESTORE_VERIFY', COMPLETE: 'COMPLETE',
-  RESTORE_FAILURE: 'RESTORE_FAILURE', MANUAL_HOLD: 'MANUAL_HOLD'
+  RESTORE_FAILURE: 'RESTORE_FAILURE', MANUAL_HOLD: 'MANUAL_HOLD', CANCELLED_RESTORE_REQUIRED: 'CANCELLED_RESTORE_REQUIRED'
 });
 
 function stable(value) {
@@ -129,6 +129,12 @@ function defaultPlan() {
     cells: [`2_資格賽成績!K${index + 2}`, `2_資格賽成績!L${index + 2}`]
   }));
 }
+function fullPlan() {
+  const qualification = defaultPlan();
+  const knockout = Array.from({ length: 132 }, (_, i) => ({ id: `knockout-${i + 1}`, stage: 'knockout', cells: [`4_淘汰賽成績!M${i + 2}`, `4_淘汰賽成績!N${i + 2}`] }));
+  const invitational = Array.from({ length: 28 }, (_, i) => ({ id: `invitational-${i + 1}`, stage: 'invitational', cells: [`5_曜請成績!J${i + 2}`, `5_曜請成績!K${i + 2}`] }));
+  return [...qualification, ...knockout, ...invitational];
+}
 
 function isKillSwitchSet(stateDir) {
   return fs.existsSync(path.join(stateDir, 'KILL_SWITCH'));
@@ -151,6 +157,6 @@ function safeError(error) {
 module.exports = {
   STATES, stable, hash, same, clone, makeRunId, scoreFor, assertLegalScore,
   canonicalCell, canonicalCells, sameCells, readbackEvidence,
-  pairedJitter, ensureDir, writeJson, readJson, appendJournal, defaultPlan,
+  pairedJitter, ensureDir, writeJson, readJson, appendJournal, defaultPlan, fullPlan,
   isKillSwitchSet, safeError
 };

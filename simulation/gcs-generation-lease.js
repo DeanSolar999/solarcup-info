@@ -46,7 +46,7 @@ class GcsGenerationLease {
       try { current = await this.call('get', this.bucket, this.object); } catch (getError) { throw this.lost(getError); }
       const currentExpiry = Date.parse(current.body?.expires_at);
       if (!Number.isFinite(currentExpiry)) throw this.lost();
-      if (currentExpiry > this.now()) { const failure = new Error('GCS_LEASE_ACQUIRE_FAILED:412'); failure.code = 'LEASE_ACQUIRE_FAILED'; throw failure; }
+      if (currentExpiry > this.now()) { const failure = new Error('GCS_LEASE_BUSY'); failure.code = 'LEASE_BUSY'; throw failure; }
       try {
         const result = await this.call('replace', this.bucket, this.object, record.body, { ifGenerationMatch: current.generation });
         return { fencingToken: String(result.generation), generation: result.generation, runId, expiresAt: record.expiresAt };
