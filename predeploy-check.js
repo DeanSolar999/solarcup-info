@@ -53,7 +53,38 @@ const BANNED=[/rnd\(\)\s*<\s*0\.5/, /function\s+score\s*\(win\)/, /DEMO 球員�
   BANNED.forEach(re=>{ if(re.test(txt)) bad.push(`${f} 殘留模擬引擎：${re}`); });
 });
 
+// ── ④ 展示控制項掃描（2026-08-02 新增）────────────────────────────
+// 起因：真串接改版時只換了資料來源，卻忘了拆展示用的互動控制項——
+// bracket-tree 的進度拉桿與寫死的 progState 撐到上線後才被團長抓到，
+// 造成賽前顯示假進度、假晉級名單與 sentinel 999.000。
+// runtime-check 抓不到這一類（畫面不會崩，只是顯示錯的東西）。
+const PAGES_UI=['solar-cup-two.html','qualifying.html','bracket-tree.html','invitational.html',
+                'team-search.html','at-field-ranking.html','solar-cup-live.html'];
+// 白名單：純視覺偏好控制項，與賽事資料無關
+const UI_OK=new Set(['recOpa','rwmR']);
+PAGES_UI.forEach(f=>{
+  const txt=fs.readFileSync(path.join(DIR,f),'utf8');
+  // (a) 任何 range 拉桿：非白名單即視為殘留的展示控制項
+  for(const m of txt.matchAll(/<input[^>]*type="range"[^>]*>/g)){
+    const id=(m[0].match(/id="([^"]+)"/)||[])[1]||'(無 id)';
+    if(!UI_OK.has(id))bad.push(`${f} 殘留展示拉桿 <input type="range" id="${id}">`);
+  }
+  // (b) 寫死的展示狀態：progState / simProg 之類被賦上非零初始值
+  for(const m of txt.matchAll(/\b(progState|simState|demoState)\s*=\s*\{([^}]*)\}/g)){
+    const vals=[...m[2].matchAll(/:\s*(\d+)/g)].map(x=>+x[1]);
+    if(vals.some(v=>v!==0))bad.push(`${f} ${m[1]} 有寫死的非零初始值 {${m[2].trim()}}`);
+  }
+  // (c) 明顯的示範用識別字
+  ['demoTime','demoNowMin','recomputeDemo','seedScore','demoUpdate','simProg'].forEach(k=>{
+    if(new RegExp('\\b'+k+'\\b').test(txt))bad.push(`${f} 殘留示範程式碼識別字 ${k}`);
+  });
+  // (d) 失效的拉桿樣式（display:none 藏起來但沒刪）
+  if(/\.(pgrange|simbar input|progbar input)\{display:none/.test(txt))
+    bad.push(`${f} 有被 display:none 藏起來的拉桿樣式（應刪除而非隱藏）`);
+});
+
 if(bad.length){console.error('❌ 資料層完整性失敗：');bad.forEach(b=>console.error('   · '+b));process.exit(1);}
 console.log('✅ 賽前：150 場全未開打 / 108 隊 / 分級全空 / 25 組各 4 隊 / 曜請 28 場');
 console.log('✅ 灌滿：分級 20-20-30-30 / 25 組全完賽');
 console.log('✅ 站上無模擬引擎殘留、無損壞字元');
+console.log('✅ 無殘留展示拉桿／寫死展示狀態');

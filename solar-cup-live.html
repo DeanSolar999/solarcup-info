@@ -242,17 +242,7 @@
     </div>
   </div>
 
-  <div class="demo-row" id="demoRow">
-    <span>▶ 示範時鐘</span>
-    <input type="range" id="demoTime" min="480" max="1065" value="520" step="5">
-    <span>現在 <b id="demoClock">08:40</b></span>
-    <span>輸入遲延
-      <select id="demoDelay" style="background:rgba(6,16,22,.9);color:#ffcf6b;border:1px solid rgba(255,207,51,.45);border-radius:3px;padding:3px 6px;font-family:inherit">
-        <option value="0">0 分（即時填分）</option><option value="10">10 分（達補燈門檻）</option><option value="15">15 分（明顯遲延）</option>
-      </select>
-    </span>
-    <span>已完賽 <b id="demoN">0</b> / 310 · 拉時間看推進；設遲延看「時間補燈」補上準備燈</span>
-  </div>
+  <!-- 示範時鐘列已移除（2026-08-02 全面真串接）-->
 
   <div class="now-focus" id="nowFocus"></div>
   <div class="court-bar" id="courtBar"></div>
@@ -305,12 +295,11 @@
   // ===== 結果狀態（未接 Sheet 前：示範拉桿；接 Sheet 後：CSV 覆蓋）=====
   // results[場次編號n] = {sa,sb,done}（n 為 1-310 唯一；對戰代號會重複故不可當 key）
   const results={};
-  function seedScore(n){const lo=11+((n*7+3)%9);const aw=(n*13+5)%2===0;return aw?[21,lo]:[lo,21];}
   const PAD=n=>String(n).padStart(2,'0');
   function toMin(t){const p=String(t).split(':');return (+p[0])*60+(+p[1]);}
   function minHHMM(m){return PAD(Math.floor(m/60))+':'+PAD(m%60);}
   function isDone(m){return !!(results[m.n]&&results[m.n].done);}
-  let LIVE=false, demoNowMin=toMin('08:40'), demoDelay=0;
+  let LIVE=false;
   const EVENT_DATE='2026-08-15';                                  // 賽事日（台北時間）
   function isEventDay(){
     try{
@@ -331,19 +320,12 @@
   // 準備燈時間觸發的「現在」。非賽事日或尚無任何比分 → -1，
   // 所有場次一律顯示「待賽」，不得依當下時鐘假裝進行中。
   function nowMin(){
-    if(!LIVE)return demoNowMin;
+    if(!LIVE)return -1;
     const anyScore=Object.keys(results||{}).length>0;
     const t=realClockMin();
     return (t<0||!anyScore)?-1:t;
   }
-  // 示範：依「模擬時間＋輸入遲延」推導完賽（賽末+遲延 ≤ 現在 → 視為分數已填）
-  function recomputeDemo(){
-    for(const k in results)delete results[k];
-    SC.matches.forEach(m=>{if(toMin(m.e)+demoDelay<=demoNowMin){const s=seedScore(m.n);results[m.n]={sa:s[0],sb:s[1],done:true};}});
-    render();
-    const ec=document.getElementById('demoClock');if(ec)ec.textContent=minHHMM(demoNowMin);
-    const en=document.getElementById('demoN');if(en)en.textContent=Object.keys(results).length;
-  }
+  // （示範推導已於 2026-08-02 移除：比分一律來自後端資料庫）
 
   // ===== 篩選狀態 =====
   let mode='matrix', tierF='all', clubF='all';
@@ -536,10 +518,6 @@
   const clubSel=document.getElementById('clubSel');
   clubList.forEach(c=>{const o=document.createElement('option');o.value=c.key;o.textContent=c.name;clubSel.appendChild(o);});
   clubSel.addEventListener('change',()=>{clubF=clubSel.value;render();});
-  const dtime=document.getElementById('demoTime'), ddelay=document.getElementById('demoDelay');
-  function demoUpdate(){if(typeof SHEET_LIVE!=='undefined'&&SHEET_LIVE)return;demoNowMin=+dtime.value;demoDelay=+ddelay.value;recomputeDemo();}
-  dtime.addEventListener('input',demoUpdate);
-  ddelay.addEventListener('change',demoUpdate);
 
   // ===== Google Sheets 讀取層（部署版）=====
   // 部署：後端資料庫上 Google 試算表後，把試算表 ID 貼進 SHEET_ID（網址 /d/ 與 /edit 之間那串）。
@@ -565,7 +543,6 @@
     return rows;
   }
   function goLive(){ if(SHEET_LIVE)return; SHEET_LIVE=true; LIVE=true;
-    document.getElementById('demoRow').style.display='none';
     for(const k in results)delete results[k];
     updateLive('live'); setInterval(render,30000); }   // 真實時鐘每 30 秒重算準備燈
   function pollSheet(){
@@ -595,7 +572,6 @@
   // 2026-08-01 起站上不再有示範模式：一開站即以後端資料庫為準，尚無比分就顯示「尚未開賽」
   updateLive('live');
   if(window.innerWidth<760){mode='list';document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='list'));}
-  const _demoRow=document.getElementById('demoRow'); if(_demoRow)_demoRow.style.display='none';
   LIVE=true; setInterval(render,30000);
   render();
   if(SHEET_CSV_URL){pollSheet();setInterval(pollSheet,45000);}
