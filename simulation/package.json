@@ -1,0 +1,13 @@
+{
+  "name": "solarcup-simulation-runner",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Safe, reversible tournament score simulation runner",
+  "scripts": {
+    "test": "node --test runner.test.js",
+    "check": "node --check runner.js && node --check lib.js && node --check sheets-rest-adapter.js && node --check mock-adapter.js && node --check gcs-generation-lease.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
