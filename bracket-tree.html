@@ -143,7 +143,9 @@
   /* 進度拉桿 */
   .progbar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
   .progbar .pglab{font-size:9px;letter-spacing:.12em;color:var(--dim)}
-  .progbar .pgrange{flex:1;min-width:160px;max-width:340px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
+  .progbar .pgbar{flex:1;min-width:160px;max-width:340px;height:4px;border-radius:2px;background:rgba(120,140,170,.25);overflow:hidden}
+  .progbar .pgbar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#22d3ee,var(--tc));transition:width .6s ease}
+  .progbar .pgrange{display:none;flex:1;min-width:160px;max-width:340px;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;
     background:linear-gradient(90deg,var(--tc),rgba(255,255,255,.1));outline:none;cursor:pointer}
   .progbar .pgrange::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;
     background:var(--tc);box-shadow:0 0 10px var(--tg);cursor:pointer}
@@ -547,7 +549,29 @@
   };
   function progMax(type){return PROGLBL[type].length-1;}
   function progLabel(type,v){const a=PROGLBL[type]||PROGLBL.comp;return a[Math.max(0,Math.min(v,a.length-1))];}
-  const progState={plat:3,gold:2,silver:2,bronze:5};
+  // 進度階段依雲端「該階級各輪是否完賽」推導，不再是寫死示範值，也不再有拉桿
+  const progState={plat:0,gold:0,silver:0,bronze:0};
+  function doneOf(nos){return (nos||[]).filter(n=>{const r=LIVE_M[String(n)];return r&&r.done;}).length;}
+  function allDone(nos){return (nos||[]).length>0&&doneOf(nos)===(nos||[]).length;}
+  function calcProg(tier){
+    const M=MNO[tier.key]||{}, comp=tier.type==='comp';
+    const rr=comp?[...(M.rrA||[]),...(M.rrB||[])]:[...(M.tri||[]),...(M.ko||[])];
+    if(!doneOf(M.pre||[])&&!doneOf(rr))return 0;
+    let p=0;
+    if(allDone(rr))p=1;
+    if(comp){
+      if(p>=1&&allDone(M.sf))p=2;
+      if(p>=2&&M.final&&allDone([M.final]))p=3;
+      if(p>=3&&M.third&&allDone([M.third]))p=4;
+    }else{
+      if(p>=1&&allDone(M.qf))p=2;
+      if(p>=2&&allDone(M.sf))p=3;
+      if(p>=3&&M.final&&allDone([M.final]))p=4;
+      if(p>=4&&M.third&&allDone([M.third]))p=5;
+    }
+    return p;
+  }
+  function refreshProg(){TIERS.forEach(t=>{progState[t.key]=calcProg(t);});}
 
   // 隊伍池：每階級唯一身分(球團+編號) + 戰績；十團盡量平均分布
   const REG={}; // tid -> team
@@ -1037,7 +1061,7 @@
       +`<div id="stagewrap_${tr.key}">${stageHTML(d,tr,progState[tr.key])}</div>`
       +`<div class="brblock"><div class="rrhead">決勝<span class="pn">${comp?'準決賽 → 決賽 ＋ 季軍賽':'8 強 → 準決賽 → 決賽 ＋ 季軍賽'} · 晉級光子流</span></div>
           <div class="progbar"><span class="pglab">賽程進度</span>
-            <input type="range" class="pgrange" min="0" max="${progMax(tr.type)}" step="1" value="${progState[tr.key]}" data-tier="${tr.key}">
+            <div class="pgbar"><i style="width:${Math.round(progState[tr.key]/progMax(tr.type)*100)}%"></i></div>
             <span class="pgstate" id="pgState_${tr.key}">${progLabel(tr.type,progState[tr.key])}</span></div>
           <div class="brwrap" id="brwrap_${tr.key}">${finalBracketSVG(d,tr,progState[tr.key])}</div></div>`;
     stopR1();if(!reduce)startR1();
@@ -1184,21 +1208,8 @@
     const gnode=e.target.closest('[data-group]');
     if(gnode&&gnode.dataset.group){openGroup(gnode.dataset.group);}
   });
-  // 進度拉桿：更新該階級 prog，只重繪對應 bracket
-  detail.addEventListener('input',e=>{
-    const r=e.target.closest('.pgrange');if(!r)return;
-    const tk=r.dataset.tier;const was=progState[tk];progState[tk]=+r.value;
-    const tr=TIERS.find(t=>t.key===tk),d=DATA[tk],mx=tr?progMax(tr.type):4;
-    if(progState[tk]===mx&&was<mx&&window.sc2Burst){
-      const cc=(d&&d.champ&&d.champ.clubObj)?d.champ.clubObj.c:(tr||{}).col;
-      window.sc2Burst(cc||'#22d3ee');}
-    const wrap=document.getElementById('brwrap_'+tk);if(wrap&&d&&tr)wrap.innerHTML=finalBracketSVG(d,tr,progState[tk]);
-    // 初賽／複賽段也跟著切換「已完賽」狀態（prog=0 只留場次編號，比照公告圖）
-    const sw=document.getElementById('stagewrap_'+tk);
-    if(sw&&d&&tr&&((was>=1)!==(progState[tk]>=1))){sw.innerHTML=stageHTML(d,tr,progState[tk]);stopR1();if(!reduce)startR1();}
-    const st=document.getElementById('pgState_'+tk);if(st&&tr)st.textContent=progLabel(tr.type,progState[tk]);
-    updateLanes();
-  });
+  // （進度拉桿已移除：階段一律由雲端完賽狀況推導）
+
 
   // 由網址 #階級（plat/gold/silver/bronze）決定開哪一條，讓 qualifying 的四個按鈕一一對應
   const _wantKey=(location.hash||'').replace('#','').trim();
@@ -1212,13 +1223,13 @@
   // ---- 雲端即時同步（每 45 秒）：對戰組合與比分皆以後端為準 ----
   if(window.SolarCupLive){
     window.SolarCupLive.onUpdate(function(d){
-      setLiveData(d);
+      setLiveData(d);refreshProg();
       Object.keys(DATA).forEach(k=>delete DATA[k]);   // 清快取，用新資料重建四條樹
       Object.keys(REG).forEach(k=>delete REG[k]);
       renderDetail(_curTier);
     },45000);
   }else{
-    setLiveData(null);
+    setLiveData(null);refreshProg();
   }
 })();
 </script>

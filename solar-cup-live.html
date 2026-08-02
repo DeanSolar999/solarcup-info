@@ -311,8 +311,31 @@
   function minHHMM(m){return PAD(Math.floor(m/60))+':'+PAD(m%60);}
   function isDone(m){return !!(results[m.n]&&results[m.n].done);}
   let LIVE=false, demoNowMin=toMin('08:40'), demoDelay=0;
-  function realClockMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
-  function nowMin(){return LIVE?realClockMin():demoNowMin;}      // 準備燈時間觸發的「現在」
+  const EVENT_DATE='2026-08-15';                                  // 賽事日（台北時間）
+  function isEventDay(){
+    try{
+      const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',
+        year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      return p===EVENT_DATE;
+    }catch(e){return true;}                                       // 取不到時區資訊就不阻擋
+  }
+  function realClockMin(){
+    // 只在賽事當天才用真實時鐘；非當天回 -1，代表「時間軸尚未啟動」
+    if(!isEventDay())return -1;
+    try{
+      const s=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',
+        hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).split(':');
+      return (+s[0])*60+(+s[1]);
+    }catch(e){const d=new Date();return d.getHours()*60+d.getMinutes();}
+  }
+  // 準備燈時間觸發的「現在」。非賽事日或尚無任何比分 → -1，
+  // 所有場次一律顯示「待賽」，不得依當下時鐘假裝進行中。
+  function nowMin(){
+    if(!LIVE)return demoNowMin;
+    const anyScore=Object.keys(results||{}).length>0;
+    const t=realClockMin();
+    return (t<0||!anyScore)?-1:t;
+  }
   // 示範：依「模擬時間＋輸入遲延」推導完賽（賽末+遲延 ≤ 現在 → 視為分數已填）
   function recomputeDemo(){
     for(const k in results)delete results[k];
