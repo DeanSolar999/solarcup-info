@@ -147,6 +147,43 @@ function liveScenario(fail){
     });
   });
 
+  // ---- 無比分 UI 基準：不允許舊示範／假晉級狀態重新混入 ----
+  const liveTxt=fs.readFileSync(path.join(DIR,'solar-cup-live.html'),'utf8');
+  if(/示範模式/.test(liveTxt))bad.push('solar-cup-live.html 殘留「示範模式」文案');
+  if(!/timeZone:'Asia\/Taipei'/.test(liveTxt)||!/\(t<0\|\|!anyScore\)\?-1:t/.test(liveTxt))
+    bad.push('solar-cup-live.html 無比分／非賽事日的台北時區 gate 不完整');
+  if(/updateLive\('live'\);\s*[\s\S]{0,220}LIVE=true;\s*setInterval\(render,30000\)/.test(liveTxt))
+    bad.push('solar-cup-live.html 首屏仍會未比分即啟用 LIVE 真實時鐘');
+
+  const bracketTxt=fs.readFileSync(path.join(DIR,'bracket-tree.html'),'utf8');
+  if(!/const doneCount=gm\.filter\(m=>m&&m\.done&&m\.winner\)\.length;/.test(bracketTxt)
+    || !/尚無賽果 · 循環榜待啟動/.test(bracketTxt))
+    bad.push('bracket-tree.html 組進程 modal 缺少 0 場賽果 placeholder guard');
+  if(!/const advSet=groupDone\?new Set\(\[rank\[0\]\.i,rank\[1\]\.i\]\):new Set\(\);/.test(bracketTxt)
+    || !/groupDone\?\(adv\?'晉級':'止步'\):'暫列'/.test(bracketTxt))
+    bad.push('bracket-tree.html 未完成循環仍可能展示正式晉級／止步');
+
+  const invitTxt=fs.readFileSync(path.join(DIR,'invitational.html'),'utf8');
+  if(!/<span class="st" id="progSt">連線中…<\/span>/.test(invitTxt))
+    bad.push('invitational.html 初始進度不是「連線中…」');
+
+  // ---- 戰情頁時區 API 失效時必須 fail-closed，不能退回裝置本地時鐘 ----
+  try{
+    const sb=sandbox();
+    sb.Intl={DateTimeFormat(){throw new Error('模擬 Intl 不可用');}};
+    vm.createContext(sb);
+    vm.runInContext(dataLayer,sb); // 名單資料
+    vm.runInContext(fs.readFileSync(path.join(DIR,'schedule-data.js'),'utf8'),sb);
+    const solarCode=inlineScripts('solar-cup-live.html').find(x=>x.includes('function isEventDay'));
+    if(!solarCode)throw new Error('找不到戰情頁狀態 script');
+    const exposed=solarCode.replace(/\}\)\(\);\s*$/,
+      'globalThis.__solarGate={isEventDay,realClockMin,nowMin,nowStr};})();');
+    vm.runInContext(exposed,sb,{timeout:8000});
+    const gate=sb.__solarGate;
+    if(!gate||gate.isEventDay()!==false||gate.realClockMin()!==-1||gate.nowMin()!==-1||gate.nowStr()!=='—')
+      throw new Error('Intl 失效時未完整 fail-closed');
+  }catch(e){bad.push(`solar-cup-live.html Taipei gate fail-closed：${e.message}`);}
+
   if(bad.length){console.error('❌ runtime 預檢失敗：');bad.forEach(b=>console.error('   · '+b));process.exit(1);}
   console.log(`✅ ${PAGES.length} 頁首屏 0 例外`);
   console.log('✅ LIVE fresh／cold 兩情境正確');

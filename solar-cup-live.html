@@ -292,7 +292,7 @@
   }
   SC.matches.forEach(m=>{m._t=assign(m);});
 
-  // ===== 結果狀態（未接 Sheet 前：示範拉桿；接 Sheet 後：CSV 覆蓋）=====
+  // ===== 結果狀態（待後端資料庫回傳真實比分）=====
   // results[場次編號n] = {sa,sb,done}（n 為 1-310 唯一；對戰代號會重複故不可當 key）
   const results={};
   const PAD=n=>String(n).padStart(2,'0');
@@ -306,7 +306,7 @@
       const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei',
         year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
       return p===EVENT_DATE;
-    }catch(e){return true;}                                       // 取不到時區資訊就不阻擋
+    }catch(e){return false;}                                      // 時區無法確認時 fail-closed，不可誤判為比賽日
   }
   function realClockMin(){
     // 只在賽事當天才用真實時鐘；非當天回 -1，代表「時間軸尚未啟動」
@@ -315,7 +315,7 @@
       const s=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',
         hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).split(':');
       return (+s[0])*60+(+s[1]);
-    }catch(e){const d=new Date();return d.getHours()*60+d.getMinutes();}
+    }catch(e){return -1;}                                        // 不可 fallback 到裝置本地時區
   }
   // 準備燈時間觸發的「現在」。非賽事日或尚無任何比分 → -1，
   // 所有場次一律顯示「待賽」，不得依當下時鐘假裝進行中。
@@ -522,7 +522,7 @@
   // ===== Google Sheets 讀取層（部署版）=====
   // 部署：後端資料庫上 Google 試算表後，把試算表 ID 貼進 SHEET_ID（網址 /d/ 與 /edit 之間那串）。
   // 讀「8_發布_戰情看板」分頁 CSV（檔案需開「知道連結的任何人可檢視」）。
-  // 未偵測到真實分數前維持示範模式；偵測到第一筆分數自動轉 LIVE（藏示範拉桿、改用真實時鐘）。
+  // 尚無真實分數時維持「尚未開賽」；第一筆完整比分才切換 LIVE 並啟用台北時間的準備燈。
   const SHEET_ID='1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA'; // 曜日盃TWO_後端資料庫_正式版 v2.5（Google Drive）
   const SHEET_CSV_URL=SHEET_ID?'https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('8_發布_戰情看板'):'';
   let SHEET_LIVE=false;
@@ -562,17 +562,21 @@
         if(!isNaN(sa)&&!isNaN(sb)){found[nn]={sa:sa,sb:sb,done:true};any=true;}});
       if(any)goLive();                             // 偵測到第一筆真分才轉 LIVE
       if(SHEET_LIVE){for(const k in results)delete results[k];Object.assign(results,found);}
-      document.getElementById('upd').innerHTML='資料來源：後端資料庫（Google Sheets）· 更新於 <b>'+nowStr()+'</b>'+(SHEET_LIVE?'':' · 尚未開賽（示範模式）');
+      updateLive(SHEET_LIVE?'live':'pending');
+      document.getElementById('upd').innerHTML='資料來源：後端資料庫（Google Sheets）· 更新於 <b>'+nowStr()+'</b>'+(SHEET_LIVE?'':' · 尚未開賽');
       render();
     }).catch(()=>{});
   }
-  function nowStr(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0');}
+  function nowStr(){
+    try{
+      return new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date());
+    }catch(e){return '—';}                                       // 更新時間不能冒用裝置本地時間
+  }
 
   // 初始渲染（手機預設清單，矩陣留給大螢幕）
-  // 2026-08-01 起站上不再有示範模式：一開站即以後端資料庫為準，尚無比分就顯示「尚未開賽」
-  updateLive('live');
+  // 一開站即以後端資料庫為準；尚無比分時不得啟用真實時鐘或製造進行中／準備上場。
+  updateLive('pending');
   if(window.innerWidth<760){mode='list';document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode==='list'));}
-  LIVE=true; setInterval(render,30000);
   render();
   if(SHEET_CSV_URL){pollSheet();setInterval(pollSheet,45000);}
 })();
