@@ -134,9 +134,23 @@ function isKillSwitchSet(stateDir) {
   return fs.existsSync(path.join(stateDir, 'KILL_SWITCH'));
 }
 
+// Journal and console output are operational evidence, not a place to retain
+// remote responses or credentials. Prefer a stable error code whenever one is
+// available and only allow a small, local-safe subset of text otherwise.
+function safeError(error) {
+  if (error?.code) return `ERROR:${String(error.code).replace(/[^A-Z0-9_:-]/gi, '_')}`;
+  if (Number.isInteger(error?.status)) return `HTTP:${error.status}`;
+  const text = String(error?.message || error || 'UNKNOWN_ERROR')
+    .replace(/https?:\/\/\S+/gi, '[URL]')
+    .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, '[EMAIL]')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]')
+    .replace(/[A-Za-z0-9_-]{20,}/g, '[REDACTED]');
+  return text.slice(0, 160);
+}
+
 module.exports = {
   STATES, stable, hash, same, clone, makeRunId, scoreFor, assertLegalScore,
   canonicalCell, canonicalCells, sameCells, readbackEvidence,
   pairedJitter, ensureDir, writeJson, readJson, appendJournal, defaultPlan,
-  isKillSwitchSet
+  isKillSwitchSet, safeError
 };

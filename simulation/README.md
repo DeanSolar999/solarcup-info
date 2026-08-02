@@ -32,6 +32,13 @@ node runner.js dry-run --fast --state-dir /private/tmp/solarcup-sim --run-id dem
 
 armed gate 的 LIVE switch 固定讀取 `0_賽事設定!B12 = 0`；`B11` 是總場次，`B13` 是最後更新時間，兩者均不得作為 LIVE gate。
 
-armed mode 還要求注入 `persistent: true` 的 external lease（含 `acquire`、`assertHeld`、`release` 與 fencing token）。目前 repository 只提供非持久化 `InMemoryLease` 供 dry-run，因此**任何 armed 實際寫入都會 fail-closed 拒絕**；這是刻意保留的 P0 安全門檻，不是可跳過的設定。
+armed mode 必須明確提供 `SOLAR_CUP_SPREADSHEET_ID`、`GOOGLE_ACCESS_TOKEN`、`SOLAR_CUP_GCS_BUCKET` 與 `SOLAR_CUP_PROJECTION_BASELINES`。後者只能是固定範圍的 SHA-256 hash map，例如 `{"3":"<64 位 hex hash>","6":"<64 位 hex hash>","7":"<64 位 hex hash>","8":"<64 位 hex hash>"}`；範圍由程式鎖定為 `3:A1:Z109`、`6:A1:Z109`、`7:A1:Z11`、`8:A1:Z311`，環境變數無法覆寫。runner 以 GCS JSON API 的 object generation 作 fencing；少任一環境變數或 baseline 都 fail-closed。
 
 正式 resume 不沿用已釋放的 canary lease。runner 會先取得新 lease、把新的 `fencing_token` 與 `manifest_hash` 寫入 manifest／journal，並在持有該 lease 的 90 秒內等待 Browser 寫入 `canary-observed` 與 `canary-approved` JSON marker。兩個 marker 都必須帶相同的 `run_id`、新 token、manifest hash 與未過期 `expires_at`；逾時即 fail-closed。
+
+Marker 只能寫入 `simulation/runs/` 下的既有 run，且會驗證 manifest hash：
+
+```bash
+node marker.js observer-heartbeat --state-dir ./runs --run-id sim-... \
+  --fencing-token <token> --manifest-hash <hash> --ttl-seconds 60
+```

@@ -1,6 +1,6 @@
 'use strict';
 
-const { clone } = require('./lib');
+const { clone, hash } = require('./lib');
 
 const SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const SHEET_POLICY = Object.freeze({
@@ -8,9 +8,13 @@ const SHEET_POLICY = Object.freeze({
   '4_淘汰賽成績': { sheetId: 1125219206, rows: [2, 133], columns: new Set(['M', 'N']) },
   '5_曜請成績': { sheetId: 848445550, rows: [2, 29], columns: new Set(['J', 'K']) }
 });
+const PROJECTION_RANGES = Object.freeze({
+  '3': '3_資格賽積分榜!A1:Z109', '6': '6_積分總表!A1:Z109',
+  '7': '7_球團積分!A1:Z11', '8': '8_發布_戰情看板!A1:Z311'
+});
 
 class SheetsRestAdapter {
-  constructor({ spreadsheetId, accessToken, requestTimeoutMs = 10_000, armedGateVerifier = null }) {
+  constructor({ spreadsheetId, accessToken, requestTimeoutMs = 10_000, armedGateVerifier = null, projectionBaselines = null }) {
     if (spreadsheetId !== SPREADSHEET_ID) throw new Error('Spreadsheet allowlist 不符');
     if (!accessToken) throw new Error('缺少 GOOGLE_ACCESS_TOKEN');
     this.spreadsheetId = spreadsheetId;
@@ -19,6 +23,7 @@ class SheetsRestAdapter {
     this.sheetIds = {};
     this.requestTimeoutMs = requestTimeoutMs;
     this.armedGateVerifier = armedGateVerifier;
+    this.projectionBaselines = projectionBaselines;
   }
 
   assertAllowedRef(ref) { return parseAllowedRef(ref, this.sheetIds); }
@@ -37,7 +42,7 @@ class SheetsRestAdapter {
     } finally { clearTimeout(timeout); }
     const body = await response.text();
     if (!response.ok) {
-      const error = new Error(`Sheets API ${response.status}: ${body.slice(0, 300)}`);
+      const error = new Error(`Sheets API ${response.status}`);
       error.status = response.status;
       throw error;
     }
@@ -55,10 +60,24 @@ class SheetsRestAdapter {
   }
 
   async verifyArmedGates(requirements) {
-    if (!this.armedGateVerifier) throw new Error('缺少 projection/LIVE gate evidence verifier');
-    const result = await this.armedGateVerifier(requirements);
+    const result = this.armedGateVerifier ? await this.armedGateVerifier(requirements) : await this.verifyProjectionBaselines(requirements);
     if (!result?.verified || result.liveSwitch !== requirements.requiredLiveValue || !requirements.requiredProjections.every((id) => result.projections?.[id])) throw new Error('projection/LIVE gate 證據不足');
     return result;
+  }
+
+  async values(range) {
+    const response = await this.request(`${this.base}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`);
+    return response.values || [];
+  }
+  async verifyProjectionBaselines(requirements) {
+    if (!this.projectionBaselines) throw new Error('缺少 projection hash baselines');
+    const live = await this.values(requirements.liveCell);
+    const liveSwitch = live?.[0]?.[0]; const projections = {};
+    for (const id of requirements.requiredProjections) {
+      const baseline = this.projectionBaselines[id]; if (typeof baseline !== 'string') throw new Error(`缺少 projection ${id} baseline`);
+      projections[id] = hash(await this.values(PROJECTION_RANGES[id])); if (projections[id] !== baseline) throw new Error(`projection ${id} hash 不符`);
+    }
+    return { verified: true, liveSwitch, projections };
   }
 
   async readCells(refs) {
@@ -100,4 +119,4 @@ function parseAllowedRef(a1, observedSheetIds = {}) {
   return { sheetId: policy.sheetId, startRowIndex: row - 1, endRowIndex: row, startColumnIndex: col, endColumnIndex: col + 1 };
 }
 
-module.exports = { SheetsRestAdapter, SPREADSHEET_ID, SHEET_POLICY, parseAllowedRef };
+module.exports = { SheetsRestAdapter, SPREADSHEET_ID, SHEET_POLICY, PROJECTION_RANGES, parseAllowedRef };

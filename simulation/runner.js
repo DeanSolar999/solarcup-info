@@ -5,10 +5,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {
   STATES, hash, same, sameCells, canonicalCells, readbackEvidence, makeRunId, scoreFor, assertLegalScore, pairedJitter,
-  ensureDir, writeJson, readJson, appendJournal, defaultPlan, isKillSwitchSet
+  ensureDir, writeJson, readJson, appendJournal, defaultPlan, isKillSwitchSet, safeError
 } = require('./lib');
 const { MockAdapter } = require('./mock-adapter');
 const { SheetsRestAdapter } = require('./sheets-rest-adapter');
+const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 
 const EXPECTED_SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const RUN_ID = /^[a-zA-Z][a-zA-Z0-9_-]{1,80}$/;
@@ -16,6 +17,13 @@ const RUN_ID = /^[a-zA-Z][a-zA-Z0-9_-]{1,80}$/;
 function cellForNumber(number) { return { userEnteredValue: { numberValue: number } }; }
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function isTransient(error) { return ['ETIMEDOUT', 'ECONNRESET'].includes(error.code) || error.status === 429 || error.status >= 500; }
+function parseProjectionBaselines(text) {
+  let baselines;
+  try { baselines = JSON.parse(text); } catch { throw new Error('SOLAR_CUP_PROJECTION_BASELINES 必須為 JSON hash map'); }
+  if (!baselines || typeof baselines !== 'object' || Array.isArray(baselines)) throw new Error('SOLAR_CUP_PROJECTION_BASELINES 必須為 JSON hash map');
+  for (const id of ['3', '6', '7', '8']) if (!/^[a-f0-9]{64}$/i.test(baselines[id] || '')) throw new Error(`projection ${id} baseline 必須為 SHA-256 hash`);
+  return Object.fromEntries(['3', '6', '7', '8'].map((id) => [id, baselines[id].toLowerCase()]));
+}
 
 class InMemoryLease {
   constructor() { this.persistent = false; }
@@ -25,7 +33,7 @@ class InMemoryLease {
 }
 
 class SimulationRunner {
-  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, allowedStages = ['qualification'], lease = new InMemoryLease(), sleepFn = sleep, markerWaitMs = 90_000 }) {
+  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, allowedStages = ['qualification'], lease = new InMemoryLease(), sleepFn = sleep, markerWaitMs = 90_000, now = () => Date.now() }) {
     this.adapter = adapter;
     this.stateDir = stateDir;
     this.mode = mode;
@@ -39,6 +47,7 @@ class SimulationRunner {
     this.lease = lease;
     this.sleepFn = sleepFn;
     this.markerWaitMs = markerWaitMs;
+    this.now = now;
     this.leaseHandle = null;
     this.stopRequested = false;
   }
@@ -59,41 +68,64 @@ class SimulationRunner {
     return this.leaseHandle;
   }
 
-  async watchdog() {
+  leaseSession() {
+    if (!this.leaseHandle) return null;
+    return { fencing_token: this.leaseHandle.fencingToken, generation: this.leaseHandle.generation ?? null, expires_at: this.leaseHandle.expiresAt ? new Date(this.leaseHandle.expiresAt).toISOString() : null };
+  }
+
+  async watchdog(manifest = null) {
     if (!this.leaseHandle && this.mode === 'dry-run') return true;
     if (!this.leaseHandle) throw Object.assign(new Error('lease 不存在'), { p0: true });
+    if (this.leaseHandle.expiresAt && (!Number.isFinite(this.leaseHandle.expiresAt) || this.leaseHandle.expiresAt <= this.now())) throw Object.assign(new Error('LEASE_EXPIRED'), { p0: true, code: 'LEASE_LOST' });
     await this.lease.assertHeld(this.leaseHandle);
+    if (this.leaseHandle.expiresAt && this.now() + 15_000 >= this.leaseHandle.expiresAt) {
+      try { this.leaseHandle = await this.lease.renew(this.leaseHandle); }
+      catch (error) { throw Object.assign(error, { p0: true }); }
+      if (manifest) {
+        manifest.lease_session = this.leaseSession();
+        this.save(manifest);
+        appendJournal(this.runDir(manifest.run_id), { type: 'LEASE_RENEWED', fencing_token: this.leaseHandle.fencingToken, generation: this.leaseHandle.generation });
+      }
+    }
+    return true;
   }
 
   runDir(runId) { if (!RUN_ID.test(runId)) throw new Error('非法 run_id'); return path.join(this.stateDir, runId); }
   manifestPath(runId) { return path.join(this.runDir(runId), 'manifest.json'); }
   save(manifest) { writeJson(this.manifestPath(manifest.run_id), manifest); }
 
-  async precheck() {
+  async precheck({ requireProjections = true } = {}) {
     if (this.spreadsheetId !== EXPECTED_SPREADSHEET_ID) throw new Error('Spreadsheet ID 不在 allowlist');
     const metadata = await this.adapter.precheck();
     if (metadata.timeZone !== 'Asia/Taipei') {
       throw new Error(`PRECHECK 失敗：Spreadsheet timezone 必須是 Asia/Taipei，實際為 ${metadata.timeZone}`);
     }
-    if (this.armed) await this.adapter.verifyArmedGates({ requiredProjections: ['8', '3', '6', '7'], liveCell: '0_賽事設定!B12', requiredLiveValue: 0 });
+    if (this.armed && requireProjections) await this.adapter.verifyArmedGates({ requiredProjections: ['8', '3', '6', '7'], liveCell: '0_賽事設定!B12', requiredLiveValue: 0 });
     return metadata;
   }
 
   manifestHash(manifest) { return hash({ schema: manifest.schema, run_id: manifest.run_id, allowlist: manifest.allowlist, pre_canonical_hash: manifest.pre_canonical_hash }); }
   markerPath(runId, name) { return path.join(this.stateDir, 'markers', `${runId}.${name}.json`); }
   requireMarker(manifest, name) {
-    const marker = readJson(this.markerPath(manifest.run_id, name));
-    if (marker.run_id !== manifest.run_id || marker.fencing_token !== this.leaseHandle?.fencingToken || marker.manifest_hash !== this.manifestHash(manifest) || Date.parse(marker.expires_at) <= Date.now()) throw new Error(`MARKER_INVALID:${name}`);
+    let marker;
+    try { marker = readJson(this.markerPath(manifest.run_id, name)); }
+    catch (error) {
+      if (error.code === 'ENOENT') throw Object.assign(new Error(`MARKER_PENDING:${name}`), { code: 'MARKER_PENDING' });
+      throw error;
+    }
+    const expiry = Date.parse(marker.expires_at);
+    if (marker.run_id !== manifest.run_id || marker.fencing_token !== this.leaseHandle?.fencingToken || marker.manifest_hash !== this.manifestHash(manifest) || !Number.isFinite(expiry) || expiry <= this.now()) throw Object.assign(new Error(`MARKER_INVALID:${name}`), { code: 'MARKER_INVALID' });
     return marker;
   }
   assertObserverAlive(manifest) { if (this.mode === 'dry-run') return true; this.requireMarker(manifest, 'observer-heartbeat'); }
 
   async waitForRunScopedMarkers(manifest) {
-    const deadline = Date.now() + this.markerWaitMs;
-    while (Date.now() < deadline) {
+    const deadline = this.now() + this.markerWaitMs;
+    while (this.now() < deadline) {
+      await this.watchdog(manifest);
       try { this.requireMarker(manifest, 'canary-observed'); this.requireMarker(manifest, 'canary-approved'); return; }
-      catch (error) { if (!String(error.message).startsWith('MARKER_INVALID:')) throw error; }
-      await this.sleepFn(1_000);
+      catch (error) { if (error.code !== 'MARKER_PENDING') throw error; }
+      await this.sleepFn(Math.min(1_000, Math.max(1, deadline - this.now())));
     }
     throw new Error('MARKER_WAIT_TIMEOUT');
   }
@@ -105,7 +137,7 @@ class SimulationRunner {
       schema: 2, run_id: runId, spreadsheet_id: this.spreadsheetId,
       state: STATES.SNAPSHOT, reason: null, created_at: new Date().toISOString(),
       allowlist: [...new Set(refs)], pre_image: pre, pre_canonical_hash: hash(canonicalCells(pre)), post_image: {}, readback_evidence: { pre: readbackEvidence(pre), writes: {} },
-      journal_hash: null, checkpoint: { completed: [], stage: 'qualification' }, plan: this.plan
+      journal_hash: null, checkpoint: { completed: [], stage: 'qualification' }, plan: this.plan, lease_session: this.leaseSession()
     };
     ensureDir(this.runDir(runId));
     this.save(manifest);
@@ -114,7 +146,7 @@ class SimulationRunner {
   }
 
   async executeMatch(manifest, match) {
-    await this.watchdog();
+    await this.watchdog(manifest);
     this.assertObserverAlive(manifest);
     if (isKillSwitchSet(this.stateDir)) throw Object.assign(new Error('Kill switch 已啟動'), { p0: true });
     if (!this.allowedStages.has(match.stage)) throw new Error(`PENDING_STAGE_GATE:${match.stage}`);
@@ -146,7 +178,7 @@ class SimulationRunner {
   }
 
   async restore(manifest) {
-    await this.watchdog();
+    await this.watchdog(manifest);
     manifest.state = STATES.RESTORING;
     this.save(manifest);
     if (manifest.schema !== 2 || hash(canonicalCells(manifest.pre_image)) !== manifest.pre_canonical_hash || !Array.isArray(manifest.allowlist) || !manifest.allowlist.every((ref) => manifest.plan.some((m) => m.cells.includes(ref)))) throw new Error('manifest 驗證失敗');
@@ -154,18 +186,21 @@ class SimulationRunner {
     const currentAll = await this.adapter.readCells(Object.keys(possiblePost));
     const safe = {}; const conflicts = [];
     for (const ref of Object.keys(possiblePost)) {
+      await this.watchdog(manifest);
       const current = { [ref]: currentAll[ref] }, pre = { [ref]: manifest.pre_image[ref] }, post = { [ref]: possiblePost[ref] };
       if (sameCells(current, pre)) continue;
       if (sameCells(current, post)) safe[ref] = manifest.pre_image[ref]; else conflicts.push(ref);
     }
     if (Object.keys(safe).length) {
       for (let attempt = 0; attempt < 2; attempt += 1) {
+        await this.watchdog(manifest);
         try { await this.adapter.writeCells(safe); const check = await this.adapter.readCells(Object.keys(safe)); if (sameCells(check, safe)) break; if (attempt === 1) throw new Error('RESTORE_READBACK_FAILED'); }
         catch (error) { if (!isTransient(error) || attempt === 1) throw error; }
       }
     }
     if (conflicts.length) { manifest.state = STATES.MANUAL_HOLD; manifest.reason = [manifest.reason, `RESTORE_CONFLICT:${conflicts.join(',')}`].filter(Boolean).join(';'); this.save(manifest); appendJournal(this.runDir(manifest.run_id), { type: 'MANUAL_HOLD', conflicts }); return manifest; }
     for (const match of manifest.plan) {
+      await this.watchdog(manifest);
       for (const ref of match.cells) {
         if (!(ref in possiblePost)) continue;
         const current = await this.adapter.readCells([ref]);
@@ -195,6 +230,7 @@ class SimulationRunner {
       manifest.state = STATES.RESTORE_FAILURE;
       manifest.reason = [manifest.reason, 'RESTORE_VERIFY_MISMATCH'].filter(Boolean).join(';');
     } else {
+      if (this.armed) await this.adapter.verifyArmedGates({ requiredProjections: ['8', '3', '6', '7'], liveCell: '0_賽事設定!B12', requiredLiveValue: 0 });
       manifest.state = STATES.COMPLETE;
       manifest.reason = manifest.reason || 'NORMAL_RESTORED';
     }
@@ -206,6 +242,7 @@ class SimulationRunner {
   async restoreRefs(manifest, refs) {
     const possiblePost = { ...manifest.post_image, ...(manifest.in_flight?.post || {}) };
     for (const ref of refs) {
+      await this.watchdog(manifest);
       const current = await this.adapter.readCells([ref]);
       const pre = { [ref]: manifest.pre_image[ref] };
       const post = { [ref]: possiblePost[ref] };
@@ -223,8 +260,17 @@ class SimulationRunner {
   observerReady() { return fs.existsSync(path.join(this.stateDir, 'OBSERVER_READY')); }
   canaryApproved() { return fs.existsSync(path.join(this.stateDir, 'CANARY_APPROVED')); }
 
-  async waitInterval(seconds) {
-    if (!this.fast) await this.sleepFn(seconds * 1000);
+  async waitInterval(seconds, manifest) {
+    if (this.fast) return;
+    let remaining = seconds * 1000;
+    // A normal 20–40 s jitter must never consume a 60 s lease. Renew/check
+    // before every long wait and heartbeat at most every 10 seconds.
+    while (remaining > 0) {
+      await this.watchdog(manifest);
+      const slice = Math.min(10_000, remaining);
+      await this.sleepFn(slice);
+      remaining -= slice;
+    }
   }
 
   async runMainPhase(manifest) {
@@ -246,7 +292,7 @@ class SimulationRunner {
       this.save(manifest);
       appendJournal(this.runDir(manifest.run_id), { type: result.skipped ? 'SKIP_ALREADY_WRITTEN' : 'WRITE_CONFIRMED', match: match.id, score: Object.values(result.post).map((v) => v.userEnteredValue.numberValue) });
       nextDue += intervals[i] * 1000;
-      if (!this.fast) await this.sleepFn(Math.max(0, nextDue - Date.now()));
+      await this.waitInterval(Math.max(0, nextDue - this.now()) / 1000, manifest);
     }
     manifest.state = STATES.VERIFY;
     this.save(manifest);
@@ -269,7 +315,7 @@ class SimulationRunner {
           // writes markers carrying this exact token. It never accepts markers
           // made for the released canary lease.
           manifest.state = STATES.WAITING_MARKERS;
-          manifest.resume = { fencing_token: this.leaseHandle.fencingToken, manifest_hash: this.manifestHash(manifest), waiting_until: new Date(Date.now() + this.markerWaitMs).toISOString() };
+          manifest.resume = { fencing_token: this.leaseHandle.fencingToken, manifest_hash: this.manifestHash(manifest), waiting_until: new Date(this.now() + this.markerWaitMs).toISOString() };
           this.save(manifest);
           appendJournal(this.runDir(runId), { type: 'WAITING_MARKERS', ...manifest.resume });
           await this.waitForRunScopedMarkers(manifest);
@@ -290,7 +336,7 @@ class SimulationRunner {
         Object.assign(manifest.post_image, result.post);
         delete manifest.in_flight;
         this.save(manifest);
-        await this.waitInterval(canaryIntervals[canary.indexOf(match)]);
+        await this.waitInterval(canaryIntervals[canary.indexOf(match)], manifest);
       }
       const canaryRefs = canary.flatMap((match) => match.cells);
       await this.restoreRefs(manifest, canaryRefs);
@@ -301,22 +347,32 @@ class SimulationRunner {
       return manifest;
     } catch (error) {
       if (!manifest) throw error;
-      manifest.reason = error.p0 ? `P0_ABORT:${error.message}` : `ABORT:${error.message}`;
-      appendJournal(this.runDir(runId), { type: error.p0 ? 'P0_ABORT' : 'ABORT', message: error.message });
+      const detail = safeError(error);
+      manifest.reason = error.p0 ? `P0_ABORT:${detail}` : `ABORT:${detail}`;
+      appendJournal(this.runDir(runId), { type: error.p0 ? 'P0_ABORT' : 'ABORT', message: detail });
       return this.restore(manifest);
     } finally {
-      if (this.leaseHandle) await this.lease.release(this.leaseHandle);
+      if (this.leaseHandle) {
+        try { await this.lease.release(this.leaseHandle); }
+        catch (error) { appendJournal(this.runDir(runId), { type: 'LEASE_RELEASE_FAILED', message: safeError(error) }); }
+      }
     }
   }
 
   async restoreOnly(runId) {
     this.assertArmed();
     await this.acquireLease(runId);
-    await this.precheck();
     const manifest = readJson(this.manifestPath(runId));
     if (manifest.spreadsheet_id !== this.spreadsheetId) throw new Error('manifest spreadsheet 不符');
-    try { return await this.restore(manifest); }
-    finally { await this.lease.release(this.leaseHandle); }
+    manifest.lease_session = this.leaseSession();
+    this.save(manifest);
+    try {
+      await this.precheck({ requireProjections: false });
+      return await this.restore(manifest);
+    } finally {
+      try { await this.lease.release(this.leaseHandle); }
+      catch (error) { appendJournal(this.runDir(runId), { type: 'LEASE_RELEASE_FAILED', message: safeError(error) }); }
+    }
   }
 }
 
@@ -338,11 +394,14 @@ function parseArgs(argv) {
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
-  const spreadsheetId = process.env.SOLAR_CUP_SPREADSHEET_ID || EXPECTED_SPREADSHEET_ID;
+  const spreadsheetId = opts.mode === 'dry-run' ? (process.env.SOLAR_CUP_SPREADSHEET_ID || EXPECTED_SPREADSHEET_ID) : process.env.SOLAR_CUP_SPREADSHEET_ID;
+  if (opts.mode !== 'dry-run' && !spreadsheetId) throw new Error('armed 模式必須明確指定 SOLAR_CUP_SPREADSHEET_ID');
+  let lease;
   const adapter = opts.mode === 'dry-run'
     ? new MockAdapter()
-    : new SheetsRestAdapter({ spreadsheetId, allowSpreadsheetId: EXPECTED_SPREADSHEET_ID, accessToken: process.env.GOOGLE_ACCESS_TOKEN });
-  const runner = new SimulationRunner({ ...opts, adapter, spreadsheetId });
+    : new SheetsRestAdapter({ spreadsheetId, accessToken: process.env.GOOGLE_ACCESS_TOKEN, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
+  if (opts.mode !== 'dry-run') lease = new GcsGenerationLease({ client: new GcsJsonClient({ accessToken: process.env.GOOGLE_ACCESS_TOKEN }), bucket: process.env.SOLAR_CUP_GCS_BUCKET, object: process.env.SOLAR_CUP_GCS_LEASE_OBJECT || 'solarcup-simulation/lease.json' });
+  const runner = new SimulationRunner({ ...opts, adapter, spreadsheetId, lease });
   process.on('SIGINT', () => { runner.stopRequested = true; });
   process.on('SIGTERM', () => { runner.stopRequested = true; });
   const result = opts.mode === 'restore-only' ? await runner.restoreOnly(opts.runId) : await runner.start(opts.runId || undefined);
@@ -355,6 +414,6 @@ async function main() {
   process.exitCode = ['NORMAL_RESTORED', 'MANUAL_STOP_RESTORED', 'ABORT_RESTORED', 'P0_ABORT_RESTORED'].includes(outcome) ? 0 : 2;
 }
 
-if (require.main === module) main().catch((error) => { console.error(String(error.message).replace(/Bearer\s+[^\s]+|[A-Za-z0-9_-]{20,}/g, '[REDACTED]')); process.exitCode = 2; });
+if (require.main === module) main().catch((error) => { console.error(safeError(error)); process.exitCode = 2; });
 
-module.exports = { SimulationRunner, EXPECTED_SPREADSHEET_ID, cellForNumber, parseArgs, InMemoryLease };
+module.exports = { SimulationRunner, EXPECTED_SPREADSHEET_ID, cellForNumber, parseArgs, parseProjectionBaselines, InMemoryLease };
