@@ -8,7 +8,7 @@ npm test
 npm run check
 mkdir -p /private/tmp/solarcup-sim && touch /private/tmp/solarcup-sim/OBSERVER_READY
 node runner.js dry-run --fast --state-dir /private/tmp/solarcup-sim --run-id demo
-# 結果為 CANARY_WAITING_APPROVAL；確認 Browser observer 後才放行：
+# 結果為 CANARY_WAITING_APPROVAL；確認本機結果後才放行：
 touch /private/tmp/solarcup-sim/CANARY_APPROVED
 node runner.js dry-run --fast --state-dir /private/tmp/solarcup-sim --run-id demo
 ```
@@ -26,7 +26,7 @@ node runner.js dry-run --fast --state-dir /private/tmp/solarcup-sim --run-id dem
 - `manifest.json`：保存 allowlist、exact pre-image、每筆 post-image、checkpoint 與 run state。
 - `journal.jsonl`：append-only 的事件稽核軌跡。
 - restore 使用 `current / post-image / pre-image` 三方比較，衝突時停止，不覆蓋協作者。
-- 預設資格賽為 `2_資格賽成績!K2:L151`；比分只生成 `21 : 0–19`，無平手。
+- 正式範圍涵蓋資格賽、淘汰賽與曜請賽三張表，共 310 場；比分只生成 `21 : 0–19`，無平手。
 
 目前限制：Google Sheets REST API 的 `batchUpdate` 沒有 spreadsheet revision CAS。runner 以 `userEnteredValue` canonical hash read-before-write、寫後 readback evidence 與三方 restore comparison 降低風險，但不能取代真正的資料庫交易鎖。
 
@@ -34,11 +34,29 @@ armed gate 的 LIVE switch 固定讀取 `0_賽事設定!B12 = 0`；`B11` 是總�
 
 armed mode 必須明確提供 `SOLAR_CUP_SPREADSHEET_ID`、`GOOGLE_ACCESS_TOKEN`、`SOLAR_CUP_GCS_BUCKET` 與 `SOLAR_CUP_PROJECTION_BASELINES`。後者只能是固定範圍的 SHA-256 hash map，例如 `{"3":"<64 位 hex hash>","6":"<64 位 hex hash>","7":"<64 位 hex hash>","8":"<64 位 hex hash>"}`；範圍由程式鎖定為 `3:A1:Z109`、`6:A1:Z109`、`7:A1:Z11`、`8:A1:Z311`，環境變數無法覆寫。runner 以 GCS JSON API 的 object generation 作 fencing；少任一環境變數或 baseline 都 fail-closed。
 
-正式 resume 不沿用已釋放的 canary lease。runner 會先取得新 lease、把新的 `fencing_token` 與 `manifest_hash` 寫入 manifest／journal，並在持有該 lease 的 90 秒內等待 Browser 寫入 `canary-observed` 與 `canary-approved` JSON marker。兩個 marker 都必須帶相同的 `run_id`、新 token、manifest hash 與未過期 `expires_at`；逾時即 fail-closed。
+## GitHub Actions 正式流程
 
-Marker 只能寫入 `simulation/runs/` 下的既有 run，且會驗證 manifest hash：
+Google Cloud 基礎設施已建立並完成設定驗證：
 
-```bash
-node marker.js observer-heartbeat --state-dir ./runs --run-id sim-... \
-  --fencing-token <token> --manifest-hash <hash> --ttl-seconds 60
-```
+- GCS bucket：`solarcup-sim-state-944480593434`（`ASIA-EAST1`、PAP enforced、uniform bucket-level access、versioning、7 天 soft delete）。
+- Workload Identity Federation：pool／provider `solarcup-gh-pool/solarcup-gh-provider`；provider 僅允許 repository ID `1288512590`、owner ID `254364847`、`refs/heads/main` 與 `workflow_dispatch`。
+- service account 已完成 WIF 綁定，並具上述 bucket 的 `objectAdmin` 權限。
+
+GitHub `production` Environment、repository variables／secret、目標 Google Sheet 分享權限，以及 workflow 的實際 production 執行仍待後續設定與驗證。
+
+1. `dry-run.yml` 只跑 `ci-dry-run`，不要求 Google 環境變數、不建立 adapter、lease 或外部連線；它驗證完整的 310 場規劃。
+2. `canary.yml` 在 `production` Environment 內 snapshot 全部 310 場，僅寫入前 3 場 canary，逐格 readback 後 exact restore，並把不可變 canary report 寫入 GCS。此時停在 `CANARY_WAITING_APPROVAL`。
+3. 由 Browser 觀察試算表與 report 後，手動執行 `approve-canary.yml`。它只能依既有 report 建立一次 approval；相同 `run_id`／hash 的第二次建立會得到 GCS `412`，不會覆寫舊核准。
+4. `simulate.yml` 使用同一 job 的 5 個累積 segment：`75 / 75 / 66 / 66 / 28`。每段開始前都以 SHA-pinned OIDC action 重取短效 access token（不建立 credentials file），並在 lease 前後重驗不可變 approval 的 `run_id` 與 manifest hash。segment 1 檢查完整 baseline；segment 2–5 只檢查 sheet、時區與 `B12 = 0`，讓已累積比分不會被舊 baseline 誤判。亂序、重跑錯段一律拒絕，且只有第 5 段才做 exact restore 與最終完整 baseline 檢查。
+5. Actions production 流程唯一的放行依據是 GCS 中不可變的 canary report／approval。canary 或任一 simulate segment 失敗／取消時，recovery job 會以同一個完整權限的 production 環境執行 `restore-only`。`restore.yml` 也可在必要時獨立接管復原；遇到仍有效 lease 會在最多 90 秒內重試，403 或非 `LEASE_BUSY` 錯誤立即 fail-closed。
+
+GCS durable state 固定在 `runs/<run_id>/`：`manifest`、`checkpoint`、`intent`、`restore`、`terminal`、append-only `journal/*` 與 `canary-report`／`approval`。每次 mutation 前都會驗證 generation fencing；復原採 `current / post-image / pre-image` 三方比較，衝突轉為 `MANUAL_HOLD`，不覆寫協作者資料。artifact 不含 token、Spreadsheet ID 或 snapshot。
+
+必備 GitHub Environment / repository 設定：
+
+- Environment：`production`（不要設定 required reviewer；以 `workflow_dispatch` 與不可變 canary approval 作為 gate，避免 recovery 被人工審核卡住。若未來需要 reviewer，另建僅供 `approve-canary` 使用的獨立審批 Environment）。
+- Variables：`GCP_WIF_PROVIDER`、`GCP_WIF_SERVICE_ACCOUNT`、`SOLAR_CUP_SPREADSHEET_ID`、`SOLAR_CUP_GCS_BUCKET`。
+- Secret：`SOLAR_CUP_PROJECTION_BASELINES`（僅固定 range 的 SHA-256 hash map）。
+- Google WIF attribute condition：只允許 `DeanSolar999/solarcup-info` 的 `main` 分支與 `workflow_dispatch`；agent 分支只供 PR review，不應取得 production OIDC。
+
+每個 production workflow 都會先檢查 `run_id` 格式，再取得 OIDC token；待 GitHub 與 Google Sheet 的後續設定完成後，才可實際啟動 production workflow。

@@ -1,0 +1,29 @@
+name: Approve immutable canary report
+on: { workflow_dispatch: { inputs: { run_id: { required: true, type: string } } } }
+permissions: { contents: read }
+jobs:
+  approve:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: { contents: read, id-token: write }
+    steps:
+      - id: safe
+        env:
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if ! [[ "$INPUT_RUN_ID" =~ ^[A-Za-z][A-Za-z0-9_-]{1,72}$ ]]; then exit 2; fi
+          printf 'RUN_ID=%s\n' "$INPUT_RUN_ID" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: auth
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          SOLAR_CUP_BASE_RUN_ID: ${{ env.RUN_ID }}
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+        run: node simulation/gcs-approve.js

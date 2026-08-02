@@ -81,13 +81,24 @@ class SheetsRestAdapter {
   }
 
   async readCells(refs) {
-    refs.forEach((ref) => this.assertAllowedRef(ref));
-    const params = new URLSearchParams({ includeGridData: 'true', fields: 'sheets(properties(title),data(startRow,startColumn,rowData(values(userEnteredValue,effectiveValue,formattedValue,dataValidation,note))))' });
-    refs.forEach((ref) => params.append('ranges', ref));
-    const data = await this.request(`${this.base}?${params}`);
-    const blocks = (data.sheets || []).flatMap((sheet) => sheet.data || []);
     const out = {};
-    for (let i = 0; i < refs.length; i += 1) out[refs[i]] = clone(blocks[i]?.rowData?.[0]?.values?.[0] || null);
+    const bySheet = new Map();
+    for (const ref of refs) {
+      this.assertAllowedRef(ref);
+      const sheet = ref.slice(0, ref.lastIndexOf('!'));
+      if (!bySheet.has(sheet)) bySheet.set(sheet, []);
+      bySheet.get(sheet).push(ref);
+    }
+    for (const sheetRefs of bySheet.values()) {
+      for (let start = 0; start < sheetRefs.length; start += 50) {
+        const batch = sheetRefs.slice(start, start + 50);
+        const params = new URLSearchParams({ includeGridData: 'true', fields: 'sheets(properties(title),data(startRow,startColumn,rowData(values(userEnteredValue,effectiveValue,formattedValue,dataValidation,note))))' });
+        batch.forEach((ref) => params.append('ranges', ref));
+        const data = await this.request(`${this.base}?${params}`);
+        const blocks = (data.sheets || []).flatMap((sheet) => sheet.data || []);
+        for (let i = 0; i < batch.length; i += 1) out[batch[i]] = clone(blocks[i]?.rowData?.[0]?.values?.[0] || null);
+      }
+    }
     return out;
   }
 

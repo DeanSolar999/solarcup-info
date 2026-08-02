@@ -1,0 +1,124 @@
+name: Resume approved Solar Cup run
+on: { workflow_dispatch: { inputs: { run_id: { required: true, type: string } } } }
+permissions: { contents: read }
+concurrency: { group: solarcup-production-sheet, cancel-in-progress: false }
+jobs:
+  resume:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    environment: production
+    permissions: { contents: read, id-token: write }
+    steps:
+      - id: safe
+        env:
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if ! [[ "$INPUT_RUN_ID" =~ ^[A-Za-z][A-Za-z0-9_-]{1,72}$ ]]; then exit 2; fi
+          printf 'RUN_ID=%s\n' "$INPUT_RUN_ID" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: auth_segment_1
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth_segment_1.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js run --armed --resume-only --segment 1 --run-id "$RUN_ID"
+      - id: auth_segment_2
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth_segment_2.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js run --armed --resume-only --segment 2 --run-id "$RUN_ID"
+      - id: auth_segment_3
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth_segment_3.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js run --armed --resume-only --segment 3 --run-id "$RUN_ID"
+      - id: auth_segment_4
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth_segment_4.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js run --armed --resume-only --segment 4 --run-id "$RUN_ID"
+      - id: auth_segment_5
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth_segment_5.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js run --armed --resume-only --segment 5 --run-id "$RUN_ID"
+  recovery:
+    if: always() && (needs.resume.result == 'failure' || needs.resume.result == 'cancelled')
+    needs: resume
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    permissions: { contents: read, id-token: write }
+    steps:
+      - id: safe
+        env:
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if ! [[ "$INPUT_RUN_ID" =~ ^[A-Za-z][A-Za-z0-9_-]{1,72}$ ]]; then exit 2; fi
+          printf 'RUN_ID=%s\n' "$INPUT_RUN_ID" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - id: auth
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_WIF_SERVICE_ACCOUNT }}
+          token_format: access_token
+          create_credentials_file: false
+      - env:
+          GOOGLE_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          SOLAR_CUP_SPREADSHEET_ID: ${{ vars.SOLAR_CUP_SPREADSHEET_ID }}
+          SOLAR_CUP_GCS_BUCKET: ${{ vars.SOLAR_CUP_GCS_BUCKET }}
+          SOLAR_CUP_GCS_LEASE_OBJECT: solarcup-simulation/production/lease.json
+          SOLAR_CUP_GCS_STATE_PREFIX: solarcup-simulation/runs
+          SOLAR_CUP_PROJECTION_BASELINES: ${{ secrets.SOLAR_CUP_PROJECTION_BASELINES }}
+        run: node simulation/runner.js restore-only --armed --run-id "$RUN_ID"
