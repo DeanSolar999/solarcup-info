@@ -5,7 +5,10 @@ const { clone, hash } = require('./lib');
 const SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const SHEET_POLICY = Object.freeze({
   '2_資格賽成績': { sheetId: 252930776, rows: [2, 151], columns: new Set(['K', 'L']) },
-  '4_淘汰賽成績': { sheetId: 1125219206, rows: [2, 133], columns: new Set(['M', 'N']) },
+  // J/L＝淘汰賽隊名。這兩欄現場是賽務手填的，沒有任何公式在推導；模擬若不寫，
+  // 編號反查與勝方公式全部回傳空，整條積分鏈路會安靜地算成 0。刻意納入寫入範圍，
+  // snapshot／三方復原也因此自動涵蓋這兩欄。
+  '4_淘汰賽成績': { sheetId: 1125219206, rows: [2, 133], columns: new Set(['J', 'L', 'M', 'N']) },
   '5_曜請成績': { sheetId: 848445550, rows: [2, 29], columns: new Set(['J', 'K']) }
 });
 const PROJECTION_RANGES = Object.freeze({

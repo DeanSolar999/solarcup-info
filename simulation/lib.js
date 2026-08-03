@@ -122,17 +122,41 @@ function appendJournal(runDir, event) {
   fs.appendFileSync(path.join(runDir, 'journal.jsonl'), `${JSON.stringify({ at: new Date().toISOString(), ...event })}\n`, { mode: 0o600 });
 }
 
-function defaultPlan() {
-  return Array.from({ length: 150 }, (_, index) => ({
-    id: `qual-${index + 1}`,
-    stage: 'qualification',
-    cells: [`2_資格賽成績!K${index + 2}`, `2_資格賽成績!L${index + 2}`]
-  }));
+// cells＝這一場會被寫到、因此也必須納入 snapshot／restore 的全部儲存格。
+// scoreCells 固定是分數；nameCells 只有淘汰賽才有——資格賽與曜請組的隊伍
+// 是賽前預填的，模擬不得改動。
+function qualMatch(index) {
+  const row = index + 2;
+  return {
+    id: `qual-${index + 1}`, stage: 'qualification', no: index + 1,
+    scoreCells: [`2_資格賽成績!K${row}`, `2_資格賽成績!L${row}`], nameCells: null,
+    cells: [`2_資格賽成績!K${row}`, `2_資格賽成績!L${row}`]
+  };
 }
-function fullPlan() {
+function defaultPlan() {
+  return Array.from({ length: 150 }, (_, index) => qualMatch(index));
+}
+function fullPlan(knockoutNos) {
+  // 淘汰賽的隊名（J/L）沒有任何系統在推導，是賽務現場手填的。模擬若只寫分數，
+  // 編號反查與勝方公式會全部回傳空，`6_積分總表` 的止步一律「—」、名次分一律 0，
+  // 等於整條積分鏈路都沒驗到卻不會報錯。因此 J/L 必須一併納入 plan。
+  const nos = knockoutNos || require('./bracket').knockoutNumbers(require('./bracket').loadTopology());
+  if (nos.length !== 132) throw new Error(`KNOCKOUT_PLAN_SIZE:${nos.length}/132`);
   const qualification = defaultPlan();
-  const knockout = Array.from({ length: 132 }, (_, i) => ({ id: `knockout-${i + 1}`, stage: 'knockout', cells: [`4_淘汰賽成績!M${i + 2}`, `4_淘汰賽成績!N${i + 2}`] }));
-  const invitational = Array.from({ length: 28 }, (_, i) => ({ id: `invitational-${i + 1}`, stage: 'invitational', cells: [`5_曜請成績!J${i + 2}`, `5_曜請成績!K${i + 2}`] }));
+  const knockout = nos.map((no, i) => {
+    const row = i + 2;
+    const nameCells = [`4_淘汰賽成績!J${row}`, `4_淘汰賽成績!L${row}`];
+    const scoreCells = [`4_淘汰賽成績!M${row}`, `4_淘汰賽成績!N${row}`];
+    return { id: `knockout-${i + 1}`, stage: 'knockout', no, nameCells, scoreCells, cells: [...nameCells, ...scoreCells] };
+  });
+  const invitational = Array.from({ length: 28 }, (_, i) => {
+    const row = i + 2;
+    return {
+      id: `invitational-${i + 1}`, stage: 'invitational', no: null,
+      scoreCells: [`5_曜請成績!J${row}`, `5_曜請成績!K${row}`], nameCells: null,
+      cells: [`5_曜請成績!J${row}`, `5_曜請成績!K${row}`]
+    };
+  });
   return [...qualification, ...knockout, ...invitational];
 }
 

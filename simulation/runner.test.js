@@ -11,6 +11,8 @@ const { MockAdapter } = require('./mock-adapter');
 const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError, fullPlan } = require('./lib');
+const { KnockoutResolver, ScriptedResolver } = require('./knockout-resolver');
+const { loadTopology, knockoutNumbers, rankGroup, seedsFor, deriveAll } = require('./bracket');
 
 function temp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'solarcup-sim-')); }
 function plan(n = 3, stage = 'qualification') {
@@ -138,9 +140,14 @@ test('Sheets readCells：超過 50 個 range 依 sheet 分批請求且保留 ref
 test('adapter allowlist、armed-fast 與無持久 lease 均拒絕', async () => {
   const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' });
   assert.throws(() => adapter.assertAllowedRef('2_資格賽成績!A2'), /allowlist/);
-  assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!J2'), /allowlist/);
-  assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!L2'), /allowlist/);
   assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!M134'), /allowlist/);
+  // J/L＝淘汰賽隊名，2026-08-03 起刻意納入寫入範圍（沒有隊名整條積分鏈路會算成 0）。
+  // 同一列的 I/K（編號反查）與 O（勝方）是公式欄，必須維持拒絕。
+  assert.deepEqual(adapter.assertAllowedRef('4_淘汰賽成績!J2').startColumnIndex, 9);
+  assert.deepEqual(adapter.assertAllowedRef('4_淘汰賽成績!L2').startColumnIndex, 11);
+  assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!I2'), /allowlist/);
+  assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!K2'), /allowlist/);
+  assert.throws(() => adapter.assertAllowedRef('4_淘汰賽成績!O2'), /allowlist/);
   assert.throws(() => parseArgs(['run', '--armed', '--fast']), /不可同時/);
   const r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true });
   assert.throws(() => r.assertArmed(), /持久化 external lease/);
@@ -173,7 +180,7 @@ test('production resume：approval 先讀取、取得 lease 後再讀取核對�
 
 test('5 個 segment 依 checkpoint 累積比分，亂序拒絕，僅最後一段 restore 全部 310 場', async () => {
   const dir = temp(); const adapter = new MockAdapter();
-  const r = new SimulationRunner({ adapter, stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], fast: true, segment: 1 });
+  const r = new SimulationRunner({ adapter, stateDir: dir, spreadsheetId: EXPECTED_SPREADSHEET_ID, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], resolver: new ScriptedResolver(), fast: true, segment: 1 });
   const manifest = await r.snapshot('five-segments'); manifest.state = STATES.CANARY_WAITING_APPROVAL; r.save(manifest);
   const one = await r.start('five-segments');
   assert.equal(one.state, STATES.SEGMENT_WAITING); assert.equal(one.checkpoint.completed.length, 75); assert.ok((await adapter.readCells([one.plan[0].cells[0]]))[one.plan[0].cells[0]]);
@@ -191,7 +198,7 @@ test('segment 2 僅驗證 timezone/sheetId/B12，末段 restore 後才驗完整 
   const checks = []; const gate = { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } };
   const lease = { persistent: true, async acquire() { return { fencingToken: 'segment-fence' }; }, async assertHeld() {}, async release() {} };
   const adapter = new MockAdapter({}, { armedGateResult: (request) => { checks.push(request.requiredProjections); return gate; } });
-  const r = new SimulationRunner({ adapter, stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, stateStore: { async persistManifest() {} }, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], fast: false, sleepFn: async () => {}, segment: 2 });
+  const r = new SimulationRunner({ adapter, stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, mode: 'run', armed: true, lease, stateStore: { async persistManifest() {} }, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'], resolver: new ScriptedResolver(), fast: false, sleepFn: async () => {}, segment: 2 });
   const manifest = await r.snapshot('gate-segment'); manifest.state = STATES.SEGMENT_WAITING; manifest.checkpoint.completed = manifest.plan.slice(0, 75).map((match) => match.id); manifest.checkpoint.next_segment = 2; r.save(manifest);
   const waiting = await r.start('gate-segment');
   assert.equal(waiting.state, STATES.SEGMENT_WAITING);
@@ -363,4 +370,108 @@ test('比分與配對 jitter 規格', () => {
     assert.notEqual(score[0], score[1]);
     assertLegalScore(score);
   }
+});
+
+// ── 淘汰賽隊名（2026-08-03 新增）──────────────────────────────
+// 起因：原本的 plan 只寫 M/N 分數，J/L 隊名沒人填。編號反查與勝方公式會全部
+// 回傳空，`6_積分總表` 的止步一律「—」、名次分一律 0——整條積分鏈路沒驗到
+// 卻不會報錯。這幾個測試守住「隊名一定會被寫進去」這件事。
+
+test('fullPlan：132 場淘汰賽都必須帶隊名格，且列號對得上場次', () => {
+  const topology = loadTopology();
+  const nos = knockoutNumbers(topology);
+  const p = fullPlan(nos);
+  assert.equal(p.length, 310);
+  const knock = p.filter((m) => m.stage === 'knockout');
+  assert.equal(knock.length, 132);
+  assert.ok(knock.every((m) => m.nameCells && m.nameCells.length === 2), '每場淘汰賽都要有 J/L 隊名格');
+  assert.ok(knock.every((m) => m.cells.length === 4), 'snapshot/restore 必須涵蓋隊名與分數共 4 格');
+  // 第 i 場淘汰賽 ↔ 第 2+i 列，且場次由小到大
+  assert.deepEqual(knock[0].nameCells, ['4_淘汰賽成績!J2', '4_淘汰賽成績!L2']);
+  assert.equal(knock[0].no, nos[0]);
+  assert.equal(knock[131].no, nos[131]);
+  assert.deepEqual(knock[131].scoreCells, ['4_淘汰賽成績!M133', '4_淘汰賽成績!N133']);
+  // 資格賽與曜請的隊伍是賽前預填的，模擬不得改動
+  assert.ok(p.filter((m) => m.stage !== 'knockout').every((m) => m.nameCells === null));
+});
+
+test('缺解析器時淘汰賽不得寫入，且解析不出隊伍要 P0 中止', async () => {
+  const dir = temp(); markObserver(dir); approve(dir);
+  const ko = { id: 'knockout-1', stage: 'knockout', no: 151, nameCells: ['S!J1', 'S!L1'], scoreCells: ['S!M1', 'S!N1'], cells: ['S!J1', 'S!L1', 'S!M1', 'S!N1'] };
+  const bare = runner(new MockAdapter(), dir, { plan: [ko], allowedStages: ['knockout'] });
+  await assert.rejects(() => bare.executeMatch({ run_id: 'x', pre_image: {}, readback_evidence: { writes: {} } }, ko), /RESOLVER_REQUIRED/);
+  const blind = runner(new MockAdapter(), dir, { plan: [ko], allowedStages: ['knockout'], resolver: { async namesFor() { return null; } } });
+  await assert.rejects(() => blind.executeMatch({ run_id: 'x', pre_image: {}, readback_evidence: { writes: {} } }, ko), /無法推導參賽隊伍/);
+});
+
+test('賽程拓撲：解析自 bracket-tree.html，五角與三角都是完整循環', () => {
+  const t = loadTopology();
+  assert.equal(knockoutNumbers(t).length, 132);
+  assert.equal(t.RR_PAIRS.length, 10);
+  assert.equal(t.TRI_PAIRS.length, 3);
+  // 拓撲被改壞（缺一場）必須立刻 fail-closed，而不是安靜地少推一場
+  const broken = { ...t, MNO: { ...t.MNO, plat: { ...t.MNO.plat, pre: t.MNO.plat.pre.slice(1) } } };
+  assert.throws(() => require('./bracket').assertTopology(broken), /TOPOLOGY_/);
+});
+
+test('循環賽名次：勝場 → 失分率 → 對戰勝負；三隊以上同率標記待抽籤', () => {
+  const teams = ['A', 'B', 'C'];
+  // A 與 B 同為 1 勝，A 的失分率較佳
+  const ms = [
+    { a: 'A', b: 'B', sa: 21, sb: 10, done: true },
+    { a: 'B', b: 'C', sa: 21, sb: 19, done: true },
+    { a: 'C', b: 'A', sa: 5, sb: 21, done: true }
+  ];
+  const { ranked, tied } = rankGroup(teams, ms);
+  assert.equal(ranked[0], 'A');
+  assert.equal(tied.size, 0);
+  // 完全對稱的三隊互咬 → 同勝場同失分率 → 標記 tied（現場需抽籤）
+  const sym = rankGroup(teams, [
+    { a: 'A', b: 'B', sa: 21, sb: 11, done: true },
+    { a: 'B', b: 'C', sa: 21, sb: 11, done: true },
+    { a: 'C', b: 'A', sa: 21, sb: 11, done: true }
+  ]);
+  assert.equal(sym.tied.size, 3);
+});
+
+test('逐場回讀：晉級採後端 O 欄勝方，與比分不符時記錄 finding 但不中斷', async () => {
+  const topology = loadTopology();
+  const nos = knockoutNumbers(topology);
+  const qualRows = [];
+  let n = 0;
+  for (const [tier, size] of [['白金', 20], ['黃金', 20], ['白銀', 30], ['青銅', 30]]) {
+    for (let i = 0; i < size; i += 1) { n += 1; qualRows.push({ no: n, name: `T${n}`, rank: (i % 2) + 1, tier }); }
+  }
+  const findings = [];
+  const results = {};
+  const source = { async qualRows() { return qualRows; }, async knockRows() { return results; } };
+  const resolver = new KnockoutResolver({ source, topology, onFinding: (f) => findings.push(f) });
+
+  // 初賽第一場：兩隊都應解得出來
+  const first = nos[0];
+  const ab = await resolver.namesFor({ no: first });
+  assert.equal(ab.length, 2);
+  assert.notEqual(ab[0], ab[1]);
+
+  // 後端 O 欄判給分數較低的一方 → 應記為 finding，且晉級跟著 O 欄走
+  results[first] = { a: ab[0], b: ab[1], sa: 21, sb: 5, winner: ab[1], winnerNo: 2, rawWinner: '2' };
+  await resolver.namesFor({ no: nos[1] });
+  assert.equal(findings.filter((f) => f.code === 'BACKEND_WINNER_MISMATCH').length, 1);
+
+  // 上一輪還沒完賽的場次不能硬掰隊伍
+  await assert.rejects(() => resolver.namesFor({ no: topology.MNO.plat.sf[0] }), /UNRESOLVED_MATCH/);
+});
+
+test('種子序：同級別內第 1 名與第 2 名交錯，初賽不會變成同名次互打', () => {
+  const rows = [];
+  for (let i = 1; i <= 20; i += 1) rows.push({ no: i, name: `P${i}`, rank: i <= 10 ? 1 : 2, tier: '白金' });
+  const seeds = seedsFor('plat', rows);
+  assert.equal(seeds.length, 20);
+  const rankOf = Object.fromEntries(rows.map((r) => [r.name, r.rank]));
+  for (let i = 0; i < 10; i += 1) {
+    assert.notEqual(rankOf[seeds[i * 2]], rankOf[seeds[i * 2 + 1]], `第 ${i + 1} 場不該是同名次互打`);
+  }
+  assert.equal(new Set(seeds).size, 20);
+  // 人數不符必須 fail-closed，而不是默默少推幾隊
+  assert.throws(() => seedsFor('plat', rows.slice(0, 19)), /SEED_SIZE/);
 });

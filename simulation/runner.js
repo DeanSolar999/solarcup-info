@@ -11,12 +11,14 @@ const { MockAdapter } = require('./mock-adapter');
 const { SheetsRestAdapter } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { GcsRunState } = require('./gcs-run-state');
+const { KnockoutResolver, CloudSource, ScriptedResolver } = require('./knockout-resolver');
 
 const EXPECTED_SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const RUN_ID = /^[a-zA-Z][a-zA-Z0-9_-]{1,72}$/;
 const SEGMENTS = Object.freeze([[0, 75], [75, 150], [150, 216], [216, 282], [282, 310]]);
 
 function cellForNumber(number) { return { userEnteredValue: { numberValue: number } }; }
+function cellForString(text) { return { userEnteredValue: { stringValue: text } }; }
 function sleep(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function isTransient(error) { return ['ETIMEDOUT', 'ECONNRESET'].includes(error.code) || error.status === 429 || error.status >= 500; }
 function parseProjectionBaselines(text) {
@@ -35,7 +37,7 @@ class InMemoryLease {
 }
 
 class SimulationRunner {
-  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, canaryOnly = false, resumeOnly = false, segment = null, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, allowedStages = ['qualification'], lease = new InMemoryLease(), stateStore = null, sleepFn = sleep, now = () => Date.now() }) {
+  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, canaryOnly = false, resumeOnly = false, segment = null, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, resolver = null, allowedStages = ['qualification'], lease = new InMemoryLease(), stateStore = null, sleepFn = sleep, now = () => Date.now() }) {
     this.adapter = adapter;
     this.stateDir = stateDir;
     this.mode = mode;
@@ -47,6 +49,9 @@ class SimulationRunner {
     this.fast = fast;
     this.stopAfter = stopAfter;
     this.random = random;
+    // 淘汰賽隊名解析器。null＝不寫隊名（僅供既有的資格賽-only 測試沿用）。
+    this.resolver = resolver;
+    this.findings = [];
     this.allowedStages = new Set(allowedStages);
     this.lease = lease;
     this.stateStore = stateStore;
@@ -134,7 +139,19 @@ class SimulationRunner {
     if (!this.allowedStages.has(match.stage)) throw new Error(`PENDING_STAGE_GATE:${match.stage}`);
     const score = scoreFor(manifest.run_id, match.id);
     assertLegalScore(score);
-    const post = { [match.cells[0]]: cellForNumber(score[0]), [match.cells[1]]: cellForNumber(score[1]) };
+    const scoreCells = match.scoreCells || match.cells;
+    const post = { [scoreCells[0]]: cellForNumber(score[0]), [scoreCells[1]]: cellForNumber(score[1]) };
+    // 淘汰賽：先問解析器這一場誰上場。解析器只吃「後端 O 欄算出的勝方」往下推，
+    // 不用本地記的分數，所以這是真的在驗後端公式鏈，而不是自己跟自己對答案。
+    if (match.nameCells) {
+      if (!this.resolver) throw new Error(`RESOLVER_REQUIRED:${match.id}`);
+      const names = await this.resolver.namesFor(match, this.adapter);
+      if (!Array.isArray(names) || names.length !== 2 || !names.every((n) => typeof n === 'string' && n)) {
+        throw Object.assign(new Error(`無法推導參賽隊伍：${match.id}（場次 ${match.no}）`), { p0: true });
+      }
+      post[match.nameCells[0]] = cellForString(names[0]);
+      post[match.nameCells[1]] = cellForString(names[1]);
+    }
     const current = await this.adapter.readCells(match.cells);
     const expectedPre = Object.fromEntries(match.cells.map((ref) => [ref, manifest.pre_image[ref]]));
     const expectedPost = Object.fromEntries(match.cells.map((ref) => [ref, post[ref]]));
@@ -489,7 +506,14 @@ async function main() {
     ? new MockAdapter()
     : new SheetsRestAdapter({ spreadsheetId, accessToken: process.env.GOOGLE_ACCESS_TOKEN, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
   if (opts.mode !== 'dry-run') { const client = new GcsJsonClient({ accessToken: process.env.GOOGLE_ACCESS_TOKEN }); lease = new GcsGenerationLease({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, object: process.env.SOLAR_CUP_GCS_LEASE_OBJECT || 'solarcup-simulation/lease.json' }); stateStore = new GcsRunState({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, prefix: process.env.SOLAR_CUP_GCS_STATE_PREFIX || 'solarcup-simulation/runs', lease }); }
-  const runner = new SimulationRunner({ ...opts, adapter, spreadsheetId, lease, stateStore, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'] });
+  // 淘汰賽隊名解析：armed 走雲端逐場回讀（用後端 O 欄的勝方往下推）；
+  // dry-run 背後是 mock，沒有公式引擎可讀，只用劇本填佔位名，
+  // 目的是驗寫入／snapshot／restore 的機制，不宣稱驗晉級推導。
+  const findings = [];
+  const resolver = opts.mode === 'dry-run'
+    ? new ScriptedResolver()
+    : new KnockoutResolver({ source: new CloudSource(adapter), onFinding: (f) => { findings.push(f); console.warn(`[FINDING] ${f.code} ${f.detail}`); } });
+  const runner = new SimulationRunner({ ...opts, adapter, spreadsheetId, lease, stateStore, resolver, plan: fullPlan(), allowedStages: ['qualification', 'knockout', 'invitational'] });
   process.on('SIGINT', () => { void runner.requestCancel(); });
   process.on('SIGTERM', () => { void runner.requestCancel(); });
   const result = opts.mode === 'restore-only' ? await runner.restoreOnly(opts.runId) : await runner.start(opts.runId || undefined);

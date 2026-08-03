@@ -27,6 +27,7 @@ node runner.js dry-run --fast --state-dir /private/tmp/solarcup-sim --run-id dem
 - `journal.jsonl`：append-only 的事件稽核軌跡。
 - restore 使用 `current / post-image / pre-image` 三方比較，衝突時停止，不覆蓋協作者。
 - 正式範圍涵蓋資格賽、淘汰賽與曜請賽三張表，共 310 場；比分只生成 `21 : 0–19`，無平手。
+- **淘汰賽隊名（J/L）一併寫入**。`4_淘汰賽成績` 的隊名是賽務現場抽籤後手填的，系統裡沒有任何一段程式在推導晉級。若只寫 M/N 分數，編號反查（I/K）與勝方（O）公式會全部回傳空，`6_積分總表` 的止步一律「—」、名次分一律 0，球團總分只剩底分——整場演練會安靜地跑完卻一格積分鏈路都沒驗到。已於 2026-08-03 實測重現。
 
 目前限制：Google Sheets REST API 的 `batchUpdate` 沒有 spreadsheet revision CAS。runner 以 `userEnteredValue` canonical hash read-before-write、寫後 readback evidence 與三方 restore comparison 降低風險，但不能取代真正的資料庫交易鎖。
 
@@ -60,3 +61,41 @@ GCS durable state 固定在 `runs/<run_id>/`：`manifest`、`checkpoint`、`inte
 - Google WIF attribute condition：只允許 `DeanSolar999/solarcup-info` 的 `main` 分支與 `workflow_dispatch`；agent 分支只供 PR review，不應取得 production OIDC。
 
 每個 production workflow 都會先檢查 `run_id` 格式，再取得 OIDC token；待 GitHub 與 Google Sheet 的後續設定完成後，才可實際啟動 production workflow。
+
+## 淘汰賽晉級推導
+
+`bracket.js` 解析 `bracket-tree.html` 的 `MNO` / `RR_PAIRS` / `TRI_PAIRS` 取得賽程拓撲——
+哪一場屬於哪個五角形、哪三場是三角循環，這是賽程的既成事實，不另抄一份以免兩邊漂移；
+解析失敗或場次數不符 132 一律 throw。
+
+`knockout-resolver.js` 在每寫一場淘汰賽之前回頭讀雲端：
+
+- 種子序來自 `3_資格賽積分榜` 的「自動晉級」與「組內排名」（後端算的，不是腳本算的）
+- 晉級採 `4_淘汰賽成績` **O 欄勝方**（後端公式 `IF(M>N,I,K)` 的結果）往下推，
+  不是拿腳本自己記的分數推——這才是在驗後端，否則只是自己跟自己對答案
+- O 欄勝方與比分不符、或 O 欄為空時記為 finding 並繼續（演練期間只記不改）
+- 上一輪未完賽時 throw `UNRESOLVED_MATCH`，不硬掰隊伍
+
+模擬用的假設（不代表現場實際籤運，但不影響公式鏈驗證）：
+
+- 初賽配對：同級別內第 1 名與第 2 名交錯後相鄰配對
+- 休閒複賽：初賽勝方前 3 走三角循環，其餘 12 隊單淘汰
+
+`dry-run` 背後是 mock，沒有公式引擎可讀 O 欄，因此用 `ScriptedResolver` 填佔位名——
+它只證明「寫入四格＋snapshot＋restore 的機制正確」，**不宣稱證明晉級推導**。
+
+## 離線全場驗證（不碰雲端）
+
+```bash
+node offline-sim.js /tmp/sim-310.json
+python3 ~/Desktop/曜日盃賽務資料/後端資料庫_建置腳本/verify_offline.py /tmp/sim-310.json
+```
+
+`offline-sim.js` 產生 310 場的隊名＋比分與「這套分數應該算出什麼」的預期值；
+`verify_offline.py` 灌進本機 xlsx、用 `formulas` 真的重算一次，再逐項比對
+淘汰賽勝方 132 場、資格賽自動晉級 100 隊、積分總表 108 隊的止步／底分／名次分／隊伍總分、
+球團積分 10 團，共 674 項。
+
+2026-08-03 實測：674 項全過，名次分非 0 的隊伍 50 隊。
+同一份分數若不寫 J/L 隊名，止步 108 隊全部變「—」、名次分 0 隊、球團總分只剩底分，
+而且完全不報錯。
