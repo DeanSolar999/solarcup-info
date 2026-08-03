@@ -81,6 +81,17 @@ PAGES_UI.forEach(f=>{
   // (d) 失效的拉桿樣式（display:none 藏起來但沒刪）
   if(/\.(pgrange|simbar input|progbar input)\{display:none/.test(txt))
     bad.push(`${f} 有被 display:none 藏起來的拉桿樣式（應刪除而非隱藏）`);
+  // (e) 沒有主人的拉桿樣式：CSS 還在替 range 排版，但那個 class 已經沒有任何
+  //     DOM 或 JS 引用了。2026-08-03 在 solar-cup-live 抓到 .demo-row —— 示範列
+  //     的 DOM 早就刪了、樣式含 input[type=range] 卻留著。這類殘留讓人以為
+  //     那個控制項還在，(a)~(d) 都掃不到，因為它根本沒有 <input> 也沒有寫死狀態。
+  for(const m of txt.matchAll(/([.#][\w-]+)[^{}]*\binput\[type=["']?range["']?\]\s*\{/g)){
+    const sel=m[1], name=sel.slice(1);
+    // 扣掉 CSS 選擇器本身的出現次數，看還有沒有人用到它
+    const total=(txt.match(new RegExp(`\\b${name}\\b`,'g'))||[]).length;
+    const inCss=(txt.match(new RegExp(`\\${sel}\\b`,'g'))||[]).length;
+    if(total-inCss<=0)bad.push(`${f} 有沒有主人的拉桿樣式 ${sel}（DOM／JS 都沒用到，應刪除）`);
+  }
 });
 
 if(bad.length){console.error('❌ 資料層完整性失敗：');bad.forEach(b=>console.error('   · '+b));process.exit(1);}

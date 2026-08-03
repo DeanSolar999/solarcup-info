@@ -175,11 +175,60 @@
     });
   }
 
+  // ---- 測試資料橫幅（LIVE 開關 B12）------------------------------------
+  // 「0_賽事設定」的 LIVE開關（0＝示範／1＝正式）本來沒有任何程式在讀,等於是死開關。
+  // 演練會把模擬分數寫進正式資料庫,公開網站會照常顯示——沒有這個橫幅,
+  // 球友看到的假成績跟真成績長得一模一樣。
+  //
+  // 判定用「找 A 欄標籤」而不是寫死 B12:gviz 會把開頭數列併成表頭,
+  // 陣列索引和試算表列號對不起來,設定表一改版就會靜默讀錯格。
+  var _bannerEl = null;
+  function liveSwitchFrom(rows) {
+    for (var i = 0; i < (rows || []).length; i++) {
+      var r = rows[i];
+      if (r && String(r[0] || '').indexOf('LIVE開關') === 0) return num(r[1]);
+    }
+    return null;
+  }
+  function setTestBanner(on) {
+    if (on && !_bannerEl) {
+      var el = document.createElement('div');
+      el.id = 'scl-test-banner';
+      el.textContent = '⚠ 測試資料 · 非正式成績（賽務演練中）';
+      el.setAttribute('role', 'status');
+      // 置底而非置頂:這幾頁都有滿版視覺,置頂會壓到標題
+      el.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483647;'
+        + 'background:#b3261e;color:#fff;font:600 13px/1.6 system-ui,-apple-system,"Noto Sans TC",sans-serif;'
+        + 'text-align:center;padding:7px 12px;letter-spacing:.05em;'
+        + 'box-shadow:0 -2px 12px rgba(0,0,0,.35);pointer-events:none;';
+      document.body.appendChild(el);
+      _bannerEl = el;
+    } else if (!on && _bannerEl) {
+      _bannerEl.remove();
+      _bannerEl = null;
+    }
+  }
+  // 讀不到設定表時不掛橫幅:賽事當天一次網路抖動不該讓正式成績被標成測試資料。
+  // 演練開跑前會先確認橫幅有出現,再往下走。
+  function refreshTestMode() {
+    return fetchSheet('0_賽事設定').then(function (rows) {
+      var v = liveSwitchFrom(rows);
+      setTestBanner(v === 0);
+      return v;
+    }).catch(function () { return null; });
+  }
+  function watchTestMode(intervalMs) {
+    refreshTestMode();
+    var timer = setInterval(refreshTestMode, intervalMs || 45000);
+    return function stop() { clearInterval(timer); };
+  }
+
   // ---- 立刻載入一次並開始輪詢;每次成功才回呼 cb(data),失敗靜默略過該次 ----
   function onUpdate(cb, intervalMs) {
     intervalMs = intervalMs || 45000;
     function tick() {
       load().then(function (data) { if (data) cb(data); });
+      refreshTestMode();
     }
     tick();
     var timer = setInterval(tick, intervalMs);
@@ -205,5 +254,7 @@
     onUpdate: onUpdate,
     statusText: statusText,
     fmtTime: fmtTime,
+    watchTestMode: watchTestMode,
+    refreshTestMode: refreshTestMode,
   };
 })(typeof window !== 'undefined' ? window : this);

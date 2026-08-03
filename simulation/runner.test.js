@@ -13,6 +13,7 @@ const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError, fullPlan } = require('./lib');
 const { KnockoutResolver, ScriptedResolver } = require('./knockout-resolver');
 const { loadTopology, knockoutNumbers, rankGroup, seedsFor, deriveAll } = require('./bracket');
+const { LocalGenerationLease, LocalRunState, LocalApprovalStore } = require('./local-state');
 
 function temp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'solarcup-sim-')); }
 function plan(n = 3, stage = 'qualification') {
@@ -474,4 +475,73 @@ test('種子序：同級別內第 1 名與第 2 名交錯，初賽不會變成�
   assert.equal(new Set(seeds).size, 20);
   // 人數不符必須 fail-closed，而不是默默少推幾隊
   assert.throws(() => seedsFor('plat', rows.slice(0, 19)), /SEED_SIZE/);
+});
+
+// ── 本機 lease／state（2026-08-03 新增）──────────────────────
+// GCS bucket 綁的是 WIF service account，本機拿不到那把鑰匙。
+// 本機版必須維持同樣的 fencing 與 fail-closed 語意，否則就是把安全機制拆掉。
+
+test('本機 lease：fencing token 單調遞增，舊 handle 立即失效', async () => {
+  const dir = temp(); const file = path.join(dir, 'lease.json');
+  let clock = 1_000_000;
+  const lease = new LocalGenerationLease({ file, ttlMs: 60_000, now: () => clock });
+  assert.equal(lease.persistent, true, 'assertArmed 要求持久化 lease');
+  const first = await lease.acquire({ runId: 'a', spreadsheetId: EXPECTED_SPREADSHEET_ID });
+  await lease.assertHeld(first);
+  // 同一把 lease 還沒過期，別的 run 不得搶走
+  await assert.rejects(() => lease.acquire({ runId: 'b', spreadsheetId: EXPECTED_SPREADSHEET_ID }), /LEASE_BUSY/);
+  // 過期後可被接管，且舊 handle 立刻失效
+  clock += 60_001;
+  const second = await lease.acquire({ runId: 'b', spreadsheetId: EXPECTED_SPREADSHEET_ID });
+  assert.ok(second.generation > first.generation, 'generation 必須遞增');
+  await assert.rejects(() => lease.assertHeld(first), /LEASE_LOST/);
+  await lease.assertHeld(second);
+  // 續約只延長到期時間，不換 fencing token
+  clock += 100;
+  const renewed = await lease.renew(second);
+  assert.equal(renewed.fencingToken, second.fencingToken);
+  await lease.release(renewed);
+  await assert.rejects(() => lease.assertHeld(renewed), /LEASE_LOST/);
+});
+
+test('本機 run state：canary report 與 approval 都只能建立一次', async () => {
+  const dir = temp();
+  const lease = new LocalGenerationLease({ file: path.join(dir, 'lease.json') });
+  const store = new LocalRunState({ dir, lease });
+  const handle = await lease.acquire({ runId: 'once', spreadsheetId: EXPECTED_SPREADSHEET_ID });
+  const manifest = {
+    schema: 2, run_id: 'once', allowlist: ['S!A1'], pre_canonical_hash: 'x'.repeat(64),
+    state: STATES.CANARY_WAITING_APPROVAL, reason: null, checkpoint: { completed: [] }
+  };
+  await store.persistManifest(manifest, handle);
+  const manifestHash = require('./lib').hash({ schema: 2, run_id: 'once', allowlist: ['S!A1'], pre_canonical_hash: 'x'.repeat(64) });
+  await store.writeCanaryReport(manifest, handle, manifestHash);
+  await assert.rejects(() => store.writeCanaryReport(manifest, handle, manifestHash), /CANARY_REPORT_EXISTS/);
+  // 格式合法但內容不符的 hash 一律拒絕，避免拿別的 manifest 的報告放行
+  await assert.rejects(() => store.writeCanaryReport({ ...manifest, run_id: 'once' }, handle, 'a'.repeat(64)), /CANARY_REPORT_STATE_INVALID/);
+  // 格式就不合法的 hash 在更前面就被擋掉
+  await assert.rejects(() => store.writeCanaryReport(manifest, handle, 'not-a-hash'), /MANIFEST_HASH_INVALID/);
+  const approvals = new LocalApprovalStore({ dir });
+  const approval = await approvals.approve('once');
+  assert.equal(approval.manifest_hash, manifestHash);
+  await assert.rejects(() => approvals.approve('once'), /CANARY_APPROVAL_EXISTS/);
+  // journal 是 append-only：兩次 persist 不會互相覆蓋
+  await store.persistManifest(manifest, handle);
+  assert.ok(fs.readdirSync(path.join(dir, 'once', 'journal')).length >= 2);
+});
+
+test('本機 state 失去 lease 後不得再寫入任何紀錄', async () => {
+  const dir = temp();
+  let clock = 2_000_000;
+  const lease = new LocalGenerationLease({ file: path.join(dir, 'lease.json'), ttlMs: 1_000, now: () => clock });
+  const store = new LocalRunState({ dir, lease });
+  const handle = await lease.acquire({ runId: 'lost', spreadsheetId: EXPECTED_SPREADSHEET_ID });
+  clock += 1_001;
+  await assert.rejects(() => store.write('lost', 'manifest', { a: 1 }, handle), /LEASE_LOST/);
+});
+
+test('--local-state 為明確旗標，未指定時不會誤用本機 lease', () => {
+  assert.equal(parseArgs(['run', '--armed']).localState, false);
+  assert.equal(parseArgs(['run', '--armed', '--local-state']).localState, true);
+  assert.throws(() => parseArgs(['run', '--local']), /未知參數/);
 });

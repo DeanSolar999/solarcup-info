@@ -12,6 +12,7 @@ const { SheetsRestAdapter } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { GcsRunState } = require('./gcs-run-state');
 const { KnockoutResolver, CloudSource, ScriptedResolver } = require('./knockout-resolver');
+const { LocalGenerationLease, LocalRunState } = require('./local-state');
 
 const EXPECTED_SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const RUN_ID = /^[a-zA-Z][a-zA-Z0-9_-]{1,72}$/;
@@ -470,10 +471,11 @@ class SimulationRunner {
 
 function parseArgs(argv) {
   const [mode = 'dry-run', ...rest] = argv;
-  const options = { mode, armed: false, fast: false, expectCanary: false, canaryOnly: false, resumeOnly: false, segment: null, stateDir: path.join(__dirname, 'runs'), runId: null };
+  const options = { mode, armed: false, fast: false, expectCanary: false, canaryOnly: false, resumeOnly: false, segment: null, stateDir: path.join(__dirname, 'runs'), runId: null, localState: false };
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
     if (arg === '--armed') options.armed = true;
+    else if (arg === '--local-state') options.localState = true;
     else if (arg === '--fast') options.fast = true;
     else if (arg === '--expect-canary') options.expectCanary = true;
     else if (arg === '--canary-only') options.canaryOnly = true;
@@ -501,11 +503,20 @@ async function main() {
   }
   const spreadsheetId = opts.mode === 'dry-run' ? (process.env.SOLAR_CUP_SPREADSHEET_ID || EXPECTED_SPREADSHEET_ID) : process.env.SOLAR_CUP_SPREADSHEET_ID;
   if (opts.mode !== 'dry-run' && !spreadsheetId) throw new Error('armed 模式必須明確指定 SOLAR_CUP_SPREADSHEET_ID');
+  // --local-state：GCS bucket 綁的是 WIF service account，那把鑰匙只發給 GitHub Actions，
+  // 本機拿不到。單一操作者、全程有人看著的演練用本機 lease／state 就夠——
+  // snapshot、CAS、readback、三方復原、KILL_SWITCH 一項不減，只少了跨機器協調。
+  const accessToken = opts.localState && !process.env.GOOGLE_ACCESS_TOKEN
+    ? (await require('./sa-token').accessToken()).token
+    : process.env.GOOGLE_ACCESS_TOKEN;
   let lease; let stateStore;
   const adapter = opts.mode === 'dry-run'
     ? new MockAdapter()
-    : new SheetsRestAdapter({ spreadsheetId, accessToken: process.env.GOOGLE_ACCESS_TOKEN, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
-  if (opts.mode !== 'dry-run') { const client = new GcsJsonClient({ accessToken: process.env.GOOGLE_ACCESS_TOKEN }); lease = new GcsGenerationLease({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, object: process.env.SOLAR_CUP_GCS_LEASE_OBJECT || 'solarcup-simulation/lease.json' }); stateStore = new GcsRunState({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, prefix: process.env.SOLAR_CUP_GCS_STATE_PREFIX || 'solarcup-simulation/runs', lease }); }
+    : new SheetsRestAdapter({ spreadsheetId, accessToken, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
+  if (opts.mode !== 'dry-run' && opts.localState) {
+    lease = new LocalGenerationLease({ file: path.join(opts.stateDir, 'lease.json') });
+    stateStore = new LocalRunState({ dir: opts.stateDir, lease });
+  } else if (opts.mode !== 'dry-run') { const client = new GcsJsonClient({ accessToken }); lease = new GcsGenerationLease({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, object: process.env.SOLAR_CUP_GCS_LEASE_OBJECT || 'solarcup-simulation/lease.json' }); stateStore = new GcsRunState({ client, bucket: process.env.SOLAR_CUP_GCS_BUCKET, prefix: process.env.SOLAR_CUP_GCS_STATE_PREFIX || 'solarcup-simulation/runs', lease }); }
   // 淘汰賽隊名解析：armed 走雲端逐場回讀（用後端 O 欄的勝方往下推）；
   // dry-run 背後是 mock，沒有公式引擎可讀，只用劇本填佔位名，
   // 目的是驗寫入／snapshot／restore 的機制，不宣稱驗晉級推導。
@@ -519,6 +530,8 @@ async function main() {
   const result = opts.mode === 'restore-only' ? await runner.restoreOnly(opts.runId) : await runner.start(opts.runId || undefined);
   const outcome = result.state === STATES.MANUAL_HOLD ? 'MANUAL_HOLD'
     : result.state === STATES.SEGMENT_WAITING ? 'SEGMENT_WAITING'
+    // 等待核准是正常的中間狀態，不是失敗；標成 RESTORE_FAILURE 會讓人以為復原出事
+    : result.state === STATES.CANARY_WAITING_APPROVAL ? 'CANARY_WAITING_APPROVAL'
     : result.state !== STATES.COMPLETE ? 'RESTORE_FAILURE'
       : result.reason === 'NORMAL_RESTORED' ? 'NORMAL_RESTORED'
         : result.reason === 'MANUAL_STOP_RESTORED' ? 'MANUAL_STOP_RESTORED'
