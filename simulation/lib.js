@@ -174,7 +174,11 @@ function safeError(error) {
     .replace(/https?:\/\/\S+/gi, '[URL]')
     .replace(/\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b/g, '[EMAIL]')
     .replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]')
-    .replace(/[A-Za-z0-9_-]{20,}/g, '[REDACTED]');
+    // 長字串一律當成可能的 token 遮掉，但保留 SCREAMING_SNAKE 的錯誤碼——
+    // CANARY_APPROVAL_EXISTS 這種 22 字元的代號會被誤遮成 [REDACTED]，
+    // 演練期間只能靠日誌診斷，看不到代號等於沒有訊息。
+    // 實際的 token（JWT、ya29.…）都是大小寫混雜，不會命中這個例外。
+    .replace(/[A-Za-z0-9_-]{20,}/g, (m) => (/^[A-Z][A-Z0-9_]*$/.test(m) ? m : '[REDACTED]'));
   return text.slice(0, 160);
 }
 

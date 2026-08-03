@@ -50,4 +50,22 @@ async function accessToken({ scope = SCOPE, now = () => Date.now() } = {}) {
   return { token: body.access_token, expiresAt: now() + (body.expires_in || 3600) * 1000, clientEmail: key.client_email };
 }
 
-module.exports = { accessToken, keyPath, SCOPE };
+/* 會自動換發的 token 提供者。
+   Google 的 access token 上限就是 1 小時，而全場演練要 155 分鐘——
+   把 token 在建構時取一次然後一路用到底，會在第 60 分鐘左右整批 401。
+   提前 5 分鐘換發，並確保同時只有一個換發流程在跑。 */
+function tokenProvider({ skewMs = 300_000, now = () => Date.now() } = {}) {
+  let current = null;
+  let pending = null;
+  return async function get() {
+    if (current && current.expiresAt - skewMs > now()) return current.token;
+    if (!pending) {
+      pending = accessToken({ now })
+        .then((t) => { current = t; return t.token; })
+        .finally(() => { pending = null; });
+    }
+    return pending;
+  };
+}
+
+module.exports = { accessToken, tokenProvider, keyPath, SCOPE };

@@ -17,11 +17,14 @@ const PROJECTION_RANGES = Object.freeze({
 });
 
 class SheetsRestAdapter {
-  constructor({ spreadsheetId, accessToken, requestTimeoutMs = 10_000, armedGateVerifier = null, projectionBaselines = null }) {
+  constructor({ spreadsheetId, accessToken, tokenProvider = null, requestTimeoutMs = 10_000, armedGateVerifier = null, projectionBaselines = null }) {
     if (spreadsheetId !== SPREADSHEET_ID) throw new Error('Spreadsheet allowlist 不符');
-    if (!accessToken) throw new Error('缺少 GOOGLE_ACCESS_TOKEN');
+    if (!accessToken && !tokenProvider) throw new Error('缺少 GOOGLE_ACCESS_TOKEN');
     this.spreadsheetId = spreadsheetId;
     this.accessToken = accessToken;
+    // 全場演練跑 155 分鐘，Google access token 上限 1 小時——
+    // 固定 token 會在中途整批 401，所以要能換發。
+    this.tokenProvider = tokenProvider;
     this.base = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
     this.sheetIds = {};
     this.requestTimeoutMs = requestTimeoutMs;
@@ -31,14 +34,17 @@ class SheetsRestAdapter {
 
   assertAllowedRef(ref) { return parseAllowedRef(ref, this.sheetIds); }
 
+  async token() { return this.tokenProvider ? await this.tokenProvider() : this.accessToken; }
+
   async request(url, options = {}) {
+    const bearer = await this.token();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.requestTimeoutMs);
     let response;
     try { response = await fetch(url, {
       ...options,
       signal: options.signal || controller.signal,
-      headers: { Authorization: `Bearer ${this.accessToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) }
+      headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json', ...(options.headers || {}) }
     }); } catch (error) {
       if (controller.signal.aborted || error.name === 'AbortError') { const timed = new Error('Sheets API timeout'); timed.code = 'ETIMEDOUT'; throw timed; }
       throw error;

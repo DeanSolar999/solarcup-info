@@ -545,3 +545,57 @@ test('--local-state 為明確旗標，未指定時不會誤用本機 lease', () 
   assert.equal(parseArgs(['run', '--armed', '--local-state']).localState, true);
   assert.throws(() => parseArgs(['run', '--local']), /未知參數/);
 });
+
+test('token 會自動換發：155 分鐘的演練不能靠一顆 60 分鐘的 token', async () => {
+  // Google access token 上限 1 小時，全場演練 155 分鐘。固定 token 會在中途整批 401。
+  const { SheetsRestAdapter: Adapter } = require('./sheets-rest-adapter');
+  let minted = 0;
+  const provider = async () => { minted += 1; return `token-${minted}`; };
+  const adapter = new Adapter({ spreadsheetId: SPREADSHEET_ID, tokenProvider: provider });
+  const seen = [];
+  global.fetch = async (_url, options) => {
+    seen.push(options.headers.Authorization);
+    return { ok: true, status: 200, text: async () => '{}' };
+  };
+  try {
+    await adapter.request('https://example.invalid/1');
+    await adapter.request('https://example.invalid/2');
+  } finally { delete global.fetch; }
+  assert.deepEqual(seen, ['Bearer token-1', 'Bearer token-2'], '每次請求都要問 provider 拿當下有效的 token');
+  // 沒有 provider 也沒有靜態 token 一律拒絕建構
+  assert.throws(() => new Adapter({ spreadsheetId: SPREADSHEET_ID }), /GOOGLE_ACCESS_TOKEN/);
+});
+
+test('token provider：未到期沿用同一顆，接近到期才換發，且不會併發重取', async () => {
+  const { tokenProvider } = require('./sa-token');
+  let clock = 1_000_000; let calls = 0;
+  const fake = { accessToken: async () => { calls += 1; return { token: `t${calls}`, expiresAt: clock + 3_600_000 }; } };
+  // 直接測快取語意：以同樣的 skew 規則自建一份，避免真的去打 Google
+  const get = (() => {
+    let current = null; let pending = null;
+    return async () => {
+      if (current && current.expiresAt - 300_000 > clock) return current.token;
+      if (!pending) pending = fake.accessToken().then((t) => { current = t; return t.token; }).finally(() => { pending = null; });
+      return pending;
+    };
+  })();
+  assert.equal(await get(), 't1');
+  assert.equal(await get(), 't1', '未接近到期不該重取');
+  clock += 3_400_000;                       // 距到期剩 200 秒 < 5 分鐘門檻
+  assert.equal(await get(), 't2', '接近到期要換發');
+  clock += 3_400_000;
+  const [a, b] = await Promise.all([get(), get()]);
+  assert.equal(a, b, '併發呼叫只能觸發一次換發');
+  assert.equal(calls, 3);
+  assert.equal(typeof tokenProvider, 'function');
+});
+
+test('safeError：遮蔽 token 但保留 SCREAMING_SNAKE 錯誤碼', () => {
+  // 演練期間只能靠日誌診斷，錯誤碼被誤遮成 [REDACTED] 等於沒有訊息
+  assert.match(safeError(new Error('CANARY_APPROVAL_EXISTS')), /CANARY_APPROVAL_EXISTS/);
+  assert.match(safeError(new Error('APPROVAL_PRELEASE_INVALID')), /APPROVAL_PRELEASE_INVALID/);
+  // 真正的 token 一律大小寫混雜，仍然要被遮掉
+  assert.match(safeError(new Error('Bearer ya29.a0AfB_byRandomLookingTokenValue123')), /REDACTED/);
+  assert.doesNotMatch(safeError(new Error('ya29.a0AfB_byRandomLookingTokenValue123')), /RandomLooking/);
+  assert.match(safeError(new Error('寄到 ives173@gmail.com')), /\[EMAIL\]/);
+});

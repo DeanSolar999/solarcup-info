@@ -506,13 +506,14 @@ async function main() {
   // --local-state：GCS bucket 綁的是 WIF service account，那把鑰匙只發給 GitHub Actions，
   // 本機拿不到。單一操作者、全程有人看著的演練用本機 lease／state 就夠——
   // snapshot、CAS、readback、三方復原、KILL_SWITCH 一項不減，只少了跨機器協調。
-  const accessToken = opts.localState && !process.env.GOOGLE_ACCESS_TOKEN
-    ? (await require('./sa-token').accessToken()).token
-    : process.env.GOOGLE_ACCESS_TOKEN;
+  // 全場演練 155 分鐘 > token 上限 60 分鐘，因此本機模式用會自動換發的 provider；
+  // Actions 模式維持由 workflow 每段重取短效 token 的既有設計。
+  const provider = opts.localState && !process.env.GOOGLE_ACCESS_TOKEN ? require('./sa-token').tokenProvider() : null;
+  const accessToken = process.env.GOOGLE_ACCESS_TOKEN;
   let lease; let stateStore;
   const adapter = opts.mode === 'dry-run'
     ? new MockAdapter()
-    : new SheetsRestAdapter({ spreadsheetId, accessToken, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
+    : new SheetsRestAdapter({ spreadsheetId, accessToken, tokenProvider: provider, projectionBaselines: process.env.SOLAR_CUP_PROJECTION_BASELINES ? parseProjectionBaselines(process.env.SOLAR_CUP_PROJECTION_BASELINES) : null });
   if (opts.mode !== 'dry-run' && opts.localState) {
     lease = new LocalGenerationLease({ file: path.join(opts.stateDir, 'lease.json') });
     stateStore = new LocalRunState({ dir: opts.stateDir, lease });
