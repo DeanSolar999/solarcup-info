@@ -84,6 +84,22 @@ function liveScenario(fail){
   const failD=await liveScenario(true);
   if(failD.state!=='cold'||failD.updatedAt!==null)bad.push(`LIVE 首次失敗應為 cold 且無時間，實得 ${failD.state}/${failD.updatedAt}`);
 
+  // ---- playM／playMatch 的 done 契約 ----
+  // 2026-08-03 全場演練抓到：bracket-tree 的 playM 只設 pending 沒設 done，
+  // 但 rrRank 與循環賽場數統計讀的都是 m.done，於是每一場都被當成「未開打」丟掉——
+  // 五角／三角循環的名次永遠是 0 勝、失分率 999，退回原始席次順序。
+  // 競技組的準決賽名單直接吃這份名次，季軍推不出來、殿軍標錯，而且畫面不會報錯。
+  {
+    const bt=fs.readFileSync(path.join(DIR,'bracket-tree.html'),'utf8');
+    const rets=[...bt.matchAll(/return\s*\{[^{}]*\bpending\s*:[^{}]*\}/g)].map(m=>m[0]);
+    if(!rets.length)bad.push('bracket-tree 找不到 playM 的回傳物件（掃描規則可能過期）');
+    rets.forEach(r=>{ if(!/\bdone\s*:/.test(r))
+      bad.push(`bracket-tree playM 回傳只有 pending 沒有 done：${r.slice(0,70)}…（rrRank 會把該場當未開打丟掉）`); });
+    // 有人讀 m.done 就一定要有人寫 done
+    if(/\bm\.done\b/.test(bt)&&!/\bdone\s*:\s*true\b/.test(bt))
+      bad.push('bracket-tree 有讀 m.done 卻沒有任何地方寫 done:true');
+  }
+
   // ---- 資料層三情境 + winner 空值巡檢 ----
   const sb=sandbox(); vm.createContext(sb); vm.runInContext(dataLayer,sb);
   const D=sb.window.SolarCupData;

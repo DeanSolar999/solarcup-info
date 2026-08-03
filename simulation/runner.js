@@ -38,7 +38,7 @@ class InMemoryLease {
 }
 
 class SimulationRunner {
-  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, canaryOnly = false, resumeOnly = false, segment = null, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, resolver = null, allowedStages = ['qualification'], lease = new InMemoryLease(), stateStore = null, sleepFn = sleep, now = () => Date.now() }) {
+  constructor({ adapter, stateDir, mode = 'dry-run', armed = false, canaryOnly = false, resumeOnly = false, segment = null, spreadsheetId, plan = defaultPlan(), fast = false, stopAfter = null, random = Math.random, resolver = null, keepScores = false, allowedStages = ['qualification'], lease = new InMemoryLease(), stateStore = null, sleepFn = sleep, now = () => Date.now() }) {
     this.adapter = adapter;
     this.stateDir = stateDir;
     this.mode = mode;
@@ -52,6 +52,8 @@ class SimulationRunner {
     this.random = random;
     // 淘汰賽隊名解析器。null＝不寫隊名（僅供既有的資格賽-only 測試沿用）。
     this.resolver = resolver;
+    // 跑完保留分數供人工檢視，不自動復原（復原改為人工觸發 restore-only）
+    this.keepScores = keepScores;
     this.findings = [];
     this.allowedStages = new Set(allowedStages);
     this.lease = lease;
@@ -299,6 +301,17 @@ class SimulationRunner {
     }
     manifest.state = STATES.VERIFY;
     await this.persist(manifest);
+    // --keep-scores：跑完把分數留在雲端供人工檢視，不自動復原。
+    // manifest 的 pre_image／post_image 完整保留，之後用
+    //   restore-only --armed --local-state --run-id <id>
+    // 仍可逐格三方比對復原；復原能力沒有失去，只是改成人工觸發。
+    if (this.keepScores) {
+      manifest.state = STATES.COMPLETE;
+      manifest.reason = 'KEPT_FOR_REVIEW';
+      await this.persist(manifest);
+      appendJournal(this.runDir(manifest.run_id), { type: 'KEPT_FOR_REVIEW', written: Object.keys(manifest.post_image).length });
+      return manifest;
+    }
     return this.restore(manifest);
   }
 
@@ -471,11 +484,12 @@ class SimulationRunner {
 
 function parseArgs(argv) {
   const [mode = 'dry-run', ...rest] = argv;
-  const options = { mode, armed: false, fast: false, expectCanary: false, canaryOnly: false, resumeOnly: false, segment: null, stateDir: path.join(__dirname, 'runs'), runId: null, localState: false };
+  const options = { mode, armed: false, fast: false, expectCanary: false, canaryOnly: false, resumeOnly: false, segment: null, stateDir: path.join(__dirname, 'runs'), runId: null, localState: false, keepScores: false };
   for (let i = 0; i < rest.length; i += 1) {
     const arg = rest[i];
     if (arg === '--armed') options.armed = true;
     else if (arg === '--local-state') options.localState = true;
+    else if (arg === '--keep-scores') options.keepScores = true;
     else if (arg === '--fast') options.fast = true;
     else if (arg === '--expect-canary') options.expectCanary = true;
     else if (arg === '--canary-only') options.canaryOnly = true;
@@ -535,10 +549,11 @@ async function main() {
     : result.state === STATES.CANARY_WAITING_APPROVAL ? 'CANARY_WAITING_APPROVAL'
     : result.state !== STATES.COMPLETE ? 'RESTORE_FAILURE'
       : result.reason === 'NORMAL_RESTORED' ? 'NORMAL_RESTORED'
-        : result.reason === 'MANUAL_STOP_RESTORED' ? 'MANUAL_STOP_RESTORED'
+        : result.reason === 'KEPT_FOR_REVIEW' ? 'KEPT_FOR_REVIEW'
+      : result.reason === 'MANUAL_STOP_RESTORED' ? 'MANUAL_STOP_RESTORED'
           : result.reason?.startsWith('P0_ABORT:') ? 'P0_ABORT_RESTORED' : 'ABORT_RESTORED';
   console.log(JSON.stringify({ run_id: result.run_id, state: result.state, outcome, reason: result.reason }, null, 2));
-  process.exitCode = outcome === 'NORMAL_RESTORED' || outcome === 'SEGMENT_WAITING' || (opts.expectCanary && result.state === STATES.CANARY_WAITING_APPROVAL) ? 0 : 2;
+  process.exitCode = outcome === 'NORMAL_RESTORED' || outcome === 'KEPT_FOR_REVIEW' || outcome === 'SEGMENT_WAITING' || (opts.expectCanary && result.state === STATES.CANARY_WAITING_APPROVAL) ? 0 : 2;
 }
 
 if (require.main === module) main().catch((error) => { console.error(safeError(error)); process.exitCode = 2; });

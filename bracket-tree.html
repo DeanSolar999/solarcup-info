@@ -624,13 +624,17 @@
     const A=(r&&r.a&&BY_LABEL[r.a]&&REG_OF(BY_LABEL[r.a],a))||a||TBD(null);
     const B=(r&&r.b&&BY_LABEL[r.b]&&REG_OF(BY_LABEL[r.b],b))||b||TBD(null);
     if(!r||!r.done){
-      return {a:A,b:B,sa:null,sb:null,sc:'',winner:null,loser:null,no,round,pending:true};
+      return {a:A,b:B,sa:null,sb:null,sc:'',winner:null,loser:null,no,round,pending:true,done:false};
     }
     const sa=r.sa,sb=r.sb,aw=sa>sb;                 // 21 分單局，無平手
     A.matches.push({round,no,vs:B.label,sc:sa+'：'+sb,win:aw});
     B.matches.push({round,no,vs:A.label,sc:sb+'：'+sa,win:!aw});
     if(aw){A.w++;B.l++;}else{B.w++;A.l++;}
-    return {a:A,b:B,sa,sb,sc:sa+'：'+sb,winner:aw?A:B,loser:aw?B:A,no,round,pending:false};
+    // done 一定要跟 pending 同時給：rrRank 與循環賽場數統計讀的都是 m.done，
+    // 只給 pending 會讓每一場都被當成「未開打」丟掉——五角／三角循環的名次
+    // 會永遠是 0 勝、失分率 999，退回原始席次順序。競技組的準決賽名單直接吃
+    // 這份名次，季軍會推不出來、殿軍會標錯（2026-08-03 全場演練實測抓到）。
+    return {a:A,b:B,sa,sb,sc:sa+'：'+sb,winner:aw?A:B,loser:aw?B:A,no,round,pending:false,done:true};
   }
   // 把資料層的隊轉成 bracket 用格式（沿用同一物件，維持戰績累加與 REG 註冊）
   function REG_OF(src,fallback){

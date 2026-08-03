@@ -599,3 +599,29 @@ test('safeError：遮蔽 token 但保留 SCREAMING_SNAKE 錯誤碼', () => {
   assert.doesNotMatch(safeError(new Error('ya29.a0AfB_byRandomLookingTokenValue123')), /RandomLooking/);
   assert.match(safeError(new Error('寄到 ives173@gmail.com')), /\[EMAIL\]/);
 });
+
+test('--keep-scores：跑完保留分數不自動復原，但復原能力完整保留', async () => {
+  const adapter = new MockAdapter({}, { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } });
+  const dir = temp();
+  const r = runner(adapter, dir, { keepScores: true });
+  const result = await canaryThenComplete(r, dir, 'keep');
+  assert.equal(result.state, STATES.COMPLETE);
+  assert.equal(result.reason, 'KEPT_FOR_REVIEW');
+  // 分數必須還在雲端
+  const cells = await adapter.readCells(plan().flatMap((m) => m.cells));
+  assert.ok(Object.values(cells).every((v) => v !== null), '--keep-scores 不該把分數清掉');
+  // manifest 的 pre_image 完整保留，之後仍可人工復原
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'keep', 'manifest.json'), 'utf8'));
+  assert.equal(Object.keys(manifest.pre_image).length, 6);
+  assert.ok(Object.keys(manifest.post_image).length >= 6);
+  const back = runner(adapter, dir, { mode: 'restore-only', armed: true, fast: false,
+    lease: { persistent: true, async acquire() { return { fencingToken: 'f' }; }, async assertHeld() {}, async release() {} } });
+  assert.equal((await back.restoreOnly('keep')).state, STATES.COMPLETE);
+  const after = await adapter.readCells(plan().flatMap((m) => m.cells));
+  assert.ok(Object.values(after).every((v) => v === null), '人工觸發後必須能完全復原');
+});
+
+test('--keep-scores 為明確旗標，預設仍是跑完自動復原', () => {
+  assert.equal(parseArgs(['run', '--armed']).keepScores, false);
+  assert.equal(parseArgs(['run', '--armed', '--keep-scores']).keepScores, true);
+});
