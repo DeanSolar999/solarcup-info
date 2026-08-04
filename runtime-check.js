@@ -100,6 +100,21 @@ function liveScenario(fail){
       bad.push('bracket-tree 有讀 m.done 卻沒有任何地方寫 done:true');
   }
 
+  // ---- clubObj 必須帶 key ----
+  // 2026-08-04：REG_OF 把球團物件重建成 {name,c}，丟掉了 key。徽記的中央圖案
+  // （embFull／embCenter／embChip）是靠 key 查的，少了它只畫得出外圈文字、
+  // 中間空一塊，而且完全不報錯。走這條路的是「雲端已填隊名」的隊伍，
+  // 也就是淘汰賽開打後畫面上的每一隊。
+  {
+    const bt=fs.readFileSync(path.join(DIR,'bracket-tree.html'),'utf8');
+    for(const m of bt.matchAll(/clubObj\s*:\s*\{[^{}]*\}/g)){
+      const lit=m[0];
+      const isTBD=/name\s*:\s*['"]{2}/.test(lit);          // 待定佔位沒有球團，例外
+      if(!isTBD&&!/\bkey\s*:/.test(lit))
+        bad.push(`bracket-tree 重建的 clubObj 少了 key：${lit.slice(0,64)}…（徽記中央會空白）`);
+    }
+  }
+
   // ---- 資料層三情境 + winner 空值巡檢 ----
   const sb=sandbox(); vm.createContext(sb); vm.runInContext(dataLayer,sb);
   const D=sb.window.SolarCupData;

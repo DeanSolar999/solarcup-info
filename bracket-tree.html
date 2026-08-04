@@ -640,7 +640,11 @@
   function REG_OF(src,fallback){
     const key='L_'+src.label;
     if(!REG[key]){
-      REG[key]={tid:key,label:src.label,club:src.club,clubObj:{name:src.club,c:src.clubColor},num:0,
+      // clubObj 必須帶 key——徽記的中央圖案是靠 key 查的（embFull／embCenter／embChip）。
+      // 少了它畫出來只有外圈文字、中間空一塊，而且不會報錯。
+      // 走這條路的是「雲端已填隊名」的隊伍，也就是淘汰賽開打後畫面上的每一隊。
+      REG[key]={tid:key,label:src.label,club:src.club,
+        clubObj:{name:src.club,full:src.clubFull||src.club,c:src.clubColor,key:src.clubKey},num:0,
         tier:src.tierName,kind:src.track,base:src.base||0,
         matches:[],w:0,l:0,stage:'初賽',placePts:0};
     }
