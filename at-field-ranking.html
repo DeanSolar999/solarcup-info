@@ -120,6 +120,14 @@
   .hpbar .cell{flex:1;height:12px;background:var(--dq-shadow);border:1px solid rgba(244,248,255,.2);max-width:16px}
   .hpbar .cell.on{background:var(--hpc,#4ade80);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
   .entry .eat{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--dq-gold);min-width:56px;text-align:right}
+  /* 競技組總分（白金＋黃金）＝球團總分同分時的判定依據，固定顯示一欄 */
+  .entry .ecomp{font-family:'Press Start 2P',monospace;font-size:8px;color:#8fb6ff;min-width:46px;text-align:right;opacity:.85}
+  .entry .ecomp::before{content:"競技 ";font-family:inherit;font-size:7px;color:#5b7089}
+  /* 有隊伍還在四強戰：名次分凍結在進入四強前的分數，冠亞與季殿填完才一次結算 */
+  .entry .esemi{font-size:9px;letter-spacing:.04em;color:#ffd24a;border:1px solid rgba(255,210,74,.45);
+    background:rgba(255,210,74,.10);padding:2px 6px;border-radius:3px;white-space:nowrap;animation:semiPulse 1.8s ease-in-out infinite}
+  @keyframes semiPulse{0%,100%{opacity:.7}50%{opacity:1}}
+  @media(max-width:640px){.entry .ecomp{display:none}.entry .esemi{font-size:8px;padding:1px 4px}}
   .entry .emedal{position:absolute;left:20px;top:2px;image-rendering:pixelated;pointer-events:none}
   .entry .emedal.hop{animation:pixHop .5s cubic-bezier(.34,1.56,.64,1)}
   @keyframes pixHop{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-8px) scale(1.1,.9)}60%{transform:translateY(2px) scale(.92,1.08)}100%{transform:translateY(0)}}
@@ -643,7 +651,10 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
 
   function render(changedCode){
     // STANDBY＝賽事已開打、但淘汰賽尚未落下第一筆分數：力場處於「絕」，一律歸零不排名
-    const sorted=STANDBY?[...TEAMS].sort((a,b)=>a.idx-b.idx):[...TEAMS].sort((a,b)=>b.field-a.field);
+    // 排序兩層：球團總分 → 競技組總分（白金＋黃金）。兩層都同＝並列，其餘現場判斷。
+    // 要跟後端 7_球團積分 的排名公式同一套規則，否則畫面名次會跟官方表對不上。
+    const sorted=STANDBY?[...TEAMS].sort((a,b)=>a.idx-b.idx)
+      :[...TEAMS].sort((a,b)=>(b.field-a.field)||((b.comp||0)-(a.comp||0)));
     const mx=STANDBY?1:maxField()*1.02;
     const podiumOrder=[3,1,0,2,4].map(k=>sorted[k]).filter(Boolean);
     podiumEl.innerHTML=podiumOrder.map(t=>{
@@ -673,6 +684,8 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
         <span class="esp evo${t.stage}">${t.spr}</span>
         <span class="enm" style="color:${t.c}">${t.name}<span class="elv">LV.${STANDBY?0:lv(t)}</span><span class="estage s${t.stage}">${STAGE_NAMES[t.stage]}</span><span class="ecode">${t.code}</span><span class="ejob">${t.job.names[t.stage-1]}</span></span>
         <span class="hpbar">${bar}</span>
+        <span class="ecomp" title="競技組總分（白金＋黃金）· 球團總分同分時的判定依據">${STANDBY||t.comp==null?'—':t.comp}</span>
+        ${(!STANDBY&&t.semiPending)?'<span class="esemi">進入四強戰 · 待結算</span>':''}
         <span class="eat">${STANDBY?0:t.field}</span></div>`;
     }).join('');
     entriesEl.querySelectorAll('.entry').forEach(e=>{
@@ -945,7 +958,16 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     // 淘汰賽隊名是抽籤後才填的,因此只誤觸一格分數的空白列不會提早開閘。
     if(!liveData.knockoutStarted)return;
     const firstActivation=!LIVE_ACTIVE;
-    const clubTotalByFull={};(liveData.clubScores||[]).forEach(c=>{clubTotalByFull[c.club]=c.total;});
+    const clubTotalByFull={},clubCompByFull={};
+    (liveData.clubScores||[]).forEach(c=>{clubTotalByFull[c.club]=c.total;clubCompByFull[c.club]=c.comp;});
+    // 哪些球團有隊伍還在四強戰、名次尚未定案。這段期間名次分凍結在 40（進入四強前的分數），
+    // 冠亞賽與季殿賽填完才一次跳到 100/80/60/60，所以要標出來讓大家知道還沒結算。
+    const SEMI_PENDING={'四強':1,'決賽中':1,'季殿賽中':1};
+    const clubSemiByFull={};
+    Object.keys(liveData.teamScores||{}).forEach(id=>{
+      const ts=liveData.teamScores[id];
+      if(ts&&SEMI_PENDING[ts.stop])clubSemiByFull[ts.club]=true;
+    });
     // 全有全無：9 個球團全部對得上才放行。缺任何一個就維持待機——
     // 否則該團會停在 0 分混進 LIVE 排行、畫面卻看不出異常。
     // ⚠️ STANDBY 必須等通過守衛後才解除，否則會出現「DOM 還是待機、內部狀態已 LIVE」的不一致
@@ -964,6 +986,9 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
     const changedCodes=[],evolvedList=[];
     TEAMS.forEach(t=>{
       const real=clubTotalByFull[t.full];
+      const comp=clubCompByFull[t.full];
+      t.comp=(typeof comp==='number'&&!isNaN(comp))?comp:null;   // 同分時的第二層判定
+      t.semiPending=!!clubSemiByFull[t.full];                     // 有隊伍在四強戰、積分待結算
       if(typeof real==='number'&&!isNaN(real)){
         if(real!==t.field)changedCodes.push(t.code);
         t.field=real;

@@ -146,13 +146,18 @@
         };
       });
 
-      // 7_球團積分：代表球團,隊伍數,球團總分,排名,備註
+      // 7_球團積分：代表球團,隊伍數,球團總分,競技組總分,排名,備註
+      // comp＝白金＋黃金隊伍的隊伍總分加總，是球團總分同分時的判定依據。
+      // 2026-08-04 起「競技組總分」插在總分與排名之間，排名索引因此由 3 變 4。
       var clubScores = [];
       cRows.slice(1).forEach(function (r) {
         if (!r || !r[0]) return;
         var club = str(r[0]);
         if (!club) return;
-        clubScores.push({ club: club, teams: num(r[1]) || 0, total: num(r[2]) || 0, rank: num(r[3]) });
+        clubScores.push({
+          club: club, teams: num(r[1]) || 0, total: num(r[2]) || 0,
+          comp: num(r[3]), rank: num(r[4]), note: str(r[5]),
+        });
       });
 
       // 四張分頁全部抓取成功才算「剛更新」；有任一張是沿用舊快取就保留上次成功時間，

@@ -553,7 +553,11 @@ if(!window.SolarCupData){
     }
     const cards=groups.map((g,i)=>{
       const d=document.createElement('div');d.className='ccard';d.dataset.gid=g.gid;d.dataset.i=i;
-      d._g=g;d._refresh=()=>{d.innerHTML=cardHTML(g);};
+      // 重畫時要「即時查」目前的小組物件，不能用建卡當下閉包抓的那份。
+      // applyLive 會把 TD.qualGroups 整個換成 buildTournament 產出的全新物件，
+      // 閉包抓舊的話卡片永遠停在頁面載入時（雲端資料還沒到）的 0 勝 0 敗。
+      // openQuad 一直都是用 findGroup 即時查，所以點開的關係圖是對的、卡面是錯的。
+      d._refresh=()=>{d.innerHTML=cardHTML(findGroup(g.gid)||g);};
       d.style.setProperty('--cc',upc);d.style.setProperty('--cg',upg);
       d.innerHTML=cardHTML(g);
       // 中間卡 3D tilt 跟隨滑鼠

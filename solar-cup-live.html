@@ -63,6 +63,8 @@
   .legend .sw{width:11px;height:11px;border-radius:2px;border:1px solid rgba(255,255,255,.2)}
   .legend .sw.off{background:rgba(255,255,255,.04)} .legend .sw.on{background:rgba(34,211,238,.9);box-shadow:0 0 8px rgba(34,211,238,.6)}
   .legend .sw.ready{background:rgba(255,194,75,.85);box-shadow:0 0 8px rgba(255,194,75,.6)}
+  /* 進行中在圖例也用「框」而非「填色」，跟格子的視覺語言一致 */
+  .legend .sw.playing{background:transparent;border-color:rgba(255,45,85,.95);box-shadow:0 0 8px rgba(224,20,60,.7),inset 0 0 4px rgba(224,20,60,.6)}
 
   /* ===== 矩陣看板 ===== */
   .matrix-wrap{overflow-x:auto;border:1px solid var(--line,rgba(29,233,182,.16));border-radius:8px;background:rgba(3,8,14,.5)}
@@ -92,7 +94,13 @@
   .cell.ready{background:rgba(255,194,75,.12);animation:readyPulse 1.4s ease-in-out infinite}
   .cell.ready::after{content:"準備";position:absolute;top:3px;right:4px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:8px;color:#ffe0a0;letter-spacing:.04em;background:rgba(120,78,8,.65);padding:1px 4px;border-radius:2px}
   @keyframes readyPulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,194,75,.5),inset 0 0 14px rgba(255,194,75,.12)}50%{box-shadow:inset 0 0 0 1px rgba(255,194,75,.95),inset 0 0 22px rgba(255,194,75,.32)}}
-  .cell:not(.done):not(.ready):not(.empty):not(.ev){opacity:.72}
+  /* 進行中：同場地前一場填完分數 → 下一場立刻亮紅提醒就位（不等實際開打）。
+     刻意不填底色、只用紅框呼吸燈——白銀級別本身就是紅色系 #ff4d6a，
+     填了紅底會跟級別色撞在一起認不出來。 */
+  .cell.playing{animation:playPulse 1.25s ease-in-out infinite}
+  .cell.playing::after{content:"進行中";position:absolute;top:3px;right:4px;font-family:'Orbitron',sans-serif;font-weight:700;font-size:8px;color:#ffd0d8;letter-spacing:.04em;background:rgba(140,10,34,.75);padding:1px 4px;border-radius:2px}
+  @keyframes playPulse{0%,100%{box-shadow:inset 0 0 0 1.5px rgba(224,20,60,.6),inset 0 0 14px rgba(224,20,60,.10)}50%{box-shadow:inset 0 0 0 2px rgba(255,45,85,1),inset 0 0 24px rgba(224,20,60,.30)}}
+  .cell:not(.done):not(.ready):not(.playing):not(.empty):not(.ev){opacity:.72}
   .cell:not(.empty):not(.ev):hover{background:rgba(34,211,238,.16);opacity:1}
   .cell.hidden{opacity:.12 !important;filter:grayscale(1)}
   .cell .ev-label{font-size:10px;color:var(--accent,#c77dff);font-weight:700;padding:6px 2px;text-align:center;font-family:'Orbitron',sans-serif}
@@ -230,7 +238,8 @@
     <select class="club" id="clubSel"><option value="all">全部球團</option></select>
     <div class="legend">
       <span class="lg"><span class="sw off"></span>未開賽</span>
-      <span class="lg"><span class="sw ready"></span>準備上場（下下場提醒）</span>
+      <span class="lg"><span class="sw ready"></span>準備上場（下下場）</span>
+      <span class="lg"><span class="sw playing"></span>進行中（下一場 · 請就位）</span>
       <span class="lg"><span class="sw on"></span>已完賽＋比分</span>
       <span class="lg" style="margin-left:auto">篩選：級別＋球團</span>
     </div>
@@ -407,14 +416,22 @@
     READY=new Set();PLAYING=new Set();const nm=nowMin();
     for(let c=1;c<=SC.courts;c++){
       const ms=byCourt[c]||[];
-      // ① 比分觸發
+      // frontier＝該場地最後一場已填分的（不是最早未完賽的）。
+      // 賽務跳著填分時，紅燈跟著他實際填的節奏走，而不是回頭找被跳過的場次。
       let frontier=-1;ms.forEach((m,idx)=>{if(isDone(m))frontier=idx;});
-      if(frontier>=0){const ri=frontier+2;if(ri<ms.length&&!isDone(ms[ri]))READY.add(ms[ri].n);}
-      // ② 進行中＝最早未完賽且已到開賽時間者；開打滿10分→下一未完賽場補亮準備
-      let playIdx=-1;
-      for(let idx=0;idx<ms.length;idx++){if(!isDone(ms[idx])){if(toMin(ms[idx].s)<=nm)playIdx=idx;break;}}
-      if(playIdx>=0){PLAYING.add(ms[playIdx].n);
-        if(nm>=toMin(ms[playIdx].s)+10){for(let j=playIdx+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}}}
+      // 進行中＝frontier 的下一場。不看時鐘：前一場分數一填，下一場立刻亮紅提醒就位。
+      // 場地還沒有任何分數時 frontier=-1 → 第一場就亮紅（賽事開始即提醒）。
+      const pi=frontier+1;
+      const hasPlaying=pi<ms.length&&!isDone(ms[pi]);
+      if(hasPlaying)PLAYING.add(ms[pi].n);
+      // 準備上場＝再下一場（下下場）
+      const ri=frontier+2;
+      if(ri<ms.length&&!isDone(ms[ri]))READY.add(ms[ri].n);
+      // 時間觸發（防輸入遲延）：進行中那場依賽程已開打滿 10 分卻還沒填分，
+      // 代表分數回報落後了，把再下一未完賽場也補亮準備。
+      if(hasPlaying&&nm>=0&&nm>=toMin(ms[pi].s)+10){
+        for(let j=pi+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}
+      }
     }
   }
   // ===== 現在焦點（進行中＋準備上場，手機主視覺）=====
@@ -451,8 +468,10 @@
     if(!ms.length){el.innerHTML='<div class="empty-note">此篩選下・場地 '+curCourt+' 無場次</div>';return;}
     let h='';
     ms.forEach(m=>{const r=results[m.n],col=tierCol(m),ready=READY.has(m.n),playing=PLAYING.has(m.n);
-      const cls=(r&&r.done)?'done':(ready?'ready':(playing?'playing':''));
-      const st=(r&&r.done)?'完賽':(ready?'準備':(playing?'進行中':''));
+      // 進行中要排在準備前面：時間觸發的「準備」有機會標到同一格，
+      // 順序寫反的話該亮紅的會被琥珀蓋掉，提醒效果就沒了。
+      const cls=(r&&r.done)?'done':(playing?'playing':(ready?'ready':''));
+      const st=(r&&r.done)?'完賽':(playing?'進行中':(ready?'準備':''));
       const stbg=(r&&r.done)?'var(--field,#22d3ee);color:#031820':(ready?'#ffc24b;color:#3a2600':'rgba(29,233,182,.28);color:#dbeafe');
       h+='<div class="cv '+cls+'" data-n="'+m.n+'" style="--cvc:'+col+'"><div class="cv-t">'+m.s+'<small>'+m.e+'</small></div><div class="cv-body"><div class="cv-code" style="color:'+col+'">'+m.code+(st?'<span class="cv-st" style="background:'+stbg+'">'+st+'</span>':'')+'</div>';
       h+=m._t?('<div class="cv-vs"><b>'+m._t[0].label+'</b> vs <b>'+m._t[1].label+'</b></div>'):('<div class="cv-vs" style="color:var(--dim,#5b7089)">待'+(m.stage==='資格賽'?'抽籤':'分流')+'</div>');
