@@ -194,6 +194,16 @@ function liveScenario(fail){
     || !/groupDone\?\(adv\?'晉級':'止步'\):'暫列'/.test(bracketTxt))
     bad.push('bracket-tree.html 未完成循環仍可能展示正式晉級／止步');
 
+  // ---- progState 重算後，概覽泳道必須跟著重畫 ----
+  // 2026-08-05：calcProg/refreshProg 都算對了，但雲端資料進來後沒人叫 updateLanes()，
+  // 四條泳道永遠停在初次渲染的全灰。跟輪播卡、徽記 key、rrRank 是同一類：
+  // 更新路徑存在、資料也對，只是少叫一個消費端，而且完全不報錯。
+  [...bracketTxt.matchAll(/refreshProg\(\);/g)].forEach(m=>{
+    const after=bracketTxt.slice(m.index,m.index+400);
+    if(!/updateLanes\(\)/.test(after))
+      bad.push('bracket-tree.html refreshProg() 後未重畫概覽泳道（updateLanes 未呼叫，泳道會停在初始狀態）');
+  });
+
   const invitTxt=fs.readFileSync(path.join(DIR,'invitational.html'),'utf8');
   if(!/<span class="st" id="progSt">連線中…<\/span>/.test(invitTxt))
     bad.push('invitational.html 初始進度不是「連線中…」');
@@ -220,4 +230,5 @@ function liveScenario(fail){
   console.log('✅ LIVE fresh／cold 兩情境正確');
   console.log('✅ 資料層 0%／40%／100% 三情境 0 例外');
   console.log('✅ 全站 winner.* 守衛無遺漏');
+  console.log('✅ 概覽泳道隨雲端資料重畫');
 })();

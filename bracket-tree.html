@@ -1241,10 +1241,11 @@
       setLiveData(d);refreshProg();
       Object.keys(DATA).forEach(k=>delete DATA[k]);   // 清快取，用新資料重建四條樹
       Object.keys(REG).forEach(k=>delete REG[k]);
+      updateLanes();          // 概覽泳道也要跟著重畫，否則永遠停在初始全灰
       renderDetail(_curTier);
     },45000);
   }else{
-    setLiveData(null);refreshProg();
+    setLiveData(null);refreshProg();updateLanes();
   }
 })();
 </script>
