@@ -269,7 +269,9 @@
       A.ms.push(m);B.ms.push(m);
       played.push({a:A,b:B,sa:m.sa,sb:m.sb,winner:st[m.w],done:true});
     });
-    // 同分判定走共用資料層（官方秩序冊第六章）：勝場 → ① 總得失分率（總得÷總失，計全部循環場次）② 兩隊對戰勝負 ③ 抽籤
+    // 同分判定走共用資料層（積分制度 v2.7 §六之二）：勝場 → 總得失分率（總得÷總失，計全部循環場次）→
+    // 仍相同則不自動判定（_tied），交現場人工判斷；drawStand() 目前純以陣列序號配發名次／獎牌，
+    // 尚未依 _tied 顯示「並列」——8 隊全循環極少見多隊完全同率，暫列已知限制
     const rank=SolarCupData.rankGroup(st,played);
     rank.forEach(t=>{t._r=t._ratio;});
     return {st,rank};
@@ -395,7 +397,7 @@
       <div class="rstats">
         <div class="c"><div class="v">${me.w}</div><div class="k">勝</div></div>
         <div class="c"><div class="v">${me.l}</div><div class="k">敗</div></div>
-        <div class="c"><div class="v">${pos}</div><div class="k">${p>=28?'最終名次':'目前排名'}</div></div></div>
+        <div class="c"><div class="v">${pos}</div><div class="k">${allDone?'最終名次':'目前排名'}</div></div></div>
       <div class="rlog"><div class="lh">對戰紀錄 · MATCH LOG</div>${logs}</div>
       <div class="rfoot">${foot}</div>
       <div class="rop"><span>背景徽記濃度</span><input type="range" id="rwmR" min="0" max="100" value="22"><span class="pv" id="rwmV">22%</span></div></div>`;

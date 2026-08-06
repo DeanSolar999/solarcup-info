@@ -223,6 +223,9 @@
   .gstand.adv .grk{color:var(--rc)}
   .gstand.adv .gnm{color:var(--core);font-weight:700}
   .gstand.adv .gadv{color:var(--rc);background:color-mix(in srgb,var(--rc) 15%,transparent)}
+  .gstand.pending{background:linear-gradient(90deg,rgba(255,90,122,.12),transparent)}
+  .gstand.pending .grk,.gstand.pending .gadv{color:#ff5a7a}
+  .gstand.pending .gadv{background:rgba(255,90,122,.16)}
   .gmatch{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px}
   .gmatch .gmno{font-size:8px;letter-spacing:.06em;color:var(--dim);min-width:30px}
   .gmatch .gmt{flex:1;text-align:right;color:var(--dim)}
@@ -739,6 +742,10 @@
       ko.push({key:'qf',name:'8 強',head:'8 強 QUARTER',teams:e,winners:qfW,nos:M.qf});
     }
     const semiIn=(tier.type==='cas')?d.qfW:d.four;
+    // 剛晉級四強就先標 40／四強：晉級的隊伍在此之前 placePts 一直是初始值 0（初賽），
+    // 準決賽打完前，戰績卡跟力場排行的後端數字（四強＝40）對不上；TBD 佔位會被 setPlace 的
+    // pending 守衛擋掉，不影響尚未分流出的席次。
+    semiIn.forEach(t=>setPlace(t,40,'四強'));
     const sfW=[];
     for(let i=0;i<2;i++)sfW.push(playM(semiIn[i*2],semiIn[i*2+1],'準決賽',M.sf[i]).winner||TBD(tier));
     d.sfW=sfW;
@@ -752,7 +759,10 @@
     const sfL=semiIn.filter(t=>t&&sfW.indexOf(t)<0);
     const tm=(sfL.length===2)?playM(sfL[0],sfL[1],'季軍賽',M.third):null;
     d.sfL=sfL;d.thirdM=tm;d.thirdW=tm?tm.winner:null;
-    sfL.forEach(t=>setPlace(t,60,t===d.thirdW?'四強 · 季軍':'四強 · 殿軍'));
+    // 季軍賽還沒打完之前不得先標「殿軍」——之前只要準決賽一結束就給兩隊都判殿軍，
+    // 跟後端「季殿賽中 · 40」對不上，而且在結果出爐前就先宣告了名次。
+    if(d.thirdW)sfL.forEach(t=>setPlace(t,60,t===d.thirdW?'四強 · 季軍':'四強 · 殿軍'));
+    else sfL.forEach(t=>setPlace(t,40,'季殿賽中'));
     d.ko=ko;
     DATA[tier.key]=d;return d;
   }
@@ -1160,7 +1170,18 @@
           <text x="${(mx+6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron,sans-serif" font-weight="${!leftWin?'900':'500'}" font-size="11" fill="${!leftWin?wc:dim}">${rightScore}</text></g>`;
       });
       const rank=d.standings[gi].map(r=>({t:r.t,i:g.indexOf(r.t),w:r.w,l:r.l,rt:r.rt}));
-      const advSet=groupDone?new Set([rank[0].i,rank[1].i]):new Set();
+      // 並列跨越第2/第3名分界線＝並列待判定，不自動排定晉級或止步（v2.7 定案：交現場人工判斷，
+      // 不採秩序冊的直接對戰自動判勝）。只有並列整段落在前二或整段落在後段，才算有明確結果。
+      const EPS=1e-9;
+      const ambiguous=new Array(rank.length).fill(false);
+      for(let s=0,k=1;k<=rank.length;k++){
+        if(k===rank.length||rank[k].w!==rank[s].w||Math.abs(rank[k].rt-rank[s].rt)>EPS){
+          if(k-s>=2&&s<2&&k>2)for(let x=s;x<k;x++)ambiguous[x]=true;
+          s=k;
+        }
+      }
+      const advSet=groupDone?new Set(rank.filter((r,i)=>i<2&&!ambiguous[i]).map(r=>r.i)):new Set();
+      const pendingSet=groupDone?new Set(rank.filter((r,i)=>ambiguous[i]).map(r=>r.i)):new Set();
       g.forEach((t,i)=>{const v=V[i],adv=groupDone&&advSet.has(i),co=t.clubObj||{c:TC,key:''},c=co.c;
         const lyOff=(i===0)?-(nodeR+16):(nodeR+16);const labY=v.y+lyOff,labW=Math.max(52,t.label.length*11+16);
         nodes+=`<g class="gnode ${adv?'adv':''}" data-i="${i}">
@@ -1175,10 +1196,11 @@
       });
       gsvg.innerHTML=`<defs>${defs}</defs><g>${links}</g><g>${photons}</g><g>${labels}</g><g>${nodes}</g>`;
       // 積分榜
-      const stand=rank.map((r,i)=>{const t=r.t,adv=groupDone&&i<2,co=t.clubObj||{c:'#8a95a5',key:''};
-        return `<div class="gstand ${adv?'adv':''}"><span class="grk">${i+1}</span>
+      const stand=rank.map((r,i)=>{const t=r.t,adv=groupDone&&i<2&&!ambiguous[i],pending=groupDone&&ambiguous[i],co=t.clubObj||{c:'#8a95a5',key:''};
+        const advTxt=!groupDone?'暫列':(pending?'⚠ 並列待判定':(adv?'晉級':'止步'));
+        return `<div class="gstand ${adv?'adv':''}${pending?' pending':''}"><span class="grk">${i+1}${pending?'（並列）':''}</span>
           <span class="gchip">${co.key?embChip(co):''}</span><span class="gnm">${t.label}</span>
-          <span class="gwl">${r.w}<i>勝</i> ${r.l}<i>敗</i>　<i>得失分率</i> ${r.rt.toFixed(3)}</span><span class="gadv">${groupDone?(adv?'晉級':'止步'):'暫列'}</span></div>`;}).join('');
+          <span class="gwl">${r.w}<i>勝</i> ${r.l}<i>敗</i>　<i>得失分率</i> ${r.rt.toFixed(3)}</span><span class="gadv">${advTxt}</span></div>`;}).join('');
       if(standEl)standEl.innerHTML=stand;
       // 互動
       const links_=[...gsvg.querySelectorAll('.glink')],labels_=[...gsvg.querySelectorAll('.scoreLbl')],nodes_=[...gsvg.querySelectorAll('.gnode')];

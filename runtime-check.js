@@ -190,9 +190,9 @@ function liveScenario(fail){
   if(!/const doneCount=gm\.filter\(m=>m&&m\.done&&m\.winner\)\.length;/.test(bracketTxt)
     || !/尚無賽果 · 循環榜待啟動/.test(bracketTxt))
     bad.push('bracket-tree.html 組進程 modal 缺少 0 場賽果 placeholder guard');
-  if(!/const advSet=groupDone\?new Set\(\[rank\[0\]\.i,rank\[1\]\.i\]\):new Set\(\);/.test(bracketTxt)
-    || !/groupDone\?\(adv\?'晉級':'止步'\):'暫列'/.test(bracketTxt))
-    bad.push('bracket-tree.html 未完成循環仍可能展示正式晉級／止步');
+  if(!/const advSet=groupDone\?new Set\(rank\.filter\(\(r,i\)=>i<2&&!ambiguous\[i\]\)\.map\(r=>r\.i\)\):new Set\(\);/.test(bracketTxt)
+    || !/!groupDone\?'暫列':\(pending\?'⚠ 並列待判定':\(adv\?'晉級':'止步'\)\)/.test(bracketTxt))
+    bad.push('bracket-tree.html 未完成循環仍可能展示正式晉級／止步，或並列跨越名額分界線時未擋下自動判定');
 
   // ---- progState 重算後，概覽泳道必須跟著重畫 ----
   // 2026-08-05：calcProg/refreshProg 都算對了，但雲端資料進來後沒人叫 updateLanes()，
@@ -207,6 +207,50 @@ function liveScenario(fail){
   const invitTxt=fs.readFileSync(path.join(DIR,'invitational.html'),'utf8');
   if(!/<span class="st" id="progSt">連線中…<\/span>/.test(invitTxt))
     bad.push('invitational.html 初始進度不是「連線中…」');
+
+  // ---- 曜請組戰績卡：openRec() 讀 p 是未宣告變數殘留（改名重構漏改）----
+  // 2026-08-06：p 只是 progLbl(p)/render(p) 的參數，openRec 範疇內不存在，
+  // 點兩下開卡直接 ReferenceError、modal 永不顯示。
+  if(!/pos<=3\?`最終名次：<b>\$\{medals\[pos-1\]\}<\/b>/.test(invitTxt)
+    || !invitTxt.includes("allDone?'最終名次':'目前排名'"))
+    bad.push('invitational.html openRec 戰績卡未修復（p 未定義／ReferenceError 風險）');
+
+  // ---- 複賽同分第三層：不得自動用直接對戰判勝，須與後端「並列待判定」一致 ----
+  // 2026-08-06：v2.7／官網秩序冊／前端三份文件互相矛盾，團長拍板採人工現場判定，
+  // 移除 tournament-data.js 的自動 h2h 排序，並在 bracket-tree 組進程卡標「⚠ 並列待判定」。
+  const tdTxt=fs.readFileSync(path.join(DIR,'tournament-data.js'),'utf8');
+  if(/function h2h\(/.test(tdTxt))
+    bad.push('tournament-data.js 仍殘留自動對戰判勝 h2h()，與 v2.7 人工判定規則矛盾');
+  if(!bracketTxt.includes("pending?'⚠ 並列待判定'"))
+    bad.push('bracket-tree.html 組進程卡未標示「並列待判定」');
+
+  // ---- 淘汰樹戰績卡凍結期積分：晉級四強後、決賽或季軍賽打完前，必須顯示 40 分 ----
+  // 2026-08-06：晉級準決賽的隊伍 placePts 預設 0，只有拿到冠亞季殿才會被 setPlace，
+  // 準決賽打完前公開頁顯示的積分比後端少 40；季軍賽未打完就先判「殿軍」也是同一種提早結算。
+  if(!bracketTxt.includes("semiIn.forEach(t=>setPlace(t,40,'四強'));"))
+    bad.push('bracket-tree.html 晉級四強未立即標 40 分（凍結期積分會比後端少 40）');
+  if(!bracketTxt.includes('if(d.thirdW)sfL.forEach'))
+    bad.push('bracket-tree.html 季軍賽未打完就可能提早判定殿軍');
+
+  // ---- 力場排行球團明細：tier/tierName/w/l 從未回填，明細視窗永遠顯示賽前假資料 ----
+  const afrTxt=fs.readFileSync(path.join(DIR,'at-field-ranking.html'),'utf8');
+  if(!afrTxt.includes('const TIER_NAME2KEY=')||!afrTxt.includes('const winLoss={};'))
+    bad.push('at-field-ranking.html applyLive 未回填 tier/tierName/w/l（球團明細會停在賽前假資料）');
+  if(!afrTxt.includes('const rankOf=new Map(),tiedOf=new Map();'))
+    bad.push('at-field-ranking.html 力場排行未使用後端同一套並列名次規則');
+
+  // ---- 戰情看板「進行中」紅燈：三種畫面模式都必須讀 PLAYING ----
+  // 2026-08-06：computeReady() 把 PLAYING 算對了，但矩陣／清單兩個 render
+  // 函式的 class 判斷式只查 done/READY，PLAYING 是死變數；同型缺陷第五例。
+  if(!liveTxt.includes('class="cell\'+(r&&r.done?\' done\':(PLAYING.has(m.n)?\' playing\''))
+    bad.push('solar-cup-live.html 矩陣模式 cellHTML 未讀 PLAYING（進行中紅燈失效）');
+  if(!liveTxt.includes('class="lm\'+(r&&r.done?\' done\':(PLAYING.has(m.n)?\' playing\''))
+    bad.push('solar-cup-live.html 清單模式 renderList 未讀 PLAYING（進行中紅燈失效）');
+  if(!/\.lm\.playing\{/.test(liveTxt))
+    bad.push('solar-cup-live.html 缺少 .lm.playing CSS（清單模式紅燈無樣式）');
+  // 資料庫尚無任何比分時，computeReady 不得誤亮任何燈號
+  if(!/if\(!Object\.keys\(results\|\|\{\}\)\.length\)return;/.test(liveTxt))
+    bad.push('solar-cup-live.html computeReady 缺少「尚無比分」閘門（賽前會誤亮進行中／準備）');
 
   // ---- 戰情頁時區 API 失效時必須 fail-closed，不能退回裝置本地時鐘 ----
   try{

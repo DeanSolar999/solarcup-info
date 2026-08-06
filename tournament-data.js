@@ -168,12 +168,16 @@
     return m;
   }
 
-  // 全站唯一的循環賽排序規則（官方秩序冊第六章）。bracket-tree 的五角/三角循環
+  // 全站唯一的循環賽排序規則（積分制度 v2.7 §六之二）。bracket-tree 的五角/三角循環
   // 也呼叫這支，不得各寫一套——兩套規則會讓同一份資料在不同頁面排出不同名次。
   //   ① 勝場多者先
   //   ② 總得失分率＝該循環「全部已完賽場次」總得÷總失，大者先（GA=0 → 999，同後端）
-  //   ③ 兩隊對戰勝負：僅在「恰好 2 隊同勝場同得失分率、且該場已完賽」時採用
-  //   ④ 3 隊以上完全同率 → 標記 _tied（待抽籤），順序不具意義
+  //   ③ 勝場＋得失分率仍相同（2 隊以上）→ 不自動判定，標記 _tied，交現場人工判斷
+  //     （2026-08-06 拿掉先前的自動直接對戰判勝：那是套用官網秩序冊的規則，
+  //     跟 v2.7 現行文字（人工判定）互相矛盾，且與後端 4b_複賽晉級 的「並列待判定」
+  //     不一致——同一組人在兩個頁面會看到不同的晉級結果。2 隊並列不影響「都晉級」
+  //     這種明確結果，只有並列跨過晉級名額分界線時才真正需要人工判斷，這段由呼叫端
+  //     （bracket-tree 的組進程卡）依名額分界線自行判斷是否要擋下自動晉級顯示。
   function rankGroup(teams,matches){
     const order=new Map();
     teams.forEach((t,i)=>{
@@ -183,30 +187,19 @@
       t._ratio=ga>0?Math.min(gf/ga,999):999;t._h2hgf=gf;t._h2hga=ga;t._tied=false;
       order.set(t,i);
     });
-    // 直接對戰：未完賽的場次不得拿來判勝
-    function h2h(x,y){
-      const dm=matches.find(m=>m.done&&m.winner&&
-        ((m.a===x&&m.b===y)||(m.a===y&&m.b===x)));
-      return dm?(dm.winner===x?-1:1):0;
-    }
     const EPS=1e-9;
     const ranked=[...teams].sort((x,y)=>{
       if(y.w!==x.w)return y.w-x.w;                                  // ① 勝場
       if(Math.abs(y._ratio-x._ratio)>EPS)return y._ratio-x._ratio;  // ② 得失分率
       return order.get(x)-order.get(y);                             // 暫定，下面處理同率群
     });
-    // 掃出「勝場＋得失分率完全相同」的連續群
+    // 掃出「勝場＋得失分率完全相同」的連續群，2 隊以上一律標記 _tied，不重排順序
     let i=0;
     while(i<ranked.length){
       let j=i+1;
       while(j<ranked.length&&ranked[j].w===ranked[i].w&&
             Math.abs(ranked[j]._ratio-ranked[i]._ratio)<=EPS)j++;
-      const n=j-i;
-      if(n===2){
-        if(h2h(ranked[i],ranked[i+1])>0)[ranked[i],ranked[i+1]]=[ranked[i+1],ranked[i]];  // ③
-      }else if(n>2){
-        for(let k=i;k<j;k++)ranked[k]._tied=true;                   // ④ 待抽籤
-      }
+      if(j-i>=2)for(let k=i;k<j;k++)ranked[k]._tied=true;            // ③ 待人工判斷
       i=j;
     }
     return ranked;
