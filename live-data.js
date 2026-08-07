@@ -110,7 +110,9 @@
         if (!id) return;
         var a = str(r[1]), b = str(r[2]);
         var sa = num(r[3]), sb = num(r[4]);
-        var done = sa !== null && sb !== null;
+        // 0:0 不算完賽——21 分制無平手，兩格都 0 只可能是賽務先填隊名時誤留的預設值。
+        // 不擋的話，力場閘門與各頁進度都會被一場根本沒打的比賽觸發（2026-08-07 手機版審查發現，雙端一致修正）。
+        var done = sa !== null && sb !== null && (sa + sb) > 0;
         if (done) hasReal = true;
         var n = parseInt(id, 10);
         if (done && n >= 1 && n <= QUAL_LAST) qualDone++;

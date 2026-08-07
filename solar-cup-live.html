@@ -579,7 +579,7 @@
         const ta=mkTeamRef(cols[cA]),tb=mkTeamRef(cols[cB]);
         if(ta&&tb)m._t=[ta,tb];                    // 真實隊伍（含淘汰賽分流）隨時覆蓋顯示
         const sa=parseInt(cols[cSA]),sb=parseInt(cols[cSB]);
-        if(!isNaN(sa)&&!isNaN(sb)){found[nn]={sa:sa,sb:sb,done:true};any=true;}});
+        if(!isNaN(sa)&&!isNaN(sb)&&sa+sb>0){found[nn]={sa:sa,sb:sb,done:true};any=true;}});   // 0:0＝隊名先填、分數誤留預設，不算完賽
       if(any)goLive();                             // 偵測到第一筆真分才轉 LIVE
       if(SHEET_LIVE){for(const k in results)delete results[k];Object.assign(results,found);}
       updateLive(SHEET_LIVE?'live':'pending');

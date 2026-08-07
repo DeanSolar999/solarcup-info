@@ -252,6 +252,14 @@ function liveScenario(fail){
   if(!/if\(!Object\.keys\(results\|\|\{\}\)\.length\)return;/.test(liveTxt))
     bad.push('solar-cup-live.html computeReady 缺少「尚無比分」閘門（賽前會誤亮進行中／準備）');
 
+  // ---- 0:0 不得視為完賽（21 分制無平手；隊名先填、分數誤留 0/0 不得觸發任何閘門）----
+  // 2026-08-07 手機版審查發現，主站同一處也沒擋，雙端一致修正。
+  const ldTxt=fs.readFileSync(path.join(DIR,'live-data.js'),'utf8');
+  if(!ldTxt.includes('sa !== null && sb !== null && (sa + sb) > 0'))
+    bad.push('live-data.js done 判定未擋 0:0（誤留預設分數會觸發力場閘門與各頁進度）');
+  if(!liveTxt.includes('sa+sb>0'))
+    bad.push('solar-cup-live.html 比分解析未擋 0:0');
+
   // ---- 戰情頁時區 API 失效時必須 fail-closed，不能退回裝置本地時鐘 ----
   try{
     const sb=sandbox();
