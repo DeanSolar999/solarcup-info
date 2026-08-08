@@ -120,6 +120,16 @@
 
   footer{text-align:center;padding:46px 24px 70px;font-size:10px;letter-spacing:.16em;color:var(--dim)}
   footer .demo{color:var(--amber);margin-top:8px;font-size:9px}
+  .sponsor-wall{margin-top:42px;padding:28px 18px;border:1px solid var(--line);background:linear-gradient(135deg,rgba(29,233,182,.05),rgba(3,6,13,.2));text-align:center}
+  .sponsor-wall h2{font-family:'Orbitron',sans-serif;font-size:16px;letter-spacing:.16em;color:var(--core)}
+  .sponsor-wall .sub{margin-top:7px;color:var(--dim);font-size:10px;letter-spacing:.12em}
+  .sponsor-tier{margin-top:24px}.sponsor-tier h3{font-family:'Orbitron',sans-serif;font-size:10px;letter-spacing:.16em;color:var(--amber)}
+  .sponsor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:12px;align-items:center;margin-top:12px}
+  .sponsor-grid.major{grid-template-columns:repeat(2,minmax(180px,1fr));max-width:620px;margin-left:auto;margin-right:auto}
+  .sponsor-logo{height:74px;padding:10px;border:1px solid rgba(29,233,182,.18);background:rgba(3,6,13,.5);display:flex;align-items:center;justify-content:center}
+  .sponsor-logo img{max-width:100%;max-height:54px;object-fit:contain}.sponsor-logo.major-logo{height:104px}.sponsor-logo.major-logo img{max-height:80px}
+  .sponsor-name{margin-top:7px;color:var(--ink);font-size:10px}.sponsor-individual{margin-top:16px;color:var(--dim);font-size:11px}.sponsor-individual b{color:var(--teal)}
+  @media(max-width:560px){.sponsor-grid.major{grid-template-columns:1fr}.sponsor-wall{padding:24px 12px}}
 
   /* ========== 看板 ========== */
   #board{position:relative;min-height:100vh}
@@ -348,9 +358,24 @@
       </div>
     </section>
 
-    <footer>
-      SOLAR CUP TWO · 曜日盃 TWO · NERV 競技部 × 曜日羽球團 · MAGI SYSTEM<br>
-      <span class="demo">◆ 看板隊名／比分為模擬資料，賽制與獎勵以正式規章為準</span>
+    <section class="sponsor-wall" aria-labelledby="sponsor-title">
+      <h2 id="sponsor-title">SPONSOR ALLIANCE</h2><p class="sub">感謝每一份支持，讓本屆賽事順利啟動</p>
+      <div class="sponsor-tier"><h3>主要贊助</h3><div class="sponsor-grid major">
+        <div><div class="sponsor-logo major-logo"><img src="assets/sponsors/room-bar.png" alt="ROOM BAR"></div><div class="sponsor-name">Room Bar</div></div>
+        <div><div class="sponsor-logo major-logo"><img src="assets/sponsors/noyi-insurance.png" alt="諾億保經"></div><div class="sponsor-name">諾億保經</div></div>
+      </div></div>
+      <div class="sponsor-tier"><h3>合作夥伴</h3><div class="sponsor-grid">
+        <div><div class="sponsor-logo"><img src="assets/sponsors/ark-taipei-bar.png" alt="ARK Taipei Bar"></div><div class="sponsor-name">ARK Taipei Bar</div></div>
+        <div><div class="sponsor-logo"><img src="assets/sponsors/fanco-creative.png" alt="帆可創作"></div><div class="sponsor-name">帆可創作</div></div>
+        <div><div class="sponsor-logo"><img src="assets/sponsors/aren-nougat.png" alt="阿仁牛軋餅"></div><div class="sponsor-name">阿仁牛軋餅</div></div>
+        <div><div class="sponsor-logo"><img src="assets/sponsors/laoluming-noodles.png" alt="勞碌命鍋燒麵"></div><div class="sponsor-name">勞碌命鍋燒麵</div></div>
+        <div><div class="sponsor-logo"><img src="assets/sponsors/dangdang-badminton.png" alt="蕩蕩歡樂羽球團"></div><div class="sponsor-name">蕩蕩歡樂羽球團</div></div>
+      </div></div>
+      <p class="sponsor-individual">個人贊助 · <b>Demon</b></p>
+    </section>
+
+    <footer class="sc2-footer">
+      <b>SOLAR CUP TWO · 曜日盃 TWO</b><br><span class="sc2-footer-thanks">感謝贊助夥伴支持本屆賽事</span>
     </footer>
   </div>
   <div id="tip"><div class="k"></div><div class="v"></div></div>

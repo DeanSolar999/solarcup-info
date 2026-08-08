@@ -255,10 +255,7 @@
   <div class="list-wrap" id="listWrap"></div>
   <div class="court-wrap" id="courtWrap"></div>
 
-  <div class="foot">
-    ＳＯＬＡＲ ＣＵＰ ＴＷＯ · 戰情看板 LIVE · 場地×時間 310 場即時推進<br>
-    <b id="footState">◆ 尚未開賽</b> · 分數↔組別↔賽程聯動 · 點場次看詳情並連往資格賽分流／淘汰樹／戰績查詢
-  </div>
+  <footer class="foot sc2-footer"><b>SOLAR CUP TWO · 曜日盃 TWO</b><br><span class="sc2-footer-thanks">感謝贊助夥伴支持本屆賽事</span></footer>
 </div>
 
 <div class="mask" id="mask"><div class="dcard" id="dcard"></div></div>
@@ -525,8 +522,8 @@
   function updateLive(state){
     const b=document.getElementById('liveBadge'),t=document.getElementById('liveTxt'),f=document.getElementById('footState');
     const doneN=Object.keys(results).length;
-    if(state==='live'){b.classList.remove('demo');t.textContent='LIVE 即時';f.textContent='◆ LIVE 即時賽況';}
-    else{b.classList.add('demo');t.textContent='尚未開賽';f.textContent='◆ 尚未開賽 · 資料來源：後端資料庫';}
+    if(state==='live'){b.classList.remove('demo');t.textContent='LIVE 即時';if(f)f.textContent='◆ LIVE 即時賽況';}
+    else{b.classList.add('demo');t.textContent='尚未開賽';if(f)f.textContent='◆ 尚未開賽 · 資料來源：後端資料庫';}
   }
 
   // ===== 控制列事件 =====

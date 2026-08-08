@@ -154,6 +154,7 @@
 
   footer{margin-top:24px;text-align:center;font-family:'DotGothic16',monospace;font-size:11px;color:#6b7bb5;line-height:1.9}
   footer .demo{color:#8fa2d8}
+  .atf-credit{margin-top:18px;text-align:center;font-family:'DotGothic16',monospace;font-size:10px;line-height:1.8;color:#8fa2d8}
 
   /* 像素明細視窗 */
   .modal{position:fixed;inset:0;z-index:60;background:rgba(3,4,20,.86);display:none;align-items:center;justify-content:center;padding:20px}
@@ -433,11 +434,11 @@ document.getElementById("tsToggle").addEventListener("click",function(){cur^=1;i
     <span class="ms">＊</span> 力場偵測系統啟動…<span class="arrow">▼</span>
   </div>
 
-  <footer>
-    ＡＴ ＦＩＥＬＤ ＡＲＥＮＡ ｜ 力場擂台 · 曜日盃 ＴＷＯ<br>
+  <div class="atf-credit" aria-live="polite">
     <span class="demo" id="demoFooter">◆ 偵測未啟動 · 九大球團力場處於「絕」·  8/15 淘汰賽開打後亮起</span><br>
     <span class="demo" id="artCredit" style="display:none">◆ 團寵美術：Tuxemon Project（CC-BY-SA 3.0）· tuxemon.org ｜ UI 邊框：Kenney（CC0）· kenney.nl</span>
-  </footer>
+  </div>
+  <footer class="sc2-footer"><b>SOLAR CUP TWO · 曜日盃 TWO</b><br><span class="sc2-footer-thanks">感謝贊助夥伴支持本屆賽事</span></footer>
 </div>
 
 <div class="modal" id="modal"><div class="dqbox mpanel" id="mpanel"></div></div>
