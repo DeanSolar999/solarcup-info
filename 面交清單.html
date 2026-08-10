@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SOLAR CUP TWO · 面交清單</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --navy: #152A42; --navy2: #1E3D5C;
+  --bg: #EEF1F7; --card: #FFFFFF;
+  --text: #1A2230; --text2: #5A6880; --text3: #8A98AC;
+  --rule: #D8DDE8; --rule2: #E8EBF2;
+  --green: #1A7A4A; --green-bg: #E6F5ED; --green-light: #C8EDD8;
+  --amber: #7A5200; --amber-bg: #FFF3CC;
+  --red: #8A2020; --red-bg: #FDEAEA;
+  --cs-bg:#E5E9EF; --cs-fg:#3E5270;
+  --cg-bg:#FEF3CE; --cg-fg:#7A5A00;
+  --cn-bg:#D5E4F5; --cn-fg:#193E70;
+  --cp-bg:#FAE0EB; --cp-fg:#9B3058;
+}
+
+body { background: var(--bg); font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', sans-serif; color: var(--text); min-height: 100vh; }
+
+/* ── Header ── */
+.app-header {
+  background: var(--navy); color: #fff; padding: 14px 16px 12px;
+  position: sticky; top: 0; z-index: 100;
+  padding-top: max(14px, env(safe-area-inset-top));
+}
+.header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.header-title { font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .6; }
+.header-sub { font-size: 17px; font-weight: 900; }
+.progress-wrap { background: rgba(255,255,255,.15); border-radius: 6px; height: 6px; }
+.progress-bar { background: #4ECCA3; border-radius: 6px; height: 6px; transition: width .4s ease; }
+.progress-label { display: flex; justify-content: space-between; margin-top: 5px; font-size: 11px; opacity: .65; }
+
+/* ── Filter tabs ── */
+.tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--rule); position: sticky; top: calc(82px + max(0px, env(safe-area-inset-top))); z-index: 90; }
+.tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 12px; font-weight: 700; color: var(--text3); border-bottom: 2.5px solid transparent; transition: all .2s; cursor: pointer; }
+.tab.active { color: var(--navy); border-color: var(--navy); }
+
+/* ── Session ── */
+.session { margin: 12px 12px 0; }
+.session-hdr {
+  background: var(--navy2); color: #fff; border-radius: 10px 10px 0 0;
+  padding: 10px 14px; display: flex; align-items: center; gap: 8px;
+}
+.session-tag { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; background: #4ECCA3; color: var(--navy); border-radius: 4px; padding: 1px 6px; }
+.session-name { font-size: 14px; font-weight: 800; }
+.session-info { font-size: 11px; opacity: .65; margin-left: auto; text-align: right; line-height: 1.4; }
+.session-body { background: var(--card); border-radius: 0 0 10px 10px; overflow: hidden; }
+.session-body.empty-session { display: none; }
+.session-footer { background: var(--rule2); padding: 6px 14px; font-size: 11px; color: var(--text3); display: flex; justify-content: space-between; }
+.session-footer strong { color: var(--navy); }
+
+/* ── Card ── */
+.person-card {
+  padding: 12px 14px; border-bottom: 1px solid var(--rule2);
+  position: relative; transition: opacity .25s, background .25s;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+}
+.person-card:last-child { border-bottom: none; }
+.person-card.pressing { background: #F0F6FF; }
+.person-card.received { background: var(--green-bg); opacity: .7; }
+.person-card.hidden { display: none; }
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.card-name { font-size: 16px; font-weight: 800; line-height: 1.2; }
+.card-name-wrap { flex: 1; }
+.card-status { display: flex; align-items: center; gap: 6px; }
+.received-badge { font-size: 10px; font-weight: 800; background: var(--green); color: white; border-radius: 12px; padding: 2px 8px; letter-spacing: .04em; white-space: nowrap; }
+.waitlist-badge { font-size: 10px; font-weight: 700; background: var(--red-bg); color: var(--red); border-radius: 12px; padding: 2px 8px; }
+.alert-badge { font-size: 10px; font-weight: 700; background: var(--amber-bg); color: var(--amber); border-radius: 12px; padding: 2px 8px; }
+.extra-badge { font-size: 10px; font-weight: 700; background: #EEE8FF; color: #5A35B0; border-radius: 12px; padding: 2px 8px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
+.chip { display: inline-block; border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 700; }
+.cs { background: var(--cs-bg); color: var(--cs-fg); }
+.cg { background: var(--cg-bg); color: var(--cg-fg); }
+.cn { background: var(--cn-bg); color: var(--cn-fg); }
+.cp { background: var(--cp-bg); color: var(--cp-fg); }
+
+.card-bottom { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text2); }
+.card-qty { font-weight: 700; color: var(--text); }
+.dot { color: var(--rule); }
+.method-pill { border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
+.m-spot   { background: #E6F5ED; color: #1A7A4A; }
+.m-gather { background: var(--rule2); color: var(--text3); }
+.m-711    { background: var(--amber-bg); color: var(--amber); }
+
+/* ── Bottom sheets ── */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.overlay.show { opacity: 1; pointer-events: all; }
+
+.sheet { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-radius: 18px 18px 0 0; z-index: 210; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,0,.67,0); padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.sheet.show { transform: translateY(0); }
+
+.sheet-handle { width: 36px; height: 4px; background: var(--rule); border-radius: 2px; margin: 10px auto 6px; }
+.sheet-person { padding: 8px 20px 14px; border-bottom: 1px solid var(--rule2); }
+.sheet-person-name { font-size: 18px; font-weight: 900; }
+.sheet-person-detail { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+.sheet-btn {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; border: none; background: transparent; width: 100%;
+  font-size: 16px; font-weight: 600; color: var(--text); cursor: pointer;
+  border-bottom: 1px solid var(--rule2); text-align: left;
+}
+.sheet-btn:last-child { border-bottom: none; }
+.sheet-btn.danger { color: var(--red); }
+.sheet-btn.cancel { color: var(--text3); font-weight: 500; }
+.sheet-btn .btn-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.icon-receive { background: var(--green-bg); }
+.icon-undo    { background: #EEE8FF; }
+.icon-move    { background: #E8F0FE; }
+.icon-hide    { background: var(--red-bg); }
+.icon-cancel  { background: var(--rule2); }
+
+/* Move picker */
+.move-sheet-item {
+  display: flex; align-items: center; padding: 14px 20px; cursor: pointer;
+  border-bottom: 1px solid var(--rule2); gap: 12px;
+}
+.move-sheet-item:active { background: var(--bg); }
+.move-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--navy2); flex-shrink: 0; }
+.move-label { font-size: 15px; font-weight: 700; }
+.move-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+.sheet-title { padding: 14px 20px 10px; font-size: 13px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--text3); border-bottom: 1px solid var(--rule2); }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">SOLAR CUP TWO</div>
+      <div class="header-sub">服裝面交清單</div>
+    </div>
+    <div style="text-align:right;font-size:11px;opacity:.6;line-height:1.6">2026/08/10<br>比對 5 場</div>
+  </div>
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+  <div class="progress-label"><span id="progressText">0 / 13 已領取</span><span>長按名字 → 操作</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="all">全部</div>
+  <div class="tab" data-tab="pending">待領</div>
+  <div class="tab" data-tab="done">已領取</div>
+</div>
+
+<div id="app"></div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
+
+<!-- Action sheet -->
+<div class="sheet" id="actionSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-person" id="sheetPersonInfo"></div>
+  <button class="sheet-btn" id="btnReceive"><span class="btn-icon icon-receive">✓</span>標記已領取</button>
+  <button class="sheet-btn" id="btnUndo"    style="display:none"><span class="btn-icon icon-undo">↩</span>取消已領取</button>
+  <button class="sheet-btn" id="btnMove"   ><span class="btn-icon icon-move">↕</span>移動到其他場次</button>
+  <button class="sheet-btn" id="btnHide"   ><span class="btn-icon icon-hide">✕</span>從此場次移除</button>
+  <button class="sheet-btn cancel" id="btnCancel"><span class="btn-icon icon-cancel">—</span>取消</button>
+</div>
+
+<!-- Move picker sheet -->
+<div class="sheet" id="moveSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">移動到</div>
+  <div id="moveOptions"></div>
+</div>
+
+<script>
+// ── Data ───────────────────────────────────────────────────────────
+const P = {
+  kaili:      { name:'凱力',    chips:[['cg','金','L'],['cg','金','XL']],              qty:2,  amt:760,   method:'gather' },
+  zihe:       { name:'子昊',    chips:[['cs','銀','M'],['cg','金','M'],['cn','藍','M'],['cp','粉','M']], qty:4, amt:1520, method:'spot' },
+  lici:       { name:'李慈',    chips:[['cg','金','XL'],['cn','藍','L'],['cp','粉','XL']], qty:3, amt:1140, method:'gather' },
+  congcong:   { name:'聰聰',    chips:[['cg','金','XL'],['cn','藍','XL']],              qty:2,  amt:760,   method:'gather' },
+  xiaocao:    { name:'小曹',    chips:[['cn','藍','XL'],['cn','藍','2XL']],             qty:2,  amt:760,   method:'gather' },
+  xiaoluo:    { name:'小羅',    chips:[['cg','金','L']],                                qty:1,  amt:380,   method:'gather' },
+  pengpeng:   { name:'蓬蓬',    chips:[['cn','藍','2XL'],['cp','粉','2XL']],            qty:2,  amt:760,   method:'711', alert:'改面交省 $60' },
+  abin:       { name:'阿斌',    chips:[['cg','金','XL']],                               qty:1,  amt:380,   method:'gather' },
+  weixiaokai: { name:'魏小開',  chips:[['cs','銀','3L'],['cg','金','3L'],['cp','粉','3L']], qty:3, amt:1140, method:'gather' },
+  lion:       { name:'Lion',    chips:[['cg','金','2XL'],['cg','金','2XL']],            qty:2,  amt:760,   method:'gather' },
+  baozi:      { name:'包子',    chips:[['cn','藍','2XL'],['cp','粉','2XL']],            qty:2,  amt:760,   method:'spot', waitlist:true },
+  cn:         { name:'CN',      chips:[['cg','金','XL'],['cn','藍','XL'],['cp','粉','XL']], qty:3, amt:1140, method:'gather' },
+  kaiwen:     { name:'凱文',    chips:[['cs','銀','2XL']],                              qty:1,  amt:380,   method:'spot' },
+};
+
+const SESSIONS = [
+  { id:'monday',    label:'月曜南港', date:'08/10(一)', time:'20:00', venue:'南港運動中心', tag:'今晚', persons:['kaili'] },
+  { id:'wednesday', label:'水曜二重', date:'08/12(三)', time:'19:00', venue:'二重國小',     tag:'',     persons:['zihe','lici','congcong','xiaocao','xiaoluo','kaili','pengpeng'] },
+  { id:'thursday',  label:'木曜大同', date:'08/13(四)', time:'20:00', venue:'大同運動中心', tag:'',     persons:['abin','weixiaokai','lion','baozi'] },
+  { id:'saturday',  label:'土曜興雅', date:'08/15(六)', time:'17:30', venue:'興雅國小',     tag:'',     persons:['cn','kaiwen','kaili'] },
+];
+
+// ── State ──────────────────────────────────────────────────────────
+const STORAGE_KEY = 'sc2_delivery_v1';
+let state = { received: {}, hidden: {}, extras: {} };
+
+function loadState() {
+  try { const s = JSON.parse(localStorage.getItem(STORAGE_KEY)); if (s) state = s; } catch(e) {}
+}
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+// ── Helpers ────────────────────────────────────────────────────────
+function isReceived(pid) { return !!state.received[pid]; }
+function isHidden(sid, pid) { return !!(state.hidden[sid] && state.hidden[sid][pid]); }
+function isExtra(sid, pid) { return !!(state.extras[sid] && state.extras[sid].includes(pid)); }
+function isInSession(sid, pid) {
+  const s = SESSIONS.find(s => s.id === sid);
+  return (s && s.persons.includes(pid)) || isExtra(sid, pid);
+}
+function personsForSession(sid) {
+  const s = SESSIONS.find(s => s.id === sid);
+  const base = s ? [...s.persons] : [];
+  const extras = state.extras[sid] || [];
+  return [...new Set([...base, ...extras])].filter(pid => !isHidden(sid, pid));
+}
+function totalPersons() {
+  // unique persons across all sessions (ignoring duplicates like 凱力)
+  const seen = new Set();
+  SESSIONS.forEach(s => personsForSession(s.id).forEach(pid => seen.add(pid)));
+  return seen.size;
+}
+function receivedCount() {
+  return Object.keys(state.received).filter(k => state.received[k]).length;
+}
+
+// ── Current filter ─────────────────────────────────────────────────
+let currentFilter = 'all'; // 'all' | 'pending' | 'done'
+function cardVisible(pid) {
+  if (currentFilter === 'pending') return !isReceived(pid);
+  if (currentFilter === 'done')    return isReceived(pid);
+  return true;
+}
+
+// ── Render ─────────────────────────────────────────────────────────
+function methodLabel(m) {
+  if (m === 'spot')   return ['m-spot', '現場'];
+  if (m === 'gather') return ['m-gather', '球聚'];
+  if (m === '711')    return ['m-711', '7-11'];
+  return ['m-gather', m];
+}
+
+function renderCard(sid, pid) {
+  const p = P[pid];
+  if (!p) return '';
+  const recv = isReceived(pid);
+  const extra = isExtra(sid, pid);
+  const classes = ['person-card', recv ? 'received' : '', cardVisible(pid) ? '' : 'hidden'].filter(Boolean).join(' ');
+  const [mc, ml] = methodLabel(p.method);
+  const chips = p.chips.map(([cls, label, size]) => `<span class="chip ${cls}">${label} ${size}</span>`).join('');
+  const badges = [
+    recv ? '<span class="received-badge">✓ 已領取</span>' : '',
+    p.waitlist ? '<span class="waitlist-badge">候補</span>' : '',
+    p.alert && !recv ? `<span class="alert-badge">⚡ ${p.alert}</span>` : '',
+    extra ? '<span class="extra-badge">移入</span>' : '',
+  ].filter(Boolean).join('');
+
+  return `
+  <div class="${classes}" data-sid="${sid}" data-pid="${pid}" id="card-${sid}-${pid}">
+    <div class="card-top">
+      <div class="card-name-wrap">
+        <div class="card-name">${p.name}</div>
+      </div>
+      <div class="card-status">${badges}</div>
+    </div>
+    <div class="chips">${chips}</div>
+    <div class="card-bottom">
+      <span class="card-qty">${p.qty} 件</span>
+      <span class="dot">·</span>
+      <span>$${p.amt.toLocaleString()}</span>
+      <span class="dot">·</span>
+      <span class="method-pill ${mc}">${ml}</span>
+    </div>
+  </div>`;
+}
+
+function renderSession(s) {
+  const persons = personsForSession(s.id);
+  if (!persons.length) return '';
+  const cards = persons.map(pid => renderCard(s.id, pid)).join('');
+  const total = persons.length;
+  const done  = persons.filter(pid => isReceived(pid)).length;
+  const tagHtml = s.tag ? `<span class="session-tag">${s.tag}</span>` : '';
+  return `
+  <div class="session" data-session-id="${s.id}">
+    <div class="session-hdr">
+      ${tagHtml}
+      <div>
+        <div class="session-name">${s.label}</div>
+      </div>
+      <div class="session-info">${s.date} ${s.time}<br>${s.venue}</div>
+    </div>
+    <div class="session-body" id="body-${s.id}">${cards}</div>
+    <div class="session-footer">
+      <span>已領取 <strong id="done-${s.id}">${done}</strong> / ${total}</span>
+      <span>${s.time} · ${s.venue}</span>
+    </div>
+  </div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  app.innerHTML = SESSIONS.map(s => renderSession(s)).join('');
+  bindCards();
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = totalPersons();
+  const done  = receivedCount();
+  const pct   = total ? (done / total * 100) : 0;
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} 已領取`;
+  // update per-session counts
+  SESSIONS.forEach(s => {
+    const persons = personsForSession(s.id);
+    const doneEl = document.getElementById('done-' + s.id);
+    if (doneEl) doneEl.textContent = persons.filter(pid => isReceived(pid)).length;
+  });
+}
+
+// ── Long press & card binding ───────────────────────────────────────
+let pressTimer = null;
+let pressTarget = null;
+
+function bindCards() {
+  document.querySelectorAll('.person-card').forEach(card => {
+    card.addEventListener('touchstart', onTouchStart, { passive: true });
+    card.addEventListener('touchend',   onTouchEnd);
+    card.addEventListener('touchmove',  onTouchMove, { passive: true });
+  });
+}
+
+function onTouchStart(e) {
+  const card = e.currentTarget;
+  pressTarget = card;
+  pressTimer = setTimeout(() => {
+    card.classList.add('pressing');
+    // haptic if available
+    if (navigator.vibrate) navigator.vibrate(40);
+    openActionSheet(card.dataset.sid, card.dataset.pid);
+    pressTimer = null;
+  }, 550);
+}
+function onTouchEnd() {
+  if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  if (pressTarget) { pressTarget.classList.remove('pressing'); pressTarget = null; }
+}
+function onTouchMove() {
+  if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+}
+
+// ── Action sheet ────────────────────────────────────────────────────
+let activeSid = null, activePid = null;
+
+function openActionSheet(sid, pid) {
+  activeSid = sid; activePid = pid;
+  const p = P[pid];
+  const recv = isReceived(pid);
+  document.getElementById('sheetPersonInfo').innerHTML = `
+    <div class="sheet-person-name">${p.name}</div>
+    <div class="sheet-person-detail">${p.chips.map(([,l,s]) => l+' '+s).join('　')} · ${p.qty}件 $${p.amt.toLocaleString()}</div>`;
+  document.getElementById('btnReceive').style.display = recv ? 'none' : '';
+  document.getElementById('btnUndo').style.display    = recv ? '' : 'none';
+  showSheet('actionSheet');
+}
+
+function showSheet(id) {
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+function hideSheet(id) {
+  document.getElementById(id).classList.remove('show');
+  if (!document.querySelector('.sheet.show')) document.getElementById('overlay').classList.remove('show');
+}
+function hideAllSheets() {
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('show'));
+  document.getElementById('overlay').classList.remove('show');
+}
+
+document.getElementById('overlay').addEventListener('click', hideAllSheets);
+
+document.getElementById('btnReceive').addEventListener('click', () => {
+  state.received[activePid] = true; saveState(); hideAllSheets();
+  rerenderCard(activeSid, activePid); updateProgress();
+});
+document.getElementById('btnUndo').addEventListener('click', () => {
+  delete state.received[activePid]; saveState(); hideAllSheets();
+  rerenderCard(activeSid, activePid); updateProgress();
+});
+document.getElementById('btnHide').addEventListener('click', () => {
+  if (!state.hidden[activeSid]) state.hidden[activeSid] = {};
+  state.hidden[activeSid][activePid] = true; saveState(); hideAllSheets();
+  const el = document.getElementById(`card-${activeSid}-${activePid}`);
+  if (el) el.remove();
+  updateProgress();
+});
+document.getElementById('btnMove').addEventListener('click', () => {
+  hideSheet('actionSheet');
+  openMoveSheet();
+});
+document.getElementById('btnCancel').addEventListener('click', hideAllSheets);
+
+// ── Move sheet ──────────────────────────────────────────────────────
+function openMoveSheet() {
+  const opts = SESSIONS.filter(s => s.id !== activeSid).map(s => `
+    <div class="move-sheet-item" data-target="${s.id}">
+      <div class="move-dot"></div>
+      <div><div class="move-label">${s.label}</div><div class="move-sub">${s.date} ${s.time} · ${s.venue}</div></div>
+    </div>`).join('');
+  document.getElementById('moveOptions').innerHTML = opts;
+  document.querySelectorAll('.move-sheet-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const target = item.dataset.target;
+      // hide from current session
+      if (!state.hidden[activeSid]) state.hidden[activeSid] = {};
+      state.hidden[activeSid][activePid] = true;
+      // add as extra to target session
+      if (!state.extras[target]) state.extras[target] = [];
+      if (!state.extras[target].includes(activePid)) state.extras[target].push(activePid);
+      saveState(); hideAllSheets(); render();
+    });
+  });
+  showSheet('moveSheet');
+}
+
+// ── Re-render single card ───────────────────────────────────────────
+function rerenderCard(sid, pid) {
+  const el = document.getElementById(`card-${sid}-${pid}`);
+  if (!el) return;
+  el.outerHTML = renderCard(sid, pid);
+  // rebind the new element
+  const newEl = document.getElementById(`card-${sid}-${pid}`);
+  if (newEl) {
+    newEl.addEventListener('touchstart', onTouchStart, { passive: true });
+    newEl.addEventListener('touchend',   onTouchEnd);
+    newEl.addEventListener('touchmove',  onTouchMove, { passive: true });
+  }
+}
+
+// ── Tab switching ───────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentFilter = tab.dataset.tab;
+    render();
+  });
+});
+
+// ── Reset button (long-press header) ───────────────────────────────
+let headerTimer = null;
+document.querySelector('.app-header').addEventListener('touchstart', e => {
+  if (e.target.closest('.progress-wrap, .progress-label')) {
+    headerTimer = setTimeout(() => {
+      if (confirm('重置所有狀態？')) { state = { received:{}, hidden:{}, extras:{} }; saveState(); render(); }
+    }, 2000);
+  }
+});
+document.querySelector('.app-header').addEventListener('touchend', () => { clearTimeout(headerTimer); });
+
+// ── Init ────────────────────────────────────────────────────────────
+loadState();
+render();
+</script>
+</body>
+</html>
