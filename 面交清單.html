@@ -209,7 +209,7 @@ const P = {
   xiaoahe:      { name:'小阿和',       chips:[['cn','藍','2XL',2]],                                                                              qty:2,  amt:820,   method:'711',  note:'末5碼：97191' },
   zalston:      { name:'Zalston Hsieh',chips:[['cg','金','M'],['cn','藍','M',2]],                                                               qty:3,  amt:1200,  method:'711',  note:'末5碼：10930' },
   chenyuren:    { name:'陳禹任',       chips:[['cs','銀','4L'],['cn','藍','4L'],['cp','粉','4L']],                                              qty:3,  amt:1200,  method:'711',  note:'末5碼：77141' },
-  luke:         { name:'路克',         chips:[['cs','銀','M'],['cn','藍','M']],                                                                 qty:2,  amt:820,   method:'711',  note:'美慈門市 158945' },
+  luke:         { name:'路克',         chips:[['cs','銀','M'],['cn','藍','M']],                                                                 qty:2,  amt:820,   method:'711',  note:'美慈門市 158945', alert:'改面交省運費' },
   chenyuzhang:  { name:'陳昱彰',       chips:[['cs','銀','L'],['cg','金','L']],                                                                 qty:2,  amt:820,   method:'711',  note:'末5碼：31179' },
   nan:          { name:'Nan',          chips:[['cs','銀','4L'],['cg','金','4L'],['cn','藍','4L'],['cp','粉','4L']],                             qty:4,  amt:1580,  method:'711' },
   // 球聚領取
@@ -223,7 +223,8 @@ const P = {
 };
 
 const SECTIONS = [
-  { id:'monday',    type:'session', label:'月曜南港',      tag:'今晚',  tagCls:'',        info:'08/10(一) 20:00\n南港運動中心', persons:['kaili'] },
+  { id:'monday',    type:'session', label:'月曜南港',      tag:'',      tagCls:'',        info:'08/10(一) 20:00\n南港運動中心', persons:['kaili'] },
+  { id:'tuesday',   type:'session', label:'火曜延平',      tag:'明日',  tagCls:'',        info:'08/11(二) 19:00\n延平國小',     persons:['abao','zihe','xiaocao','cn','pengpeng','oneplus','benlin','luke'] },
   { id:'wednesday', type:'session', label:'水曜二重',      tag:'',      tagCls:'',        info:'08/12(三) 19:00\n二重國小',     persons:['zihe','lici','congcong','xiaocao','xiaoluo','kaili','pengpeng'] },
   { id:'thursday',  type:'session', label:'木曜大同',      tag:'',      tagCls:'',        info:'08/13(四) 20:00\n大同運動中心', persons:['abin','weixiaokai','lion','baozi'] },
   { id:'saturday',  type:'session', label:'土曜興雅',      tag:'',      tagCls:'',        info:'08/15(六) 17:30\n興雅國小',     persons:['cn','kaiwen','kaili'] },
