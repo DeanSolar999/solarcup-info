@@ -43,24 +43,23 @@ Google Cloud 基礎設施已建立並完成設定驗證：
 - Workload Identity Federation：pool／provider `solarcup-gh-pool/solarcup-gh-provider`；provider 僅允許 repository ID `1288512590`、owner ID `254364847`、`refs/heads/main` 與 `workflow_dispatch`。
 - service account 已完成 WIF 綁定，並具上述 bucket 的 `objectAdmin` 權限。
 
-GitHub `production` Environment、repository variables／secret、目標 Google Sheet 分享權限，以及 workflow 的實際 production 執行仍待後續設定與驗證。
+正式全日推演入口為 `autonomous-simulate.yml`；由單次 `workflow_dispatch` 自動完成 canary、清空輸入、5 段推演、前端觀測、exact restore 與最終報告。任何失敗／取消都會喚起獨立 recovery job。
 
 1. `dry-run.yml` 只跑 `ci-dry-run`，不要求 Google 環境變數、不建立 adapter、lease 或外部連線；它驗證完整的 310 場規劃。
-2. `canary.yml` 在 `production` Environment 內 snapshot 全部 310 場，僅寫入前 3 場 canary，逐格 readback 後 exact restore，並把不可變 canary report 寫入 GCS。此時停在 `CANARY_WAITING_APPROVAL`。
-3. 由 Browser 觀察試算表與 report 後，手動執行 `approve-canary.yml`。它只能依既有 report 建立一次 approval；相同 `run_id`／hash 的第二次建立會得到 GCS `412`，不會覆寫舊核准。
-4. `simulate.yml` 使用同一 job 的 5 個累積 segment：`75 / 75 / 66 / 66 / 28`。每段開始前都以 SHA-pinned OIDC action 重取短效 access token（不建立 credentials file），並在 lease 前後重驗不可變 approval 的 `run_id` 與 manifest hash。segment 1 檢查完整 baseline；segment 2–5 只檢查 sheet、時區與 `B12 = 0`，讓已累積比分不會被舊 baseline 誤判。亂序、重跑錯段一律拒絕，且只有第 5 段才做 exact restore 與最終完整 baseline 檢查。
-5. Actions production 流程唯一的放行依據是 GCS 中不可變的 canary report／approval。canary 或任一 simulate segment 失敗／取消時，recovery job 會以同一個完整權限的 production 環境執行 `restore-only`。`restore.yml` 也可在必要時獨立接管復原；遇到仍有效 lease 會在最多 90 秒內重試，403 或非 `LEASE_BUSY` 錯誤立即 fail-closed。
+2. `autonomous-simulate.yml` 先 snapshot 全部 310 場，再對資格賽、淘汰賽、曜請賽三張輸入表各寫一格 sentinel。readback 正確、對外網站全部可 render，且三格 exact restore 後，才進入 clear barrier 與正式推演。
+3. 5 個累積 segment 為 `75 / 40 / 75 / 75 / 45`（index 邊界 `0–75 / 75–115 / 115–190 / 190–265 / 265–310`）。預估時間依序為 `38 分 05 秒 / 45 分 / 37.5 分 / 37.5 分 / 22.5 分`；第 1 段含 35 秒延遲情境，第 2 段含 25 分鐘開幕空檔，仍都低於 50 分鐘。每段開始前都以 SHA-pinned OIDC action 重取短效 access token，亂序與重跑錯段一律拒絕，且只有第 5 段做 exact restore 與最終完整 baseline 檢查。
+4. 任一 segment 失敗或取消時，recovery job 以同一個 production Environment 執行 `restore-only`。復原遇到仍有效 lease 會重試；403 或非 `LEASE_BUSY` 錯誤立即 fail-closed。
 
 GCS durable state 固定在 `runs/<run_id>/`：`manifest`、`checkpoint`、`intent`、`restore`、`terminal`、append-only `journal/*` 與 `canary-report`／`approval`。每次 mutation 前都會驗證 generation fencing；復原採 `current / post-image / pre-image` 三方比較，衝突轉為 `MANUAL_HOLD`，不覆寫協作者資料。artifact 不含 token、Spreadsheet ID 或 snapshot。
 
 必備 GitHub Environment / repository 設定：
 
-- Environment：`production`（不要設定 required reviewer；以 `workflow_dispatch` 與不可變 canary approval 作為 gate，避免 recovery 被人工審核卡住。若未來需要 reviewer，另建僅供 `approve-canary` 使用的獨立審批 Environment）。
+- Environment：`production`（不要設定 required reviewer，避免自動 recovery 被人工審核卡住；正式推演由單次 `workflow_dispatch` 明確啟動）。
 - Variables：`GCP_WIF_PROVIDER`、`GCP_WIF_SERVICE_ACCOUNT`、`SOLAR_CUP_SPREADSHEET_ID`、`SOLAR_CUP_GCS_BUCKET`。
-- Secret：`SOLAR_CUP_PROJECTION_BASELINES`（僅固定 range 的 SHA-256 hash map）。
+- Projection baselines：由 `autonomous-simulate.yml` 的 preflight／simulate／recovery job-level `env` 固定，不使用 repository secret，也不可由 dispatch input 覆寫。
 - Google WIF attribute condition：只允許 `DeanSolar999/solarcup-info` 的 `main` 分支與 `workflow_dispatch`；agent 分支只供 PR review，不應取得 production OIDC。
 
-每個 production workflow 都會先檢查 `run_id` 格式，再取得 OIDC token；待 GitHub 與 Google Sheet 的後續設定完成後，才可實際啟動 production workflow。
+workflow 會先檢查 `run_id` 格式，再取得 OIDC token；正式啟動前仍須確認 Environment variables、Sheet 分享權限與固定備份證據均有效。
 
 ## 淘汰賽晉級推導
 

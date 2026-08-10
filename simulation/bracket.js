@@ -97,9 +97,8 @@ function assertTopology({ MNO, RR_PAIRS, TRI_PAIRS }) {
 
 // ── 循環賽名次 ────────────────────────────────────────────────
 // 與 tournament-data.js 的 rankGroup 同一套規則：
-// 勝場 → 失分率（該循環總得÷總失）→ 兩隊對戰勝負 → 原始序位。
-// 三隊以上同勝場同失分率時，官方規則是抽籤；這裡退回原始序位並標記 tied，
-// 讓演練報告能指出「現場會需要抽籤」的位置。
+// 勝場 → 得失分率（該循環總得÷總失）。完全同率一律標記待判定，
+// 不採直接對戰；原始序位只用來維持畫面穩定，不代表裁定名次。
 function rankGroup(teams, matches) {
   const EPS = 1e-9;
   const order = new Map();
@@ -119,12 +118,6 @@ function rankGroup(teams, matches) {
     const s = stat.get(name);
     return s.ga > 0 ? Math.min(s.gf / s.ga, 999) : 999;
   };
-  const head = (x, y) => {
-    const m = matches.find((mm) => mm && mm.done && ((mm.a === x && mm.b === y) || (mm.a === y && mm.b === x)));
-    if (!m) return 0;
-    const winner = m.sa > m.sb ? m.a : m.b;
-    return winner === x ? -1 : 1;
-  };
   const ranked = [...teams].sort((x, y) => {
     const dw = stat.get(y).w - stat.get(x).w;
     if (dw) return dw;
@@ -139,14 +132,12 @@ function rankGroup(teams, matches) {
     while (j < ranked.length && stat.get(ranked[j]).w === stat.get(ranked[i]).w
       && Math.abs(ratio(ranked[j]) - ratio(ranked[i])) <= EPS) j += 1;
     const size = j - i;
-    if (size === 2) {
-      if (head(ranked[i], ranked[i + 1]) > 0) [ranked[i], ranked[i + 1]] = [ranked[i + 1], ranked[i]];
-    } else if (size > 2) {
+    if (size >= 2) {
       for (let k = i; k < j; k += 1) tied.add(ranked[k]);
     }
     i = j;
   }
-  return { ranked, tied };
+  return { ranked, tied, pendingDecision: tied.size > 0 };
 }
 
 // ── 種子序 ────────────────────────────────────────────────────

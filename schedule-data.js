@@ -80,3 +80,4 @@
     byCourt:function(){const g={};for(let c=1;c<=10;c++)g[c]=M.filter(m=>m.ct===c).sort((a,b)=>a.n-b.n);return g;},
   };
 })(typeof window!=='undefined'?window:this);
+if (typeof module !== 'undefined') module.exports = globalThis.SolarCupSchedule || module.exports.SolarCupSchedule;

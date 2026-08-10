@@ -3,6 +3,7 @@
 const { clone, hash } = require('./lib');
 
 const SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
+const BACKUP_FILE_ID = '15WHaxX9Qa-6-tw9XzQ-G0LgkzdxxGDbHqLv8dZ048RM';
 const SHEET_POLICY = Object.freeze({
   '2_資格賽成績': { sheetId: 252930776, rows: [2, 151], columns: new Set(['K', 'L']) },
   // J/L＝淘汰賽隊名。這兩欄現場是賽務手填的，沒有任何公式在推導；模擬若不寫，
@@ -74,9 +75,48 @@ class SheetsRestAdapter {
     return result;
   }
 
+  async verifyBackupGate(requirements) {
+    if (requirements.expectedBackupFileId !== BACKUP_FILE_ID || requirements.backup_file_id !== BACKUP_FILE_ID) throw new Error('BACKUP_FILE_ID_MISMATCH');
+    if (requirements.expectedSourceSheetId !== this.spreadsheetId || requirements.source_sheet_id !== this.spreadsheetId) throw new Error('BACKUP_SOURCE_SHEET_MISMATCH');
+    const fields = 'id,name,mimeType,createdTime,modifiedTime,size,trashed';
+    const metadata = await this.request(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(BACKUP_FILE_ID)}?fields=${encodeURIComponent(fields)}&supportsAllDrives=true`);
+    if (metadata.id !== BACKUP_FILE_ID || metadata.trashed) throw new Error('BACKUP_DRIVE_FILE_UNAVAILABLE');
+    if (metadata.mimeType !== 'application/vnd.google-apps.spreadsheet') throw new Error('BACKUP_MIME_TYPE_INVALID');
+    if (metadata.name !== requirements.title) throw new Error('BACKUP_TITLE_MISMATCH');
+    if (!metadata.name.includes(`source-${this.spreadsheetId}`)) throw new Error('BACKUP_SOURCE_PROVENANCE_MISSING');
+    if (metadata.createdTime !== requirements.created_at) throw new Error('BACKUP_CREATED_AT_MISMATCH');
+    const size = Number(metadata.size);
+    if (!Number.isSafeInteger(size) || size !== requirements.size) throw new Error('BACKUP_SIZE_MISMATCH');
+    const liveSha = hash([metadata.id, this.spreadsheetId, metadata.createdTime, metadata.name, size]);
+    if (liveSha !== requirements.sha) throw new Error('BACKUP_SHA_MISMATCH');
+    return { verified: true, id: metadata.id, title: metadata.name, sourceSheetId: this.spreadsheetId, mimeType: metadata.mimeType, createdAt: metadata.createdTime, size, sha: liveSha };
+  }
+
   async values(range) {
     const response = await this.request(`${this.base}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`);
     return response.values || [];
+  }
+  async authoritativeMatchRows() {
+    const specs = [
+      { key: 'qualification', range: '2_資格賽成績!A2:A151', expected: 150, first: 1 },
+      { key: 'knockout', range: '4_淘汰賽成績!A2:A133', expected: 132, first: 151 },
+      { key: 'invitational', range: '5_曜請成績!A2:A29', expected: 28, first: 283 }
+    ];
+    const result = {};
+    for (const spec of specs) {
+      const rows = await this.values(spec.range);
+      const ids = rows.map((row) => Number(row?.[0]));
+      if (rows.length !== spec.expected || ids.some((id, index) => !Number.isInteger(id) || id !== spec.first + index)) {
+        const bad = ids.findIndex((id, index) => id !== spec.first + index);
+        throw new Error(`AUTHORITATIVE_MATCH_ROW_MAPPING:${spec.key}:row=${bad < 0 ? rows.length + 2 : bad + 2}:actual=${bad < 0 ? 'missing' : ids[bad]}:expected=${bad < 0 ? spec.expected : spec.first + bad}`);
+      }
+      result[spec.key] = ids;
+    }
+    // 顯式讀取權威賽程設定，確保不是從比分欄推導 last row。欄位名稱由現場表
+    // 決定，這裡只用於存在性／非空稽核，場次 ID 仍以上述三張成績表為準。
+    const schedule = await this.values('0_賽事設定!A1:Z400');
+    if (!schedule.length) throw new Error('AUTHORITATIVE_SCHEDULE_EMPTY');
+    return result;
   }
   async verifyProjectionBaselines(requirements) {
     if (!this.projectionBaselines) throw new Error('缺少 projection hash baselines');
@@ -121,6 +161,10 @@ class SheetsRestAdapter {
     }));
     await this.request(`${this.base}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
   }
+  async clearCells(refs) {
+    const requests = refs.map((a1) => ({ repeatCell: { range: this.assertAllowedRef(a1), cell: {}, fields: 'userEnteredValue' } }));
+    await this.request(`${this.base}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
+  }
 }
 
 function parseAllowedRef(a1, observedSheetIds = {}) {
@@ -139,4 +183,4 @@ function parseAllowedRef(a1, observedSheetIds = {}) {
   return { sheetId: policy.sheetId, startRowIndex: row - 1, endRowIndex: row, startColumnIndex: col, endColumnIndex: col + 1 };
 }
 
-module.exports = { SheetsRestAdapter, SPREADSHEET_ID, SHEET_POLICY, PROJECTION_RANGES, parseAllowedRef };
+module.exports = { SheetsRestAdapter, SPREADSHEET_ID, BACKUP_FILE_ID, SHEET_POLICY, PROJECTION_RANGES, parseAllowedRef };

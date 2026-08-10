@@ -14,6 +14,14 @@ class MockAdapter {
     if (!this.options.armedGateResult) throw new Error('缺少 projection/LIVE gate evidence verifier');
     return typeof this.options.armedGateResult === 'function' ? this.options.armedGateResult(requirements) : this.options.armedGateResult;
   }
+  async verifyBackupGate(requirements) {
+    if (this.options.backupGateError) throw this.options.backupGateError;
+    return this.options.backupGateResult || { verified: true, id: requirements.backup_file_id, title: requirements.title, sourceSheetId: requirements.source_sheet_id };
+  }
+  async authoritativeMatchRows() {
+    if (!this.options.authoritativeRows) throw new Error('AUTHORITATIVE_MATCH_PREFLIGHT_UNAVAILABLE');
+    return this.options.authoritativeRows;
+  }
 
   async readCells(refs) {
     return Object.fromEntries(refs.map((ref) => [ref, clone(this.cells.get(ref) ?? null)]));
@@ -28,6 +36,7 @@ class MockAdapter {
       throw error;
     }
   }
+  async clearCells(refs) { refs.forEach((ref) => this.cells.set(ref, null)); }
 
   mutate(ref, value) { this.cells.set(ref, clone(value)); }
 }

@@ -42,6 +42,8 @@ class GcsRunState {
     if (manifest.state === 'RESTORING') await this.write(manifest.run_id, 'restore', { state: manifest.state, reason: manifest.reason || null }, handle);
     if (['COMPLETE', 'RESTORE_FAILURE', 'MANUAL_HOLD', 'CANCELLED_RESTORE_REQUIRED'].includes(manifest.state)) await this.write(manifest.run_id, 'terminal', { state: manifest.state, reason: manifest.reason || null }, handle);
   }
+  async writeReport(runId, body, handle) { return this.write(runId, 'final-report', body, handle); }
+  async writeIncidentReport(runId, body, handle) { return this.write(runId, 'restore-incident-report', body, handle); }
 }
 
 class GcsApprovalStore {

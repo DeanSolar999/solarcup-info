@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const test = require('node:test');
-const { SimulationRunner, EXPECTED_SPREADSHEET_ID, cellForNumber, parseArgs, parseProjectionBaselines } = require('./runner');
+const { SimulationRunner, EXPECTED_SPREADSHEET_ID, EXPECTED_BACKUP_FILE_ID, cellForNumber, parseArgs, parseProjectionBaselines, parseBackupEvidence, backupEvidenceDigest } = require('./runner');
 const { MockAdapter } = require('./mock-adapter');
 const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
@@ -14,6 +14,15 @@ const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, 
 const { KnockoutResolver, ScriptedResolver } = require('./knockout-resolver');
 const { loadTopology, knockoutNumbers, rankGroup, seedsFor, deriveAll } = require('./bracket');
 const { LocalGenerationLease, LocalRunState, LocalApprovalStore } = require('./local-state');
+const { buildScenarioPlan } = require('./scenario-engine');
+
+const TEST_BACKUP_EVIDENCE = {
+  backup_file_id: '15WHaxX9Qa-6-tw9XzQ-G0LgkzdxxGDbHqLv8dZ048RM',
+  source_sheet_id: EXPECTED_SPREADSHEET_ID, created_at: '2026-08-10T09:31:26.569Z',
+  verified_at: new Date().toISOString(), title: '曜日盃TWO_正式資料庫_模擬前備份_source-1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA_2026-08-10T17-31+08', size: 76499
+};
+TEST_BACKUP_EVIDENCE.sha = backupEvidenceDigest(TEST_BACKUP_EVIDENCE);
+process.env.SOLAR_CUP_BACKUP_EVIDENCE = JSON.stringify(TEST_BACKUP_EVIDENCE);
 
 function temp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'solarcup-sim-')); }
 function plan(n = 3, stage = 'qualification') {
@@ -88,6 +97,39 @@ test('restore conflict：協作者修改不會被覆蓋', async () => {
   assert.match(result.reason, /RESTORE_CONFLICT/);
 });
 
+test('clear durable intent：清空後 0 場、1 場、中段失敗都 exact restore', async () => {
+  for (const written of [0, 1, 2]) {
+    const initial = { 'S!A1': cellForNumber(9), 'S!B1': cellForNumber(8), 'S!A2': cellForNumber(7), 'S!B2': cellForNumber(6), 'S!A3': cellForNumber(5), 'S!B3': cellForNumber(4) };
+    const adapter = new MockAdapter(initial); const dir = temp();
+    const r = runner(adapter, dir, { autonomous: true, plan: plan(3), allowedStages: ['qualification'] });
+    const manifest = await r.snapshot(`clear-restore-${written}`);
+    await r.clearBarrier(manifest);
+    assert.equal(Object.keys(manifest.post_image).length, 6);
+    for (let index = 0; index < written; index += 1) await r.commitMatch(manifest, manifest.plan[index]);
+    manifest.reason = 'INJECTED_FAILURE';
+    const restored = await r.restore(manifest);
+    assert.equal(restored.state, STATES.COMPLETE);
+    assert.deepEqual(await adapter.readCells(manifest.allowlist), manifest.pre_image);
+  }
+});
+
+test('clear API 前全 allowlist CAS：snapshot 後外部改動即 fail-closed 且不清空', async () => {
+  class ClearTracked extends MockAdapter { constructor(initial) { super(initial); this.clears = 0; } async clearCells(refs) { this.clears += 1; return super.clearCells(refs); } }
+  const adapter = new ClearTracked({ 'S!A1': cellForNumber(9) }); const r = runner(adapter, temp(), { autonomous: true, plan: plan(1) });
+  const manifest = await r.snapshot('clear-cas'); adapter.mutate('S!A1', cellForNumber(10));
+  await assert.rejects(() => r.clearBarrier(manifest), (error) => error.p0 === true && /CLEAR_CAS_CONFLICT/.test(error.message));
+  assert.equal(adapter.clears, 0); assert.deepEqual((await adapter.readCells(['S!A1']))['S!A1'], cellForNumber(10));
+});
+
+test('clear API 成功瞬間取消：durable empty intent 可辨識並 exact restore', async () => {
+  const adapter = new MockAdapter({ 'S!A1': cellForNumber(9), 'S!B1': cellForNumber(8) });
+  const r = runner(adapter, temp(), { autonomous: true, plan: plan(1) }); const manifest = await r.snapshot('clear-cancel');
+  const original = adapter.clearCells.bind(adapter); adapter.clearCells = async (refs) => { await original(refs); r.stopRequested = true; };
+  await assert.rejects(() => r.clearBarrier(manifest), (error) => error.p0 === true && /CANCELLED/.test(error.message));
+  const restored = await r.restore(manifest); assert.equal(restored.state, STATES.COMPLETE);
+  assert.deepEqual(await adapter.readCells(manifest.allowlist), manifest.pre_image);
+});
+
 test('restore-only：先 metadata/precheck，再以持久 lease idempotent 重跑', async () => {
   const lease = { persistent: true, async acquire() { return { fencingToken: 'fence-1' }; }, async assertHeld() {}, async release() {} };
   const adapter = new MockAdapter({}, { armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } } }); const dir = temp();
@@ -97,6 +139,16 @@ test('restore-only：先 metadata/precheck，再以持久 lease idempotent 重�
   await adapter.writeCells(post); Object.assign(manifest.post_image, post); r.save(manifest);
   assert.equal((await r.restoreOnly('restore-only')).state, STATES.COMPLETE);
   assert.equal((await r.restoreOnly('restore-only')).state, STATES.COMPLETE);
+  assert.ok(fs.existsSync(path.join(dir, 'restore-only', 'restore-incident-report.json')));
+});
+
+test('restore-only precheck 失敗也必須留下事故報告', async () => {
+  const lease = { persistent: true, async acquire() { return { fencingToken: 'incident-fence' }; }, async assertHeld() {}, async release() {} };
+  const adapter = new MockAdapter(); const dir = temp(); const r = runner(adapter, dir, { mode: 'restore-only', armed: true, fast: false, lease });
+  await r.snapshot('restore-incident'); adapter.precheck = async () => { throw new Error('injected-precheck'); };
+  await assert.rejects(() => r.restoreOnly('restore-incident'), /injected-precheck/);
+  const report = require('./lib').readJson(path.join(dir, 'restore-incident', 'restore-incident-report.json'));
+  assert.equal(report.outcome, 'FAILED'); assert.equal(report.redacted, true);
 });
 
 test('pending stage gate：未獲得允許不可進入下一 stage', async () => {
@@ -155,6 +207,53 @@ test('adapter allowlist、armed-fast 與無持久 lease 均拒絕', async () => 
   assert.throws(() => parseArgs(['dry-run', '--phase', 'qualification']), /未知參數/);
 });
 
+test('backup hard gate：固定 Drive ID、Google Sheet mime、title/source provenance 與 evidence 時戳', async () => {
+  const evidence = parseBackupEvidence(process.env.SOLAR_CUP_BACKUP_EVIDENCE);
+  assert.equal(evidence.backup_file_id, EXPECTED_BACKUP_FILE_ID);
+  assert.throws(() => parseBackupEvidence(), /BACKUP_EVIDENCE_REQUIRED/);
+  assert.throws(() => parseBackupEvidence({ ...evidence, sha: 'bad' }), /BACKUP_SHA_INVALID/);
+  const wrongSourceId = { ...evidence, source_sheet_id: 'wrong-source' }; wrongSourceId.sha = backupEvidenceDigest(wrongSourceId);
+  assert.throws(() => parseBackupEvidence(wrongSourceId), /BACKUP_SOURCE_SHEET_MISMATCH/);
+  const stale = { ...evidence, verified_at: new Date(Date.now() - 16 * 60_000).toISOString() };
+  stale.sha = backupEvidenceDigest(stale);
+  assert.throws(() => parseBackupEvidence(stale), /BACKUP_TIMESTAMP_INVALID/);
+  const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' });
+  let requested = '';
+  adapter.request = async (url) => { requested = url; return {
+    id: EXPECTED_BACKUP_FILE_ID, name: evidence.title, mimeType: 'application/vnd.google-apps.spreadsheet',
+    createdTime: evidence.created_at, size: String(evidence.size), trashed: false
+  }; };
+  const verified = await adapter.verifyBackupGate({ ...evidence, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID });
+  assert.equal(verified.verified, true); assert.match(requested, /drive\/v3\/files/);
+  adapter.request = async () => ({ id: EXPECTED_BACKUP_FILE_ID, name: evidence.title, mimeType: 'application/pdf', createdTime: evidence.created_at, size: String(evidence.size) });
+  await assert.rejects(() => adapter.verifyBackupGate({ ...evidence, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_MIME_TYPE_INVALID/);
+  const noSource = { ...evidence, title: '曜日盃TWO_正式資料庫_模擬前備份' }; noSource.sha = backupEvidenceDigest(noSource);
+  adapter.request = async () => ({ id: EXPECTED_BACKUP_FILE_ID, name: noSource.title, mimeType: 'application/vnd.google-apps.spreadsheet', createdTime: noSource.created_at, size: String(noSource.size) });
+  await assert.rejects(() => adapter.verifyBackupGate({ ...noSource, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_SOURCE_PROVENANCE_MISSING/);
+  adapter.request = async () => ({ id: EXPECTED_BACKUP_FILE_ID, name: evidence.title, mimeType: 'application/vnd.google-apps.spreadsheet', createdTime: evidence.created_at, size: String(evidence.size) });
+  const wrongTitle = { ...evidence, title: `${evidence.title}-wrong` }; wrongTitle.sha = backupEvidenceDigest(wrongTitle);
+  await assert.rejects(() => adapter.verifyBackupGate({ ...wrongTitle, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_TITLE_MISMATCH/);
+  const wrongSize = { ...evidence, size: evidence.size + 1 }; wrongSize.sha = backupEvidenceDigest(wrongSize);
+  await assert.rejects(() => adapter.verifyBackupGate({ ...wrongSize, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_SIZE_MISMATCH/);
+  await assert.rejects(() => adapter.verifyBackupGate({ ...evidence, sha: '0'.repeat(64), expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_SHA_MISMATCH/);
+  adapter.request = async () => ({ id: EXPECTED_BACKUP_FILE_ID, name: evidence.title, mimeType: 'application/vnd.google-apps.spreadsheet', createdTime: '2026-08-10T09:31:27.000Z', size: String(evidence.size) });
+  await assert.rejects(() => adapter.verifyBackupGate({ ...evidence, expectedBackupFileId: EXPECTED_BACKUP_FILE_ID, expectedSourceSheetId: SPREADSHEET_ID }), /BACKUP_CREATED_AT_MISMATCH/);
+});
+
+test('authoritative rows：每個 Sheet row 必須逐列對上 global match ID', async () => {
+  const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' });
+  let corrupt = false;
+  adapter.values = async (range) => {
+    if (range.startsWith('2_')) return Array.from({ length: 150 }, (_, index) => [index + 1]);
+    if (range.startsWith('4_')) return Array.from({ length: 132 }, (_, index) => [151 + index + (corrupt && index === 4 ? 1 : 0)]);
+    if (range.startsWith('5_')) return Array.from({ length: 28 }, (_, index) => [283 + index]);
+    return [['schedule']];
+  };
+  const rows = await adapter.authoritativeMatchRows(); assert.equal(rows.knockout[0], 151); assert.equal(rows.invitational.at(-1), 310);
+  corrupt = true;
+  await assert.rejects(() => adapter.authoritativeMatchRows(), /AUTHORITATIVE_MATCH_ROW_MAPPING:knockout:row=6/);
+});
+
 test('ci-dry-run：缺 production env 仍只驗證完整 310 場，且不建立外部 adapter', () => {
   const output = execFileSync(process.execPath, ['runner.js', 'ci-dry-run', '--run-id', 'ci-local'], { cwd: __dirname, env: {} }).toString();
   const result = JSON.parse(output);
@@ -195,6 +294,29 @@ test('5 個 segment 依 checkpoint 累積比分，亂序拒絕，僅最後一段
   assert.ok(Object.values(values).every((value) => value === null));
 });
 
+test('5 個 segment 覆蓋 0–309 無缺漏，含 H 的每段最壞排程均低於 50 分鐘', () => {
+  const compiled = buildScenarioPlan('segment-duration');
+  const r = new SimulationRunner({ adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, plan: compiled });
+  const covered = [];
+  // Segment 1 contains scenario E's extra 35-second delay; segment 2 contains
+  // H's 25-minute opening gap. All five remain safely below 50 minutes.
+  const expectedSeconds = [2_285, 2_700, 2_250, 2_250, 1_350];
+  for (let segment = 1; segment <= 5; segment += 1) {
+    const [start, end] = r.segmentBounds(segment);
+    const matches = compiled.slice(start, end);
+    covered.push(...Array.from({ length: end - start }, (_, index) => start + index));
+    const durationMs = pairedJitter(matches.length, () => 0.2).reduce((sum, seconds) => sum + seconds * 1000, 0)
+      + matches.reduce((sum, match) => sum + r.scheduledDelayMs(match), 0);
+    assert.equal(durationMs / 1_000, expectedSeconds[segment - 1]);
+    assert.ok(durationMs < 50 * 60_000, `segment ${segment} must stay below token refresh boundary`);
+  }
+  assert.deepEqual(covered, Array.from({ length: 310 }, (_, index) => index));
+  const hIndex = compiled.findIndex((match) => match.scenario === 'H');
+  const [segment2Start, segment2End] = r.segmentBounds(2);
+  assert.ok(hIndex >= segment2Start && hIndex < segment2End);
+  assert.deepEqual(r.segmentBounds(5), [265, 310]);
+});
+
 test('segment 2 僅驗證 timezone/sheetId/B12，末段 restore 後才驗完整 projection baseline', async () => {
   const checks = []; const gate = { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } };
   const lease = { persistent: true, async acquire() { return { fencingToken: 'segment-fence' }; }, async assertHeld() {}, async release() {} };
@@ -205,7 +327,7 @@ test('segment 2 僅驗證 timezone/sheetId/B12，末段 restore 後才驗完整 
   assert.equal(waiting.state, STATES.SEGMENT_WAITING);
   assert.deepEqual(checks, [[]]);
   const resumed = require('./lib').readJson(r.manifestPath('gate-segment'));
-  r.segment = 5; resumed.state = STATES.SEGMENT_WAITING; resumed.checkpoint.completed = resumed.plan.slice(0, 282).map((match) => match.id); resumed.checkpoint.next_segment = 5; r.save(resumed);
+  r.segment = 5; resumed.state = STATES.SEGMENT_WAITING; resumed.checkpoint.completed = resumed.plan.slice(0, 265).map((match) => match.id); resumed.checkpoint.next_segment = 5; r.save(resumed);
   const final = await r.start('gate-segment');
   assert.equal(final.state, STATES.COMPLETE);
   assert.deepEqual(checks.at(-1), ['8', '3', '6', '7']);
@@ -415,7 +537,7 @@ test('賽程拓撲：解析自 bracket-tree.html，五角與三角都是完整�
   assert.throws(() => require('./bracket').assertTopology(broken), /TOPOLOGY_/);
 });
 
-test('循環賽名次：勝場 → 失分率 → 對戰勝負；三隊以上同率標記待抽籤', () => {
+test('循環賽名次：勝場 → GF/GA；任何同率（含兩隊）一律待裁定、不採 H2H', () => {
   const teams = ['A', 'B', 'C'];
   // A 與 B 同為 1 勝，A 的失分率較佳
   const ms = [
@@ -433,6 +555,14 @@ test('循環賽名次：勝場 → 失分率 → 對戰勝負；三隊以上同�
     { a: 'C', b: 'A', sa: 21, sb: 11, done: true }
   ]);
   assert.equal(sym.tied.size, 3);
+  assert.equal(sym.pendingDecision, true);
+  const pair = rankGroup(['A', 'B'], [
+    { a: 'A', b: 'B', sa: 21, sb: 11, done: true },
+    { a: 'B', b: 'A', sa: 21, sb: 11, done: true }
+  ]);
+  assert.deepEqual(pair.ranked, ['A', 'B']);
+  assert.deepEqual([...pair.tied], ['A', 'B']);
+  assert.equal(pair.pendingDecision, true);
 });
 
 test('逐場回讀：晉級採後端 O 欄勝方，與比分不符時記錄 finding 但不中斷', async () => {
@@ -624,4 +754,146 @@ test('--keep-scores：跑完保留分數不自動復原，但復原能力完整�
 test('--keep-scores 為明確旗標，預設仍是跑完自動復原', () => {
   assert.equal(parseArgs(['run', '--armed']).keepScores, false);
   assert.equal(parseArgs(['run', '--armed', '--keep-scores']).keepScores, true);
+});
+
+test('restore 620 格維持固定批次量，不退化成逐格讀寫，CAS conflict 行為不變', async () => {
+  class QuotaAdapter extends MockAdapter {
+    constructor() { super(); this.readRequests = 0; this.writeRequests = 0; }
+    async readCells(refs) { this.readRequests += Math.ceil(refs.length / 50); return super.readCells(refs); }
+    async writeCells(values) { this.writeRequests += 1; return super.writeCells(values); }
+  }
+  const largePlan = Array.from({ length: 310 }, (_, index) => ({
+    id: `large-${index + 1}`, stage: 'qualification',
+    cells: [`S!A${index + 1}`, `S!B${index + 1}`]
+  }));
+  const adapter = new QuotaAdapter();
+  const r = new SimulationRunner({ adapter, stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID, plan: largePlan, fast: true });
+  const manifest = await r.snapshot('restore-620');
+  const post = Object.fromEntries(manifest.allowlist.map((ref, index) => [ref, cellForNumber(index % 22)]));
+  await adapter.writeCells(post); Object.assign(manifest.post_image, post);
+  adapter.readRequests = 0; adapter.writeRequests = 0;
+  const restored = await r.restore(manifest);
+  assert.equal(restored.state, STATES.COMPLETE);
+  assert.equal(adapter.readRequests, 39, '620 格應為 13 + 13 + 13 個 50 格批次讀取');
+  assert.equal(adapter.writeRequests, 1, 'safe pre-image 應一次 batchUpdate，不得逐格寫回');
+  assert.deepEqual(await adapter.readCells(manifest.allowlist), manifest.pre_image);
+});
+
+test('observer 等待超過 120 秒仍每 10 秒續租，watchdog 併發只換發一次', async () => {
+  let clock = 0; let renewCalls = 0; let inRenew = 0; let maxInRenew = 0; let resolveObserver;
+  const observerDone = new Promise((resolve) => { resolveObserver = resolve; });
+  const lease = {
+    persistent: true,
+    async assertHeld() {},
+    async renew(handle) {
+      inRenew += 1; maxInRenew = Math.max(maxInRenew, inRenew);
+      await Promise.resolve();
+      renewCalls += 1;
+      const renewed = { ...handle, generation: renewCalls + 1, expiresAt: clock + 60_000 };
+      if (renewCalls === 3) resolveObserver('rendered');
+      inRenew -= 1;
+      return renewed;
+    }
+  };
+  const r = new SimulationRunner({
+    adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID,
+    lease, now: () => clock, sleepFn: async (ms) => { clock += ms; }
+  });
+  const manifest = await r.snapshot('observer-heartbeat');
+  r.leaseHandle = { fencingToken: 'fence-1', generation: 1, expiresAt: 60_000 };
+  assert.equal(await r.withObserverHeartbeat(() => observerDone, manifest), 'rendered');
+  assert.ok(clock >= 130_000, 'observer wait must cross 120 seconds');
+  assert.equal(renewCalls, 3); assert.equal(maxInRenew, 1);
+  clock = r.leaseHandle.expiresAt - 10_000;
+  const before = renewCalls;
+  await Promise.all([r.watchdog(manifest), r.watchdog(manifest), r.watchdog(manifest)]);
+  assert.equal(renewCalls, before + 1, 'concurrent canary probes may share only one renewal');
+  assert.equal(maxInRenew, 1);
+});
+
+test('resolver backend finding 當段即持久化，跨 segment final report 保留且 deterministic 去重', async () => {
+  const external = [];
+  const match = {
+    id: 'knockout-1', no: 1, stage: 'knockout', score: [21, 9],
+    scoreCells: ['S!A1', 'S!B1'], nameCells: ['S!C1', 'S!D1'], cells: ['S!A1', 'S!B1', 'S!C1', 'S!D1']
+  };
+  const first = new SimulationRunner({
+    adapter: new MockAdapter(), stateDir: temp(), spreadsheetId: EXPECTED_SPREADSHEET_ID,
+    plan: [match], allowedStages: ['knockout'], externalFindings: external,
+    resolver: { async namesFor() { external.push({ code: 'BACKEND_WINNER_MISMATCH', detail: 'winner mismatch', eventId: match.id }); return ['甲隊', '乙隊']; } },
+    fast: true
+  });
+  const manifest = await first.snapshot('finding-segments');
+  await first.executeMatch(manifest, match);
+  first.addFinding(manifest, 'C3_PENDING_ASSERT_FAILED', 'fixture mismatch', 'qual-25');
+  await first.persist(manifest);
+  assert.deepEqual(manifest.findings.map((item) => item.code), ['BACKEND_WINNER_MISMATCH', 'C3_PENDING_ASSERT_FAILED']);
+
+  let report;
+  const duplicateExternal = [{ code: 'BACKEND_WINNER_MISMATCH', detail: 'winner mismatch', eventId: match.id }];
+  const second = new SimulationRunner({
+    adapter: first.adapter, stateDir: first.stateDir, spreadsheetId: EXPECTED_SPREADSHEET_ID,
+    plan: [match], externalFindings: duplicateExternal,
+    stateStore: { async persistManifest() {}, async writeReport(_runId, body) { report = body; } }
+  });
+  await second.writeFinalReport(manifest, manifest.created_at);
+  assert.deepEqual(report.findings.map((item) => item.code), ['BACKEND_WINNER_MISMATCH', 'C3_PENDING_ASSERT_FAILED']);
+  assert.equal(report.findings.filter((item) => item.code === 'BACKEND_WINNER_MISMATCH').length, 1);
+  assert.equal(report.backendReadback, 1);
+});
+
+test('--preflight-only：只驗 GCS lease 與所有外部 gate，零 snapshot／state／Sheet cell I/O', async () => {
+  class PreflightAdapter extends MockAdapter {
+    constructor(options) { super({}, options); this.reads = 0; this.writes = 0; this.clears = 0; }
+    async readCells(refs) { this.reads += 1; return super.readCells(refs); }
+    async writeCells(values) { this.writes += 1; return super.writeCells(values); }
+    async clearCells(refs) { this.clears += 1; return super.clearCells(refs); }
+  }
+  const counts = { acquire: 0, assert: 0, release: 0, persist: 0 };
+  const lease = {
+    persistent: true,
+    async acquire() { counts.acquire += 1; return { fencingToken: 'preflight-fence' }; },
+    async assertHeld() { counts.assert += 1; },
+    async release() { counts.release += 1; }
+  };
+  const adapter = new PreflightAdapter({
+    armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } },
+    authoritativeRows: { qualification: Array.from({ length: 150 }, (_, index) => index + 1), knockout: Array.from({ length: 132 }, (_, index) => index + 1), invitational: Array.from({ length: 28 }, (_, index) => index + 1) }
+  });
+  const dir = temp();
+  const r = new SimulationRunner({
+    adapter, stateDir: dir, mode: 'run', armed: true, autonomous: true,
+    spreadsheetId: EXPECTED_SPREADSHEET_ID, lease,
+    stateStore: { async persistManifest() { counts.persist += 1; } },
+    plan: buildScenarioPlan('preflight-gates'), allowedStages: ['qualification', 'knockout', 'invitational']
+  });
+  const result = await r.preflightOnly('same-production-run');
+  assert.equal(result.state, 'PREFLIGHT_COMPLETE');
+  assert.deepEqual(counts, { acquire: 1, assert: 1, release: 1, persist: 0 });
+  assert.deepEqual({ reads: adapter.reads, writes: adapter.writes, clears: adapter.clears }, { reads: 0, writes: 0, clears: 0 });
+  assert.equal(fs.existsSync(path.join(dir, 'same-production-run')), false, 'preflight 不得建立正式 run state');
+  assert.equal(parseArgs(['run', '--armed', '--autonomous', '--preflight-only', '--run-id', 'same-production-run']).preflightOnly, true);
+  assert.throws(() => parseArgs(['run', '--armed', '--preflight-only', '--run-id', 'x1']), /僅允許/);
+  assert.throws(() => parseArgs(['run', '--armed', '--autonomous', '--preflight-only', '--segment', '1', '--run-id', 'x1']), /僅允許/);
+});
+
+test('--preflight-only gate 失敗仍必定釋放 production lease', async () => {
+  const counts = { acquire: 0, assert: 0, release: 0 };
+  const lease = {
+    persistent: true,
+    async acquire() { counts.acquire += 1; return { fencingToken: 'preflight-fence' }; },
+    async assertHeld() { counts.assert += 1; },
+    async release() { counts.release += 1; }
+  };
+  const adapter = new MockAdapter({}, {
+    backupGateError: new Error('BACKUP_GATE_FAILED'),
+    armedGateResult: { verified: true, liveSwitch: 0, projections: { 8: 'h', 3: 'h', 6: 'h', 7: 'h' } },
+    authoritativeRows: { qualification: [], knockout: [], invitational: [] }
+  });
+  const r = new SimulationRunner({
+    adapter, stateDir: temp(), mode: 'run', armed: true, autonomous: true,
+    spreadsheetId: EXPECTED_SPREADSHEET_ID, lease, plan: buildScenarioPlan('preflight-fail')
+  });
+  await assert.rejects(() => r.preflightOnly('preflight-fail'), /BACKUP_GATE_FAILED/);
+  assert.deepEqual(counts, { acquire: 1, assert: 1, release: 1 });
 });

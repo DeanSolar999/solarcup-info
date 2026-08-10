@@ -15,8 +15,10 @@ test('mock GCS：preimage/manifest/checkpoint/intent/restore 皆於 fencing 後�
   const store = new GcsRunState({ client, bucket: 'mock', prefix: 'state', lease });
   const manifest = { run_id: 'phase-resume', checkpoint: { completed: ['qual-1'] }, in_flight: { match: 'qual-2' }, state: 'RESTORING', reason: null, pre_image: { hidden: true } };
   await store.persistManifest(manifest, { fencingToken: 'wif-fence' });
+  await store.writeIncidentReport('phase-resume', { outcome: 'FAILED' }, { fencingToken: 'wif-fence' });
   assert.deepEqual(await store.read('phase-resume'), manifest);
   assert.ok(records.has('state/phase-resume/checkpoint.json')); assert.ok(records.has('state/phase-resume/intent.json')); assert.ok(records.has('state/phase-resume/restore.json')); assert.ok([...records.keys()].some((key) => key.startsWith('state/phase-resume/journal/'))); assert.ok(checks >= 4);
+  assert.equal(records.get('state/phase-resume/restore-incident-report.json').body.outcome, 'FAILED');
 });
 
 test('journal 每次 append 都是新 key，MANUAL_HOLD 與 COMPLETE 都寫入 terminal', async () => {

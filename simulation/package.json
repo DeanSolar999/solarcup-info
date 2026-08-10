@@ -5,7 +5,7 @@
   "description": "Safe, reversible tournament score simulation runner",
   "scripts": {
     "test": "node --test *.test.js",
-    "check": "node --check runner.js && node --check lib.js && node --check sheets-rest-adapter.js && node --check mock-adapter.js && node --check gcs-generation-lease.js && node --check gcs-run-state.js && node --check gcs-approve.js"
+    "check": "node --check runner.js && node --check lib.js && node --check scenario-engine.js && node --check observer.js && node --check report.js && node --check sheets-rest-adapter.js && node --check mock-adapter.js && node --check gcs-generation-lease.js && node --check gcs-run-state.js && node --check gcs-approve.js"
   },
   "engines": {
     "node": ">=20"

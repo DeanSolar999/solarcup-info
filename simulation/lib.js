@@ -9,7 +9,9 @@ const STATES = Object.freeze({
   CANARY_WAITING_APPROVAL: 'CANARY_WAITING_APPROVAL', SEGMENT_WAITING: 'SEGMENT_WAITING',
   RUNNING: 'RUNNING', VERIFY: 'VERIFY', RESTORING: 'RESTORING',
   RESTORE_VERIFY: 'RESTORE_VERIFY', COMPLETE: 'COMPLETE',
-  RESTORE_FAILURE: 'RESTORE_FAILURE', MANUAL_HOLD: 'MANUAL_HOLD', CANCELLED_RESTORE_REQUIRED: 'CANCELLED_RESTORE_REQUIRED'
+  RESTORE_FAILURE: 'RESTORE_FAILURE', MANUAL_HOLD: 'MANUAL_HOLD', CANCELLED_RESTORE_REQUIRED: 'CANCELLED_RESTORE_REQUIRED',
+  PREFLIGHT_READY: 'PREFLIGHT_READY', CANARY_READY: 'CANARY_READY', FULL_READY: 'FULL_READY',
+  RUNNING_PAUSED_DECISION: 'RUNNING_PAUSED_DECISION'
 });
 
 function stable(value) {
@@ -77,13 +79,14 @@ function assertLegalScore(score) {
     throw new Error('比分必須為 2 個整數');
   }
   const [a, b] = score;
-  if (a === b || !((a === 21 && b >= 0 && b <= 19) || (b === 21 && a >= 0 && a <= 19))) {
+  // 本賽事後端接受 21:20（單局 21 分到點，不延長 deuce）；只禁止平手與超界。
+  if (a === b || !((a === 21 && b >= 0 && b <= 20) || (b === 21 && a >= 0 && a <= 20))) {
     throw new Error(`非法比分：${a}:${b}`);
   }
 }
 
 // Every adjacent pair sums to 60 seconds. Each individual interval has a
-// uniform 20–40 second marginal distribution, while the complete even-length
+// uniform 25–35 second marginal distribution, while the complete even-length
 // plan remains exactly 30 seconds per match on average.
 function pairedJitter(count, random = Math.random) {
   const values = [];
@@ -92,7 +95,7 @@ function pairedJitter(count, random = Math.random) {
       values.push(30);
       break;
     }
-    const x = 20 + random() * 20;
+    const x = 25 + random() * 10;
     if (random() < 0.5) values.push(x, 60 - x);
     else values.push(60 - x, x);
   }
@@ -127,8 +130,14 @@ function appendJournal(runDir, event) {
 // 是賽前預填的，模擬不得改動。
 function qualMatch(index) {
   const row = index + 2;
+  const published = require('../tournament-data.js').SolarCupData;
+  const source = Object.values(published.QUAL_SCHEDULE)
+    .flat()
+    .find((item) => item.n === index + 1);
+  if (!source?.a || !source?.b) throw new Error(`QUALIFICATION_TEAM_SOURCE_MISSING:${index + 1}`);
   return {
     id: `qual-${index + 1}`, stage: 'qualification', no: index + 1,
+    teamA: source.a, teamB: source.b, teamSource: 'tournament-data:QUAL_SCHEDULE',
     scoreCells: [`2_資格賽成績!K${row}`, `2_資格賽成績!L${row}`], nameCells: null,
     cells: [`2_資格賽成績!K${row}`, `2_資格賽成績!L${row}`]
   };
@@ -149,10 +158,17 @@ function fullPlan(knockoutNos) {
     const scoreCells = [`4_淘汰賽成績!M${row}`, `4_淘汰賽成績!N${row}`];
     return { id: `knockout-${i + 1}`, stage: 'knockout', no, nameCells, scoreCells, cells: [...nameCells, ...scoreCells] };
   });
+  const published = require('../tournament-data.js').SolarCupData;
+  const invitation = published.buildInvitational();
   const invitational = Array.from({ length: 28 }, (_, i) => {
     const row = i + 2;
+    const source = invitation.matches[i];
+    if (!source?.a?.label || !source?.b?.label || !Number.isInteger(source.n)) {
+      throw new Error(`INVITATIONAL_TEAM_SOURCE_MISSING:${i + 1}`);
+    }
     return {
-      id: `invitational-${i + 1}`, stage: 'invitational', no: null,
+      id: `invitational-${i + 1}`, stage: 'invitational', no: source.n,
+      teamA: source.a.label, teamB: source.b.label, teamSource: 'tournament-data:INVITE_SCHEDULE',
       scoreCells: [`5_曜請成績!J${row}`, `5_曜請成績!K${row}`], nameCells: null,
       cells: [`5_曜請成績!J${row}`, `5_曜請成績!K${row}`]
     };
