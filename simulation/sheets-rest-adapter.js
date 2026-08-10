@@ -1,6 +1,8 @@
 'use strict';
 
-const { clone, hash } = require('./lib');
+const { clone, hash, fullPlan } = require('./lib');
+const { loadTopology, knockoutNumbers } = require('./bracket');
+const scheduleData = require('../schedule-data.js');
 
 const SPREADSHEET_ID = '1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA';
 const BACKUP_FILE_ID = '15WHaxX9Qa-6-tw9XzQ-G0LgkzdxxGDbHqLv8dZ048RM';
@@ -49,6 +51,35 @@ function projectionHashMismatch(id, actual, expected) {
   error.actualHash = safeActual;
   error.expectedHash = safeExpected;
   return error;
+}
+
+function canonicalScheduleRows() {
+  const matches = scheduleData?.matches;
+  if (!Array.isArray(matches) || matches.length !== 310) {
+    throw new Error(`AUTHORITATIVE_SCHEDULE_DATA_COUNT:${matches?.length ?? 0}/310`);
+  }
+  const allNos = matches.map((match) => match?.n);
+  if (new Set(allNos).size !== 310 || allNos.some((no, index) => !Number.isInteger(no) || no !== index + 1)) {
+    throw new Error('AUTHORITATIVE_SCHEDULE_DATA_NOT_COMPLETE');
+  }
+  const rows = {
+    qualification: matches.filter((match) => match.stage === '資格賽').map((match) => match.n),
+    knockout: matches.filter((match) => match.n > 150 && match.grp !== '曜請組').map((match) => match.n),
+    invitational: matches.filter((match) => match.grp === '曜請組').map((match) => match.n)
+  };
+  const expectedCounts = { qualification: 150, knockout: 132, invitational: 28 };
+  for (const [key, expected] of Object.entries(expectedCounts)) {
+    if (rows[key].length !== expected) throw new Error(`AUTHORITATIVE_SCHEDULE_STAGE_COUNT:${key}:${rows[key].length}/${expected}`);
+  }
+  const union = Object.values(rows).flat().sort((a, b) => a - b);
+  if (new Set(union).size !== 310 || union.some((no, index) => no !== index + 1)) {
+    throw new Error('AUTHORITATIVE_SCHEDULE_STAGE_PARTITION_INVALID');
+  }
+  const topologyNos = knockoutNumbers(loadTopology());
+  if (JSON.stringify(rows.knockout) !== JSON.stringify(topologyNos)) {
+    throw new Error('AUTHORITATIVE_SCHEDULE_TOPOLOGY_MISMATCH');
+  }
+  return rows;
 }
 
 class SheetsRestAdapter {
@@ -131,18 +162,45 @@ class SheetsRestAdapter {
     return response.values || [];
   }
   async authoritativeMatchRows() {
+    const plan = fullPlan();
+    const canonicalRows = canonicalScheduleRows();
+    if (plan.length !== 310 || new Set(plan.map((match) => match.id)).size !== 310
+      || new Set(plan.map((match) => match.no)).size !== 310) {
+      throw new Error('AUTHORITATIVE_LOCAL_PLAN_NOT_UNIQUE');
+    }
+    const allNos = plan.map((match) => match.no).sort((a, b) => a - b);
+    if (allNos.some((no, index) => no !== index + 1)) throw new Error('AUTHORITATIVE_LOCAL_PLAN_NOT_COMPLETE');
     const specs = [
-      { key: 'qualification', range: '2_資格賽成績!A2:A151', expected: 150, first: 1 },
-      { key: 'knockout', range: '4_淘汰賽成績!A2:A133', expected: 132, first: 151 },
-      { key: 'invitational', range: '5_曜請成績!A2:A29', expected: 28, first: 283 }
+      { key: 'qualification', prefix: 'qual', range: '2_資格賽成績!A2:A151', expected: 150, columns: { score: ['K', 'L'], names: [] } },
+      { key: 'knockout', prefix: 'knockout', range: '4_淘汰賽成績!A2:A133', expected: 132, columns: { score: ['M', 'N'], names: ['J', 'L'] } },
+      { key: 'invitational', prefix: 'invitational', range: '5_曜請成績!A2:A29', expected: 28, columns: { score: ['J', 'K'], names: [] } }
     ];
     const result = {};
     for (const spec of specs) {
+      const matches = plan.filter((match) => match.stage === spec.key);
+      if (matches.length !== spec.expected) throw new Error(`AUTHORITATIVE_LOCAL_PLAN_COUNT:${spec.key}:${matches.length}/${spec.expected}`);
+      if (JSON.stringify(matches.map((match) => match.no)) !== JSON.stringify(canonicalRows[spec.key])) {
+        throw new Error(`AUTHORITATIVE_LOCAL_PLAN_SCHEDULE_MISMATCH:${spec.key}`);
+      }
+      for (let index = 0; index < matches.length; index += 1) {
+        const match = matches[index]; const row = index + 2;
+        const expectedId = `${spec.prefix}-${index + 1}`;
+        const expectedNameCells = spec.columns.names.map((column) => `${spec.range.slice(0, spec.range.indexOf('!'))}!${column}${row}`);
+        const expectedScoreCells = spec.columns.score.map((column) => `${spec.range.slice(0, spec.range.indexOf('!'))}!${column}${row}`);
+        const expectedCells = [...expectedNameCells, ...expectedScoreCells];
+        if (match.id !== expectedId || JSON.stringify(match.nameCells || []) !== JSON.stringify(expectedNameCells)
+          || JSON.stringify(match.scoreCells) !== JSON.stringify(expectedScoreCells)
+          || JSON.stringify(match.cells) !== JSON.stringify(expectedCells)) {
+          throw new Error(`AUTHORITATIVE_LOCAL_PLAN_CELLS:${spec.key}:row=${row}:match=${match.id}`);
+        }
+      }
       const rows = await this.values(spec.range);
       const ids = rows.map((row) => Number(row?.[0]));
-      if (rows.length !== spec.expected || ids.some((id, index) => !Number.isInteger(id) || id !== spec.first + index)) {
-        const bad = ids.findIndex((id, index) => id !== spec.first + index);
-        throw new Error(`AUTHORITATIVE_MATCH_ROW_MAPPING:${spec.key}:row=${bad < 0 ? rows.length + 2 : bad + 2}:actual=${bad < 0 ? 'missing' : ids[bad]}:expected=${bad < 0 ? spec.expected : spec.first + bad}`);
+      if (new Set(ids).size !== ids.length) throw new Error(`AUTHORITATIVE_MATCH_ROW_DUPLICATE:${spec.key}`);
+      if (rows.length !== spec.expected || ids.some((id, index) => !Number.isInteger(id) || id !== canonicalRows[spec.key][index])) {
+        const bad = ids.findIndex((id, index) => !Number.isInteger(id) || id !== canonicalRows[spec.key][index]);
+        const index = bad < 0 ? rows.length : bad;
+        throw new Error(`AUTHORITATIVE_MATCH_ROW_MAPPING:${spec.key}:row=${index + 2}:actual=${bad < 0 ? 'missing' : ids[index]}:expected=${canonicalRows[spec.key][index] ?? 'none'}`);
       }
       result[spec.key] = ids;
     }
@@ -220,5 +278,5 @@ function parseAllowedRef(a1, observedSheetIds = {}) {
 
 module.exports = {
   SheetsRestAdapter, SPREADSHEET_ID, BACKUP_FILE_ID, SHEET_POLICY,
-  PROJECTION_RANGES, PROJECTION_SHAPES, canonicalProjectionValues, parseAllowedRef
+  PROJECTION_RANGES, PROJECTION_SHAPES, canonicalProjectionValues, canonicalScheduleRows, parseAllowedRef
 };

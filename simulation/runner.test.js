@@ -8,7 +8,7 @@ const { execFileSync } = require('node:child_process');
 const test = require('node:test');
 const { SimulationRunner, EXPECTED_SPREADSHEET_ID, EXPECTED_BACKUP_FILE_ID, cellForNumber, parseArgs, parseProjectionBaselines, parseBackupEvidence, backupEvidenceDigest } = require('./runner');
 const { MockAdapter } = require('./mock-adapter');
-const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES, canonicalProjectionValues } = require('./sheets-rest-adapter');
+const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES, canonicalProjectionValues, canonicalScheduleRows } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError, fullPlan } = require('./lib');
 const { KnockoutResolver, ScriptedResolver } = require('./knockout-resolver');
@@ -242,16 +242,31 @@ test('backup hard gate：固定 Drive ID、Google Sheet mime、title/source prov
 
 test('authoritative rows：每個 Sheet row 必須逐列對上 global match ID', async () => {
   const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test' });
-  let corrupt = false;
+  const canonical = canonicalScheduleRows();
+  let corrupt = null;
   adapter.values = async (range) => {
-    if (range.startsWith('2_')) return Array.from({ length: 150 }, (_, index) => [index + 1]);
-    if (range.startsWith('4_')) return Array.from({ length: 132 }, (_, index) => [151 + index + (corrupt && index === 4 ? 1 : 0)]);
-    if (range.startsWith('5_')) return Array.from({ length: 28 }, (_, index) => [283 + index]);
+    if (range.startsWith('2_')) return canonical.qualification.map((no) => [no]);
+    if (range.startsWith('4_')) return canonical.knockout.map((no, index) => {
+      if (index === 6 && corrupt === 'mapping') return [160];
+      if (index === 6 && corrupt === 'duplicate') return [canonical.knockout[5]];
+      return [no];
+    });
+    if (range.startsWith('5_')) return canonical.invitational.map((no) => [no]);
     return [['schedule']];
   };
-  const rows = await adapter.authoritativeMatchRows(); assert.equal(rows.knockout[0], 151); assert.equal(rows.invitational.at(-1), 310);
-  corrupt = true;
-  await assert.rejects(() => adapter.authoritativeMatchRows(), /AUTHORITATIVE_MATCH_ROW_MAPPING:knockout:row=6/);
+  const rows = await adapter.authoritativeMatchRows();
+  assert.equal(rows.knockout[0], 151);
+  assert.equal(rows.knockout[6], 161, '正式檔案的淘汰賽第 8 列是場次 161，不是連續推定的 157');
+  assert.equal(rows.knockout.length, 132);
+  assert.equal(new Set(rows.knockout).size, 132);
+  assert.equal(rows.invitational[0], 157);
+  assert.equal(rows.invitational.at(-1), 310);
+  const union = Object.values(rows).flat().sort((a, b) => a - b);
+  assert.deepEqual(union, Array.from({ length: 310 }, (_, index) => index + 1));
+  corrupt = 'mapping';
+  await assert.rejects(() => adapter.authoritativeMatchRows(), /AUTHORITATIVE_MATCH_ROW_MAPPING:knockout:row=8:actual=160:expected=161/);
+  corrupt = 'duplicate';
+  await assert.rejects(() => adapter.authoritativeMatchRows(), /AUTHORITATIVE_MATCH_ROW_DUPLICATE:knockout/);
 });
 
 test('ci-dry-run：缺 production env 仍只驗證完整 310 場，且不建立外部 adapter', () => {
