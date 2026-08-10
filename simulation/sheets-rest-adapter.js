@@ -16,6 +16,40 @@ const PROJECTION_RANGES = Object.freeze({
   '3': '3_資格賽積分榜!A1:Z109', '6': '6_積分總表!A1:Z109',
   '7': '7_球團積分!A1:Z11', '8': '8_發布_戰情看板!A1:Z311'
 });
+const PROJECTION_SHAPES = Object.freeze({
+  '3': { rows: 109, columns: 26 }, '6': { rows: 109, columns: 26 },
+  '7': { rows: 11, columns: 26 }, '8': { rows: 311, columns: 26 }
+});
+
+function canonicalProjectionValues(id, values) {
+  const shape = PROJECTION_SHAPES[id];
+  if (!shape) throw new Error(`PROJECTION_SHAPE_MISSING:${id}`);
+  return Array.from({ length: shape.rows }, (_, rowIndex) => {
+    const row = Array.isArray(values?.[rowIndex]) ? values[rowIndex] : [];
+    return Array.from({ length: shape.columns }, (_, columnIndex) => {
+      const value = row[columnIndex];
+      // Sheets Values REST uses '' for formula-produced blanks and omits
+      // trailing blank cells/rows. The connector returns the same cells as
+      // null in a fixed rectangle. Both are one semantic projection state.
+      return value === '' || value === null || value === undefined ? null : value;
+    });
+  });
+}
+
+function projectionHashMismatch(id, actual, expected) {
+  const safeId = String(id).replace(/[^0-9]/g, '') || 'UNKNOWN';
+  const safeActual = /^[a-f0-9]{64}$/i.test(actual) ? actual.toLowerCase() : 'INVALID_ACTUAL_HASH';
+  const safeExpected = /^[a-f0-9]{64}$/i.test(expected) ? expected.toLowerCase() : 'INVALID_EXPECTED_HASH';
+  const error = new Error(`projection ${safeId} hash mismatch`);
+  // safeError preserves explicit error codes. These values are hashes of
+  // public projection ranges, not credentials, so production logs may expose
+  // them to diagnose which canonical baseline drifted before any write.
+  error.code = `PROJECTION_HASH_MISMATCH:${safeId}:ACTUAL:${safeActual}:EXPECTED:${safeExpected}`;
+  error.projectionId = safeId;
+  error.actualHash = safeActual;
+  error.expectedHash = safeExpected;
+  return error;
+}
 
 class SheetsRestAdapter {
   constructor({ spreadsheetId, accessToken, tokenProvider = null, requestTimeoutMs = 10_000, armedGateVerifier = null, projectionBaselines = null }) {
@@ -124,7 +158,8 @@ class SheetsRestAdapter {
     const liveSwitch = live?.[0]?.[0]; const projections = {};
     for (const id of requirements.requiredProjections) {
       const baseline = this.projectionBaselines[id]; if (typeof baseline !== 'string') throw new Error(`缺少 projection ${id} baseline`);
-      projections[id] = hash(await this.values(PROJECTION_RANGES[id])); if (projections[id] !== baseline) throw new Error(`projection ${id} hash 不符`);
+      projections[id] = hash(canonicalProjectionValues(id, await this.values(PROJECTION_RANGES[id])));
+      if (projections[id] !== baseline) throw projectionHashMismatch(id, projections[id], baseline);
     }
     return { verified: true, liveSwitch, projections };
   }
@@ -183,4 +218,7 @@ function parseAllowedRef(a1, observedSheetIds = {}) {
   return { sheetId: policy.sheetId, startRowIndex: row - 1, endRowIndex: row, startColumnIndex: col, endColumnIndex: col + 1 };
 }
 
-module.exports = { SheetsRestAdapter, SPREADSHEET_ID, BACKUP_FILE_ID, SHEET_POLICY, PROJECTION_RANGES, parseAllowedRef };
+module.exports = {
+  SheetsRestAdapter, SPREADSHEET_ID, BACKUP_FILE_ID, SHEET_POLICY,
+  PROJECTION_RANGES, PROJECTION_SHAPES, canonicalProjectionValues, parseAllowedRef
+};

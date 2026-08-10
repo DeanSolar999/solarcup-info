@@ -43,7 +43,7 @@ Google Cloud 基礎設施已建立並完成設定驗證：
 - Workload Identity Federation：pool／provider `solarcup-gh-pool/solarcup-gh-provider`；provider 僅允許 repository ID `1288512590`、owner ID `254364847`、`refs/heads/main` 與 `workflow_dispatch`。
 - service account 已完成 WIF 綁定，並具上述 bucket 的 `objectAdmin` 權限。
 
-正式全日推演入口為 `autonomous-simulate.yml`；由單次 `workflow_dispatch` 自動完成 canary、清空輸入、5 段推演、前端觀測、exact restore 與最終報告。任何失敗／取消都會喚起獨立 recovery job。
+正式全日推演入口為 `autonomous-simulate.yml`；`workflow_dispatch` 的 `preflight_only=true` 只驗 WIF、GCS lease、備份、projection、LIVE switch 與 1–310 mapping，不建立 run state，也不啟動 simulate／recovery。確認成功後，改用新的唯一 `run_id` 並維持預設 `false`，才會自動完成 canary、清空輸入、5 段推演、前端觀測、exact restore 與最終報告。
 
 1. `dry-run.yml` 只跑 `ci-dry-run`，不要求 Google 環境變數、不建立 adapter、lease 或外部連線；它驗證完整的 310 場規劃。
 2. `autonomous-simulate.yml` 先 snapshot 全部 310 場，再對資格賽、淘汰賽、曜請賽三張輸入表各寫一格 sentinel。readback 正確、對外網站全部可 render，且三格 exact restore 後，才進入 clear barrier 與正式推演。
@@ -57,6 +57,7 @@ GCS durable state 固定在 `runs/<run_id>/`：`manifest`、`checkpoint`、`inte
 - Environment：`production`（不要設定 required reviewer，避免自動 recovery 被人工審核卡住；正式推演由單次 `workflow_dispatch` 明確啟動）。
 - Variables：`GCP_WIF_PROVIDER`、`GCP_WIF_SERVICE_ACCOUNT`、`SOLAR_CUP_SPREADSHEET_ID`、`SOLAR_CUP_GCS_BUCKET`。
 - Projection baselines：由 `autonomous-simulate.yml` 的 preflight／simulate／recovery job-level `env` 固定，不使用 repository secret，也不可由 dispatch input 覆寫。
+- Projection hash 在計算前固定展開為 A:Z 矩形，將 REST 的空字串、`null` 與省略的尾端空白格／列視為同一個空白狀態。workflow 內的四組 baseline 必須由正式 Sheet 與原生備份各自以 `UNFORMATTED_VALUE` 計算，且四個 ID 全部逐一相同後才可更新。
 - Google WIF attribute condition：只允許 `DeanSolar999/solarcup-info` 的 `main` 分支與 `workflow_dispatch`；agent 分支只供 PR review，不應取得 production OIDC。
 
 workflow 會先檢查 `run_id` 格式，再取得 OIDC token；正式啟動前仍須確認 Environment variables、Sheet 分享權限與固定備份證據均有效。

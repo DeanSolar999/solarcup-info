@@ -8,7 +8,7 @@ const { execFileSync } = require('node:child_process');
 const test = require('node:test');
 const { SimulationRunner, EXPECTED_SPREADSHEET_ID, EXPECTED_BACKUP_FILE_ID, cellForNumber, parseArgs, parseProjectionBaselines, parseBackupEvidence, backupEvidenceDigest } = require('./runner');
 const { MockAdapter } = require('./mock-adapter');
-const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES } = require('./sheets-rest-adapter');
+const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES, canonicalProjectionValues } = require('./sheets-rest-adapter');
 const { GcsJsonClient, GcsGenerationLease } = require('./gcs-generation-lease');
 const { STATES, assertLegalScore, pairedJitter, sameCells, scoreFor, writeJson, safeError, fullPlan } = require('./lib');
 const { KnockoutResolver, ScriptedResolver } = require('./knockout-resolver');
@@ -472,12 +472,48 @@ test('long wait：假時鐘下固定 heartbeat 續約，40 秒 jitter 不會耗�
 
 test('projection boundary 與 baseline parser 均 fail closed', async () => {
   assert.equal(PROJECTION_RANGES['8'], '8_發布_戰情看板!A1:Z311');
-  const values = Array.from({ length: 311 }, (_, i) => [i]); const baseline = require('./lib').hash(values); const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test', projectionBaselines: { 3: baseline, 6: baseline, 7: baseline, 8: baseline } });
+  const values = Array.from({ length: 311 }, (_, i) => [i]); const baseline = require('./lib').hash(canonicalProjectionValues('8', values)); const adapter = new SheetsRestAdapter({ spreadsheetId: SPREADSHEET_ID, accessToken: 'test', projectionBaselines: { 3: baseline, 6: baseline, 7: baseline, 8: baseline } });
   const ranges = []; adapter.values = async (range) => { ranges.push(range); return range === '0_賽事設定!B12' ? [[0]] : values; };
   await adapter.verifyProjectionBaselines({ requiredProjections: ['8'], liveCell: '0_賽事設定!B12', requiredLiveValue: 0 });
   assert.ok(ranges.includes('8_發布_戰情看板!A1:Z311'));
   assert.deepEqual(parseProjectionBaselines(JSON.stringify({ 3: 'a'.repeat(64), 6: 'b'.repeat(64), 7: 'c'.repeat(64), 8: 'd'.repeat(64) })), { 3: 'a'.repeat(64), 6: 'b'.repeat(64), 7: 'c'.repeat(64), 8: 'd'.repeat(64) });
   assert.throws(() => parseProjectionBaselines('{"8":{"range":"bad"}}'), /hash map|baseline/);
+});
+
+test('projection canonicalization：REST 空字串／省略尾格與 connector null 固定矩形等價', () => {
+  const connector = Array.from({ length: 109 }, () => Array(26).fill(null));
+  connector[0][0] = '隊伍'; connector[0][5] = '覆蓋'; connector[1][0] = 1; connector[1][8] = 0;
+  connector[50][2] = '競技組';
+  const raw = [
+    ['隊伍', '', '', '', '', '覆蓋'],
+    [1, '', '', '', '', '', '', '', 0],
+    ...Array.from({ length: 48 }, () => []),
+    ['', '', '競技組']
+    // Values API 會省略第 52–109 列及每列尾端空白格。
+  ];
+  const canonicalConnector = canonicalProjectionValues('6', connector);
+  const canonicalRaw = canonicalProjectionValues('6', raw);
+  assert.deepEqual(canonicalRaw, canonicalConnector);
+  assert.equal(require('./lib').hash(canonicalRaw), require('./lib').hash(canonicalConnector));
+});
+
+test('projection mismatch 安全錯誤包含 id、actual 與 expected SHA-256', async () => {
+  const values = [['projection-6']];
+  const actual = require('./lib').hash(canonicalProjectionValues('6', values));
+  const expected = 'a'.repeat(64);
+  const adapter = new SheetsRestAdapter({
+    spreadsheetId: SPREADSHEET_ID, accessToken: 'test',
+    projectionBaselines: { 6: expected }
+  });
+  adapter.values = async (range) => range === '0_賽事設定!B12' ? [[0]] : values;
+  let failure;
+  await assert.rejects(
+    () => adapter.verifyProjectionBaselines({ requiredProjections: ['6'], liveCell: '0_賽事設定!B12', requiredLiveValue: 0 }),
+    (error) => { failure = error; return error.code === `PROJECTION_HASH_MISMATCH:6:ACTUAL:${actual}:EXPECTED:${expected}`; }
+  );
+  assert.equal(failure.projectionId, '6');
+  assert.equal(failure.actualHash, actual); assert.equal(failure.expectedHash, expected);
+  assert.equal(safeError(failure), `ERROR:PROJECTION_HASH_MISMATCH:6:ACTUAL:${actual}:EXPECTED:${expected}`);
 });
 
 

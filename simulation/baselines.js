@@ -11,7 +11,7 @@
    輸出可直接餵給 SOLAR_CUP_PROJECTION_BASELINES。 */
 
 const { accessToken } = require('./sa-token');
-const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES } = require('./sheets-rest-adapter');
+const { SheetsRestAdapter, SPREADSHEET_ID, PROJECTION_RANGES, canonicalProjectionValues } = require('./sheets-rest-adapter');
 const { hash } = require('./lib');
 
 async function main() {
@@ -29,7 +29,7 @@ async function main() {
   const out = {};
   for (const [id, range] of Object.entries(PROJECTION_RANGES)) {
     const values = await adapter.values(range);
-    out[id] = hash(values);
+    out[id] = hash(canonicalProjectionValues(id, values));
     console.error(`· projection ${id}  ${range}  ${values.length} 列  ${out[id].slice(0, 16)}…`);
   }
   process.stdout.write(`${JSON.stringify(out)}\n`);

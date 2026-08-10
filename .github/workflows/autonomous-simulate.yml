@@ -6,6 +6,11 @@ on:
         description: Immutable run identifier
         required: true
         type: string
+      preflight_only:
+        description: Run read-only production preflight without simulation or recovery
+        required: false
+        default: false
+        type: boolean
 permissions: { contents: read }
 concurrency: { group: solarcup-production-sheet, cancel-in-progress: false }
 jobs:
@@ -20,7 +25,7 @@ jobs:
       SOLAR_CUP_BACKUP_CREATED_AT: 2026-08-10T09:31:26.569Z
       SOLAR_CUP_BACKUP_SOURCE_ID: 1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA
       SOLAR_CUP_BACKUP_SIZE: '76499'
-      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"23ec2261d059f04eba310a5499654518f562466656d4ea3583b5056f81a47da4","6":"c6b6cda611f9968534acf4da40aeee774f7ae865765ce365061aab1d0199b920","7":"759bf4f7d6a86f17a75f77ea92a5b9199193c4e80ecc3b2eefc9cf2c7a378fca","8":"bd054c98dea579c2e3f73e834f1f0a6ce7c69394d074b2bd918c9c75fc042b4a"}'
+      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"4bea314d53dfb638f7cfac92332845afba333d0c9763f32fc2e8afda3e61b781","6":"087553ad9eebfba8f31408834ae6734221ba64a7c7575008a069b888755196e4","7":"81137b66f236cd4f84fed2bab3436b40426dd2a94dd8e6191d557f66b8f7417a","8":"b97a98625dc411b1876cfcb1145231f2a35f862436da8d62b114f94eb9fa7a55"}'
     permissions: { contents: read, id-token: write }
     steps:
       - id: safe
@@ -49,7 +54,7 @@ jobs:
         run: node simulation/runner.js run --armed --autonomous --preflight-only --run-id "$RUN_ID"
   simulate:
     needs: preflight
-    if: needs.preflight.result == 'success' && github.ref == 'refs/heads/main'
+    if: needs.preflight.result == 'success' && inputs.preflight_only == false && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 330
     environment: production
@@ -59,7 +64,7 @@ jobs:
       SOLAR_CUP_BACKUP_CREATED_AT: 2026-08-10T09:31:26.569Z
       SOLAR_CUP_BACKUP_SOURCE_ID: 1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA
       SOLAR_CUP_BACKUP_SIZE: '76499'
-      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"23ec2261d059f04eba310a5499654518f562466656d4ea3583b5056f81a47da4","6":"c6b6cda611f9968534acf4da40aeee774f7ae865765ce365061aab1d0199b920","7":"759bf4f7d6a86f17a75f77ea92a5b9199193c4e80ecc3b2eefc9cf2c7a378fca","8":"bd054c98dea579c2e3f73e834f1f0a6ce7c69394d074b2bd918c9c75fc042b4a"}'
+      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"4bea314d53dfb638f7cfac92332845afba333d0c9763f32fc2e8afda3e61b781","6":"087553ad9eebfba8f31408834ae6734221ba64a7c7575008a069b888755196e4","7":"81137b66f236cd4f84fed2bab3436b40426dd2a94dd8e6191d557f66b8f7417a","8":"b97a98625dc411b1876cfcb1145231f2a35f862436da8d62b114f94eb9fa7a55"}'
     permissions: { contents: read, id-token: write }
     steps:
       - id: safe
@@ -166,7 +171,7 @@ jobs:
             simulation/runs/**/final-report.json
             simulation/runs/**/*.md
   recovery:
-    if: always() && (needs.simulate.result == 'failure' || needs.simulate.result == 'cancelled')
+    if: always() && inputs.preflight_only == false && (needs.simulate.result == 'failure' || needs.simulate.result == 'cancelled')
     needs: simulate
     runs-on: ubuntu-latest
     timeout-minutes: 55
@@ -177,7 +182,7 @@ jobs:
       SOLAR_CUP_BACKUP_CREATED_AT: 2026-08-10T09:31:26.569Z
       SOLAR_CUP_BACKUP_SOURCE_ID: 1kQ-D248ADzN1SxDfQGPkZ-MHhk11sR4zoll3qxL1YdA
       SOLAR_CUP_BACKUP_SIZE: '76499'
-      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"23ec2261d059f04eba310a5499654518f562466656d4ea3583b5056f81a47da4","6":"c6b6cda611f9968534acf4da40aeee774f7ae865765ce365061aab1d0199b920","7":"759bf4f7d6a86f17a75f77ea92a5b9199193c4e80ecc3b2eefc9cf2c7a378fca","8":"bd054c98dea579c2e3f73e834f1f0a6ce7c69394d074b2bd918c9c75fc042b4a"}'
+      SOLAR_CUP_PROJECTION_BASELINES: '{"3":"4bea314d53dfb638f7cfac92332845afba333d0c9763f32fc2e8afda3e61b781","6":"087553ad9eebfba8f31408834ae6734221ba64a7c7575008a069b888755196e4","7":"81137b66f236cd4f84fed2bab3436b40426dd2a94dd8e6191d557f66b8f7417a","8":"b97a98625dc411b1876cfcb1145231f2a35f862436da8d62b114f94eb9fa7a55"}'
     permissions: { contents: read, id-token: write }
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
