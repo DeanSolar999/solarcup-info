@@ -166,7 +166,7 @@ body { background: var(--bg); font-family: -apple-system, 'PingFang TC', 'Helvet
   <div class="sheet-person" id="sheetPersonInfo"></div>
   <button class="sheet-btn" id="btnReceive"><span class="btn-icon icon-receive">✓</span><span id="btnReceiveLabel">標記已領取</span></button>
   <button class="sheet-btn" id="btnUndo" style="display:none"><span class="btn-icon icon-undo">↩</span>取消完成狀態</button>
-  <button class="sheet-btn" id="btnMove"><span class="btn-icon icon-move">↕</span>移動到其他場次</button>
+  <button class="sheet-btn" id="btnMove"><span class="btn-icon icon-move">↕</span>移動到其他分類</button>
   <button class="sheet-btn" id="btnHide"><span class="btn-icon icon-hide">✕</span>從此清單移除</button>
   <button class="sheet-btn cancel" id="btnCancel"><span class="btn-icon icon-cancel">—</span>取消</button>
 </div>
@@ -375,7 +375,7 @@ function openActionSheet(sid, pid) {
   document.getElementById('btnReceiveLabel').textContent = sec?.actionLabel || '標記已領取';
   document.getElementById('btnReceive').style.display = recv ? 'none' : '';
   document.getElementById('btnUndo').style.display    = recv ? ''     : 'none';
-  document.getElementById('btnMove').style.display    = sec?.type === 'session' ? '' : 'none';
+  document.getElementById('btnMove').style.display    = '';
   showSheet('actionSheet');
 }
 
@@ -401,10 +401,11 @@ document.getElementById('btnHide').addEventListener('click', () => {
 });
 document.getElementById('btnMove').addEventListener('click', () => { hideSheet('actionSheet'); openMoveSheet(); });
 
+const SECTION_COLORS = {session:'#1E3D5C', spot:'#2A5020', '711':'#7A5200', gather:'#2E3A6E'};
 function openMoveSheet() {
-  const opts = SECTIONS.filter(s => s.type==='session' && s.id!==activeSid).map(s => `
+  const opts = SECTIONS.filter(s => s.id !== activeSid).map(s => `
     <div class="move-sheet-item" data-target="${s.id}">
-      <div class="move-dot"></div>
+      <div class="move-dot" style="background:${SECTION_COLORS[s.type]||'#1E3D5C'}"></div>
       <div><div class="move-label">${s.label}</div><div class="move-sub">${s.info.replace('\n',' · ')}</div></div>
     </div>`).join('');
   document.getElementById('moveOptions').innerHTML = opts;
