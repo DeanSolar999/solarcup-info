@@ -1094,7 +1094,7 @@
       const pre=d.preMatches.map(m=>card(m,m.seat)).join('');
       return `<div class="r1block"><div class="prehead">初賽<span class="pn">20 隊抽籤單淘汰 · 10 場 → 晉級 10 隊（配對＝現場抽籤後公布）</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
           <div class="r1scroll">${pre}</div></div>
-        <div class="rrblock"><div class="rrhead">複賽<span class="pn">A／B 兩組 × 5 隊五角全循環 · 每組 10 場 · 各取前二晉級準決賽</span></div>
+        <div class="rrblock"><div class="rrhead">複賽<span class="pn">A／B 兩組 × 5 隊五角全循環 · 每組 10 場 · 各取前二晉級準決賽（準決賽配對＝現場抽籤）</span></div>
           <div class="rrgrid">${d.groups.map((_,i)=>rrPentBoard(d,tr,i)).join('')}</div></div>`;
     }
     const triPlayed=d.triMatches.some(m=>m.done),triDone=!!d.triDone;
@@ -1128,7 +1128,7 @@
     let head=`<div class="dh"><span class="dbadge ${tr.badge}">${tr.name}</span>
       <span class="dt">${tr.en} 階級晉級路徑</span><span class="dn">${comp?'競技組 · 20 隊':'休閒組 · 30 隊'}</span></div>`;
     head+=comp
-      ?`<div class="dsub">初賽 <span class="hl">20 隊抽籤單淘汰 10 場</span> → 10 隊；複賽 <span class="hl">A／B 兩組各 5 隊五角全循環</span>（每組 10 場、共 20 場）各取前二 → 準決賽 2 場（A1×B2、B1×A2）→ 決賽 ＋ 季軍賽（競技組無 8 強）</div>`
+      ?`<div class="dsub">初賽 <span class="hl">20 隊抽籤單淘汰 10 場</span> → 10 隊；複賽 <span class="hl">A／B 兩組各 5 隊五角全循環</span>（每組 10 場、共 20 場）各取前二 → 準決賽 2 場（配對＝現場抽籤後公布）→ 決賽 ＋ 季軍賽（競技組無 8 強）</div>`
       :`<div class="dsub">初賽 <span class="hl">30 隊單淘汰 15 場</span> → 15 隊；複賽 <span class="hl">12 隊單淘汰取 6 ＋ 3 隊三角循環取 2</span> → 8 強 → 準決賽 → 決賽 ＋ 季軍賽</div>`;
     head+=`<div class="taphint">▸ 點任一隊伍節點，查看該隊累積戰績檔案　·　數字為官方場次編號</div>`;
     detail.innerHTML=head
