@@ -535,9 +535,8 @@
   };
   // 五角全循環 10 場的對戰順序（0-based；對應官方公告圖的場次編號遞增順序）
   //   第一輪 (1,2)(3,4)｜第二輪 (2,5)(1,4)｜第三輪 (3,5)(2,4)｜第四輪 (1,5)(2,3)｜第五輪 (1,3)(4,5)
-  const RR_PAIRS=[[0,1],[2,3],[1,4],[0,3],[2,4],[1,3],[0,4],[1,2],[0,2],[3,4]];
-  const TRI_PAIRS=[[0,1],[1,2],[0,2]];   // 三角循環 P／Q／R
-  const SEATS=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5']; // 初賽勝方進入的複賽席次
+  // （RR_PAIRS／TRI_PAIRS 已移除：循環組成員與配對一律由雲端場次列決定，不再結構推導）
+  const SEATS=['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5']; // 官方表定：初賽第 i 場勝方進入的複賽席次
 
   // 各階級賽程進度拉桿 — 兩種賽制各自的階梯（競技無 8 強）
   const PROGLBL={
@@ -576,53 +575,46 @@
   // 淘汰賽的對戰組合是現場抽籤後由賽務填入 4_淘汰賽成績，因此每一場的參賽隊伍
   // 與比分都直接讀雲端；站上不再模擬任何抽籤或比分。
   let LIVE=null, LIVE_M={}, BY_LABEL={};
-  let _TD_TIERS=null;
-  function tdTiers(){
-    if(_TD_TIERS!==null)return _TD_TIERS;
-    try{ _TD_TIERS = (window.SolarCupData&&SolarCupData.buildTournament) ? SolarCupData.buildTournament(LIVE).tiers : false; }
-    catch(e){ _TD_TIERS=false; }
-    return _TD_TIERS;
-  }
   function setLiveData(d){
-    LIVE=d||null; LIVE_M=(d&&d.matches)||{}; _TD_TIERS=null; BY_LABEL={};
+    LIVE=d||null; LIVE_M=(d&&d.matches)||{}; BY_LABEL={};
     try{
       if(window.SolarCupData&&SolarCupData.buildAllTeams){
         SolarCupData.buildAllTeams(LIVE).teams.forEach(t=>{BY_LABEL[t.label]=t;});
       }
     }catch(e){}
   }
-  // 待定佔位：抽籤尚未進行／上一輪未分出勝負時的空席
+  // 待定佔位：上游結構空位（維持樹形）
   let _tbd=0;
   function TBD(tier){
     return {tid:'TBD'+(++_tbd),label:'待定',club:'',clubObj:{name:'',c:'#5b7089'},num:0,
       tier:tier?tier.name:'',kind:tier?tier.kind:'',base:0,
       matches:[],w:0,l:0,stage:'—',placePts:0,pending:true};
   }
-  // 從資料層取該階級真隊，轉成 bracket 複賽用格式（保留身分，複賽戰績重置由 play 灌）
-  function poolFromTD(tier,n){
-    const T=tdTiers();
-    if(!T||!T[tier.key]||!T[tier.key].length) return null; // 無資料層 → 交回 fallback
-    const src=T[tier.key].slice(0,n);
-    return src.map((s,i)=>{
-      const t={tid:s.tid,label:s.label,club:s.clubObj.name,clubObj:s.clubObj,num:0,
-        tier:tier.name,kind:tier.kind,base:BASE[tier.name],
-        matches:[],w:0,l:0,stage:'初賽',placePts:0};
-      REG[s.tid]=t;return t;
-    });
+  // 淘汰賽空席：初賽配對＝現場抽籤決定（2026-08-11 團長定案），雲端隊名還沒填就是「待定」，
+  // 嚴禁從 pool／standings 結構推導捏造配對——任何預測配對都是錯的。
+  // 文案分兩種：只有初賽席位來自抽籤；複賽以後的席位是勝方晉級後由賽務填入雲端，
+  // 對外不能寫「抽籤」（觀眾看完準決賽不該看到決賽「等抽籤」）。
+  function TBD_DRAW(round){
+    const t=TBD(null);
+    t.label=(round==='初賽')?'待定（抽籤後公布）':'待定（晉級後公布）';
+    return t;
   }
-  function makePool(tier,n){
-    const fromTD=poolFromTD(tier,n);
-    if(fromTD&&fromTD.length===n) return fromTD;   // 資格賽已分流：真隊
-    // 資格賽未完賽 → 全部待定席，站上不生成任何假隊
-    const pool=[];for(let i=0;i<n;i++){const t=TBD(tier);REG[t.tid]=t;pool.push(t);}
-    return pool;
+  // 雲端隊名 → 隊伍物件；名冊查得到帶完整球團身分，查不到也照雲端顯示（雲端為唯一真相）
+  function teamFromCloud(label){
+    if(!label)return null;
+    const src=BY_LABEL[label];
+    if(src)return REG_OF(src);
+    const key='L_'+label;
+    if(!REG[key])REG[key]={tid:key,label,club:'',clubObj:{name:'',c:'#8a95a5'},num:0,
+      tier:'',kind:'',base:0,matches:[],w:0,l:0,stage:'—',placePts:0};
+    return REG[key];
   }
-  // 打一場：參賽隊伍與比分**全部**讀雲端該場次；沒有就是未開打
-  function playM(a,b,round,no){
+  // 打一場：參賽隊伍與比分**一律**讀雲端該場次（8_發布 隊A/隊B）；
+  // 隊名空＝抽籤未公布 → 待定；比分空＝未開打。不接受任何結構帶入的隊伍。
+  function playM(round,no){
     const r=LIVE_M[String(no)];
-    // 現場抽籤結果以雲端隊名為準；雲端還沒填就沿用結構帶入的席次
-    const A=(r&&r.a&&BY_LABEL[r.a]&&REG_OF(BY_LABEL[r.a],a))||a||TBD(null);
-    const B=(r&&r.b&&BY_LABEL[r.b]&&REG_OF(BY_LABEL[r.b],b))||b||TBD(null);
+    const A=(r&&r.a&&teamFromCloud(r.a))||TBD_DRAW(round);
+    const B=(r&&r.b&&teamFromCloud(r.b))||TBD_DRAW(round);
     if(!r||!r.done){
       return {a:A,b:B,sa:null,sb:null,sc:'',winner:null,loser:null,no,round,pending:true,done:false};
     }
@@ -632,12 +624,23 @@
     if(aw){A.w++;B.l++;}else{B.w++;A.l++;}
     // done 一定要跟 pending 同時給：rrRank 與循環賽場數統計讀的都是 m.done，
     // 只給 pending 會讓每一場都被當成「未開打」丟掉——五角／三角循環的名次
-    // 會永遠是 0 勝、失分率 999，退回原始席次順序。競技組的準決賽名單直接吃
-    // 這份名次，季軍會推不出來、殿軍會標錯（2026-08-03 全場演練實測抓到）。
+    // 會永遠是 0 勝、失分率 999。（2026-08-03 全場演練實測抓到）
     return {a:A,b:B,sa,sb,sc:sa+'：'+sb,winner:aw?A:B,loser:aw?B:A,no,round,pending:false,done:true};
   }
+  // 循環組成員＝該組全部場次雲端隊名的聯集（出現即納入），不足補待定
+  function rrMembers(nos,cap){
+    const out=[],seen=new Set();
+    (nos||[]).forEach(n=>{
+      const r=LIVE_M[String(n)];if(!r)return;
+      [r.a,r.b].forEach(lb=>{
+        if(lb&&!seen.has(lb)&&out.length<cap){seen.add(lb);const t=teamFromCloud(lb);if(t)out.push(t);}
+      });
+    });
+    while(out.length<cap)out.push(TBD_DRAW('複賽'));   // 循環組成員來自晉級，非抽籤
+    return out;
+  }
   // 把資料層的隊轉成 bracket 用格式（沿用同一物件，維持戰績累加與 REG 註冊）
-  function REG_OF(src,fallback){
+  function REG_OF(src){
     const key='L_'+src.label;
     if(!REG[key]){
       // clubObj 必須帶 key——徽記的中央圖案是靠 key 查的（embFull／embCenter／embChip）。
@@ -672,94 +675,119 @@
     sorted.forEach(x=>{x.rt=x._ratio;x.pf=x._h2hgf;x.pa=x._h2hga;x.tied=!!x._tied;});
     return sorted;
   }
+  // 並列跨越晉級分界＝⚠ 並列待判定（v2.7：交現場人工，不採直接對戰自動判）。
+  // 回傳每列是否落在「跨界並列段」；rrPentBoard 主表與組進程卡共用，不得各寫一套。
+  function rrAmbiguity(rank,advN){
+    const EPS=1e-9,amb=new Array(rank.length).fill(false);
+    for(let s=0,k=1;k<=rank.length;k++){
+      const rtOf=(r)=>(r.rt!=null?r.rt:r._ratio);
+      if(k===rank.length||rank[k].w!==rank[s].w||Math.abs(rtOf(rank[k])-rtOf(rank[s]))>EPS){
+        if(k-s>=2&&s<advN&&k>advN)for(let x=s;x<k;x++)amb[x]=true;
+        s=k;
+      }
+    }
+    return amb;
+  }
 
   // 快取各階級資料
   const DATA={};
   function buildTier(tier){
     if(DATA[tier.key])return DATA[tier.key];
     const M=MNO[tier.key];let d;
+    // ★ 全部淘汰賽場次的參賽隊伍一律取自雲端 8_發布（playM 內部讀 LIVE_M）；
+    //   雲端隊名空＝「待定（抽籤後公布）」。不從 pool／standings 推導任何配對。
     if(tier.type==='comp'){
-      // ── 初賽：20 隊抽籤單淘汰 10 場 → 10 隊（敗方該級別結束）──
-      const pool=makePool(tier,20);
+      // ── 初賽：20 隊抽籤單淘汰 10 場（配對＝現場抽籤，僅雲端知道）──
       const preMatches=[];
       for(let i=0;i<10;i++){
-        const m=playM(pool[i*2],pool[i*2+1],'初賽',M.pre[i]);
-        m.seat=SEATS[i];if(m.winner)m.winner.seat=SEATS[i];   // 未開打無勝方，不寫 seat
+        const m=playM('初賽',M.pre[i]);
+        m.seat=SEATS[i];if(m.winner)m.winner.seat=SEATS[i];   // 官方表定：第 i 場勝方進入席次
         setPlace(m.loser,0,'初賽止步');preMatches.push(m);
       }
-      const adv=preMatches.map(m=>m.winner||TBD(tier));   // 未開打 → TBD 佔位，維持樹形
-      // ── 複賽：A／B 兩組各 5 隊五角全循環（每組 10 場）→ 各取前二 ──
-      const groups=[adv.slice(0,5),adv.slice(5,10)];
+      // ── 複賽：A／B 五角全循環；成員＝該組 10 場雲端隊名聯集 ──
+      const groups=[rrMembers(M.rrA,5),rrMembers(M.rrB,5)];
       const groupNos=[M.rrA,M.rrB];
       const groupMatches=[[],[]],standings=[];
       groups.forEach((g,gi)=>{
-        RR_PAIRS.forEach((p,k)=>groupMatches[gi].push(
-          playM(g[p[0]],g[p[1]],'複賽 '+'AB'[gi]+'組',groupNos[gi][k])));
-        const rk=rrRank(g,groupMatches[gi]);standings.push(rk);
+        groupNos[gi].forEach(no=>groupMatches[gi].push(playM('複賽 '+'AB'[gi]+'組',no)));
+        // 名次只算真隊；待定席固定沉底（GA=0 sentinel 999 會把 0 戰待定排到真隊前面）
+        const rk=rrRank(g.filter(t=>!t.pending),groupMatches[gi]);standings.push(rk);
+        // 組 10 場全完賽才蓋晉級／止步；進行中一律「暫列」，不捏造止步。
         // 競技組無八強賽制，五角循環未晉級之 6 隊即「十強」，名次分 40（等同休閒八強層）
-        rk.forEach((r,i)=>{if(i>=2)setPlace(r.t,40,'複賽止步');});
+        if(groupMatches[gi].length&&groupMatches[gi].every(m=>m.done)){
+          const amb=rrAmbiguity(rk,2);
+          rk.forEach((r,i)=>{
+            if(amb[i])setPlace(r.t,40,'複賽 · 並列待判定');
+            else if(i>=2)setPlace(r.t,40,'複賽止步');
+          });
+        }
       });
-      // 準決賽配對：A1×B2、B1×A2
-      const four=[standings[0][0].t,standings[1][1].t,standings[1][0].t,standings[0][1].t];
-      d={pool,preMatches,adv,groups,groupNos,groupMatches,standings,four};
+      d={preMatches,groups,groupNos,groupMatches,standings};
     }else{
-      // ── 初賽：30 隊單淘汰 15 場 → 15 隊 ──
-      const pool=makePool(tier,30);
+      // ── 初賽：30 隊抽籤單淘汰 15 場 ──
       const preMatches=[];
       for(let i=0;i<15;i++){
-        const m=playM(pool[i*2],pool[i*2+1],'初賽',M.pre[i]);
+        const m=playM('初賽',M.pre[i]);
         setPlace(m.loser,0,'初賽止步');preMatches.push(m);
       }
-      const adv=preMatches.map(m=>m.winner||TBD(tier));   // 未開打 → TBD 佔位，維持樹形
-      // ── 複賽：3 隊三角循環取 2 ＋ 12 隊單淘汰 6 場取 6 ＝ 8 強 ──
-      const tri=adv.slice(0,3),koPool=adv.slice(3,15);
-      const triMatches=TRI_PAIRS.map((p,k)=>playM(tri[p[0]],tri[p[1]],'複賽 三角循環',M.tri[k]));
-      const triRank=rrRank(tri,triMatches);
-      const triTop2=[triRank[0].t,triRank[1].t];
-      setPlace(triRank[2].t,20,'複賽止步');
+      // ── 複賽：三角循環（成員＝3 場雲端隊名聯集）＋ 12 隊單淘汰 6 場 ──
+      const tri=rrMembers(M.tri,3);
+      const triMatches=M.tri.map(no=>playM('複賽 三角循環',no));
+      const triRank=rrRank(tri.filter(t=>!t.pending),triMatches);
+      const triDone=triMatches.length&&triMatches.every(m=>m.done);
+      const triTop2=[];
+      if(triDone){
+        const amb=rrAmbiguity(triRank,2);
+        triRank.forEach((r,i)=>{
+          if(amb[i])setPlace(r.t,20,'複賽 · 並列待判定');
+          else if(i>=2)setPlace(r.t,20,'複賽止步');
+          else triTop2.push(r.t);
+        });
+      }
       const koMatches=[];
       for(let i=0;i<6;i++){
-        const m=playM(koPool[i*2],koPool[i*2+1],'複賽',M.ko[i]);
+        const m=playM('複賽',M.ko[i]);
         setPlace(m.loser,20,'複賽止步');koMatches.push(m);
       }
-      const koWin=koMatches.map(m=>m.winner||TBD(tier));
-      // 8 強席次：三角前二拆開分置兩端，避免同循環兩隊立刻碰頭
-      const eight=[triTop2[0],koWin[0],koWin[1],koWin[2],koWin[3],koWin[4],koWin[5],triTop2[1]];
-      d={pool,preMatches,adv,tri,triMatches,triRank,triTop2,koPool,koMatches,koWin,eight};
+      d={preMatches,tri,triMatches,triRank,triDone,triTop2,koMatches};
     }
-    // ── 決勝：8 強（僅休閒）→ 準決賽 → 決賽 ＋ 季軍賽 ──
+    // ── 決勝：8 強（僅休閒）→ 準決賽 → 決賽 ＋ 季軍賽；席次全由雲端場次列給 ──
     const ko=[];
+    // 顯示順序對齊：下一輪雲端兩隊若恰為上一輪兩個視覺欄位的勝方但左右顛倒，
+    // 交換顯示順序讓晉級線不交叉；對不上就照雲端原順序（雲端永遠是真相）
+    const alignPair=(m,expA,expB)=>
+      (expA&&expB&&!expA.pending&&!expB.pending&&m.a===expB&&m.b===expA)?[m.b,m.a]:[m.a,m.b];
+    let qfW=null;
     if(tier.type==='cas'){
-      const e=d.eight,qfW=[];
-      for(let i=0;i<4;i++){
-        const m=playM(e[i*2],e[i*2+1],'8 強',M.qf[i]);qfW.push(m.winner||TBD(tier));
-        if(m.loser&&m.loser.placePts<40)setPlace(m.loser,40,'8 強止步');
-      }
+      const qfMs=M.qf.map(no=>playM('8 強',no));
+      qfMs.forEach(m=>{if(m.loser&&m.loser.placePts<40)setPlace(m.loser,40,'8 強止步');});
+      qfW=qfMs.map(m=>m.winner||TBD(tier));
       d.qfW=qfW;
-      ko.push({key:'qf',name:'8 強',head:'8 強 QUARTER',teams:e,winners:qfW,nos:M.qf});
+      ko.push({key:'qf',name:'8 強',head:'8 強 QUARTER',
+        teams:qfMs.flatMap(m=>[m.a,m.b]),winners:qfW,nos:M.qf,ms:qfMs});
     }
-    const semiIn=(tier.type==='cas')?d.qfW:d.four;
-    // 剛晉級四強就先標 40／四強：晉級的隊伍在此之前 placePts 一直是初始值 0（初賽），
-    // 準決賽打完前，戰績卡跟力場排行的後端數字（四強＝40）對不上；TBD 佔位會被 setPlace 的
-    // pending 守衛擋掉，不影響尚未分流出的席次。
-    semiIn.forEach(t=>setPlace(t,40,'四強'));
-    const sfW=[];
-    for(let i=0;i<2;i++)sfW.push(playM(semiIn[i*2],semiIn[i*2+1],'準決賽',M.sf[i]).winner||TBD(tier));
+    const sfMs=M.sf.map(no=>playM('準決賽',no));
+    // 凍結期積分顯示：已入座（雲端有名）的準決賽隊伍先標 40／四強——
+    // 綁在雲端隊伍上；待定席被 setPlace 的 pending 守衛擋掉（行為與 8/8 修正一致）
+    sfMs.forEach(m=>[m.a,m.b].forEach(t=>setPlace(t,40,'四強')));
+    const sfW=sfMs.map(m=>m.winner||TBD(tier));
     d.sfW=sfW;
-    ko.push({key:'sf',name:'準決賽',head:'準決賽 SEMI',teams:semiIn,winners:sfW,nos:M.sf});
+    const sfTeams=qfW?sfMs.flatMap((m,i)=>alignPair(m,qfW[2*i],qfW[2*i+1])):sfMs.flatMap(m=>[m.a,m.b]);
+    ko.push({key:'sf',name:'準決賽',head:'準決賽 SEMI',teams:sfTeams,winners:sfW,nos:M.sf,ms:sfMs});
     // 決賽（先打）→ 季軍賽（場次編號在後）
-    const fm=playM(sfW[0],sfW[1],'決賽',M.final);
+    const fm=playM('決賽',M.final);
     d.champ=fm.winner;d.runner=fm.loser;
     if(d.champ)setPlace(d.champ,100,'冠軍');
     if(d.runner)setPlace(d.runner,80,'亞軍');
-    ko.push({key:'fin',name:'決賽',head:'決賽 FINAL',teams:sfW,winners:[d.champ],nos:[M.final]});
-    const sfL=semiIn.filter(t=>t&&sfW.indexOf(t)<0);
-    const tm=(sfL.length===2)?playM(sfL[0],sfL[1],'季軍賽',M.third):null;
-    d.sfL=sfL;d.thirdM=tm;d.thirdW=tm?tm.winner:null;
-    // 季軍賽還沒打完之前不得先標「殿軍」——之前只要準決賽一結束就給兩隊都判殿軍，
-    // 跟後端「季殿賽中 · 40」對不上，而且在結果出爐前就先宣告了名次。
-    if(d.thirdW)sfL.forEach(t=>setPlace(t,60,t===d.thirdW?'四強 · 季軍':'四強 · 殿軍'));
-    else sfL.forEach(t=>setPlace(t,40,'季殿賽中'));
+    ko.push({key:'fin',name:'決賽',head:'決賽 FINAL',
+      teams:alignPair(fm,sfW[0],sfW[1]),winners:[d.champ],nos:[M.final],ms:[fm]});
+    // 季殿賽兩隊＝雲端 #third 列的隊A／隊B（人工裁定直接生效，不再由準決敗方推導覆蓋）
+    const tm=playM('季軍賽',M.third);
+    d.thirdM=tm;d.thirdW=tm.winner;
+    d.sfL=[tm.a,tm.b].filter(t=>t&&!t.pending);
+    // 季軍賽打完前不得標「殿軍」；兩隊已入座未打完＝季殿賽中（與後端 40 過渡態一致）
+    if(tm.done){setPlace(tm.winner,60,'四強 · 季軍');setPlace(tm.loser,60,'四強 · 殿軍');}
+    else d.sfL.forEach(t=>setPlace(t,40,'季殿賽中'));
     d.ko=ko;
     DATA[tier.key]=d;return d;
   }
@@ -820,7 +848,8 @@
     r1raf=requestAnimationFrame(step);
   }
   function seed(t,sc,win,bye){if(bye)return `<div class="seed bye"><span>（輪空）</span></div>`;
-    const chip=t.clubObj?`<span class="chip">${embChip(t.clubObj)}</span>`:'';
+    if(t.pending)return `<div class="seed pend"><span style="color:#3f4d61">${t.label}</span></div>`;
+    const chip=(t.clubObj&&t.clubObj.key)?`<span class="chip">${embChip(t.clubObj)}</span>`:'';
     return `<div class="seed ${win?'win':''}" data-tid="${t.tid}">${chip}<span>${t.label}</span>${sc!=null?`<span class="s">${sc}</span>`:''}</div>`;}
   function lastSc(t,round){const m=[...t.matches].reverse().find(x=>x.round===round);return m?m.sc.split('：')[0]:'';}
 
@@ -832,50 +861,71 @@
 
   // 五角複賽看板：比照官方公告圖 —— 5 隊置於五個頂點、10 條連線各標一個場次編號
   //   已完賽的連線以勝方球團色加亮並顯示比分；右／下方附即時積分表（前二高亮晉級）
-  function rrPentBoard(d,tr,gi,played){
+  function rrPentBoard(d,tr,gi){
     const g=d.groups[gi],ms=d.groupMatches[gi],nos=d.groupNos[gi],rk=d.standings[gi];
     const TC=tr.col,GL='AB'[gi];
+    // 循環進行中就要顯示戰況：逐場點亮、每隊勝敗「暫列」，組完賽才給晉級／止步
+    const gPlayed=ms.some(m=>m.done),gDone=ms.length&&ms.every(m=>m.done);
     const CX=240,CY=215,R=155,BW=100,BH=44;
     // 逆時針排列，讓 1 在正上、2 在左上、5 在右上（與公告圖一致）
     const V=g.map((t,i)=>{const a=(-90-i*72)*Math.PI/180;return{x:CX+Math.cos(a)*R,y:CY+Math.sin(a)*R};});
-    const advTid=new Set([rk[0].t.tid,rk[1].t.tid]);
-    const stOf=new Map(rk.map(r=>[r.t.tid,r]));
+    const idx=new Map();g.forEach((t,i)=>idx.set(t,i));
+    const cyc=new Map(rk.map(r=>[r.t,r]));           // 本循環戰績代理（rrRank）
+    const amb=gDone?rrAmbiguity(rk,2):[];
+    const advSet=new Set(gDone?rk.filter((r,i)=>i<2&&!amb[i]).map(r=>r.t):[]);
     let lines='',labs='',boxes='';
-    RR_PAIRS.forEach((p,k)=>{
-      const A=V[p[0]],B=V[p[1]],m=ms[k],no=nos[k];
-      const adj=(p[1]-p[0]===1)||(p[0]===0&&p[1]===4); // 外框邊（相鄰）／內部對角線
+    // K5 骨架：10 條可能連線淡底圖（配對未公布時只有骨架，不猜任何一條）
+    for(let i=0;i<5;i++)for(let j=i+1;j<5;j++){
+      lines+=`<line x1="${V[i].x.toFixed(1)}" y1="${V[i].y.toFixed(1)}" x2="${V[j].x.toFixed(1)}" y2="${V[j].y.toFixed(1)}" stroke="rgba(120,140,170,.18)" stroke-width="1"/>`;
+    }
+    // 只疊「雲端兩隊名都在」的場次：未完賽亮半線＋場次號，完賽亮勝方色＋比分
+    ms.forEach((m,k)=>{
+      const ai=idx.get(m.a),bi=idx.get(m.b);
+      if(ai===undefined||bi===undefined)return;       // 抽籤未公布 → 不畫、不猜
+      const A=V[ai],B=V[bi],no=nos[k],dn=m.done;
+      const adj=(Math.abs(ai-bi)===1)||(Math.abs(ai-bi)===4);
       const wc=((m.winner&&m.winner.clubObj)||{c:TC}).c;
       lines+=`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}"
-        stroke="${played?wc:'rgba(120,140,170,.3)'}" stroke-width="${played?(adj?2.4:1.6):1.1}" opacity="${played?.8:1}"/>`;
+        stroke="${dn?wc:'rgba(120,140,170,.45)'}" stroke-width="${dn?(adj?2.4:1.6):1.2}" opacity="${dn?.8:1}"/>`;
       const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,dx=mx-CX,dy=my-CY,dd=Math.hypot(dx,dy)||1;
       const push=adj?13:17,lx=mx+dx/dd*push,ly=my+dy/dd*push;
-      const h=played?26:17,w=46;
-      labs+=`<g><title>#${no}　${m.a.label} ${played?m.sc:'vs'} ${m.b.label}</title>
+      const h=dn?26:17,w=46;
+      labs+=`<g><title>#${no}　${m.a.label} ${dn?m.sc:'vs'} ${m.b.label}</title>
         <rect x="${(lx-w/2).toFixed(1)}" y="${(ly-h/2).toFixed(1)}" width="${w}" height="${h}" rx="3"
-          fill="rgba(3,6,13,.94)" stroke="${played?wc:'rgba(120,140,170,.4)'}" stroke-width="1"/>
-        <text x="${lx.toFixed(1)}" y="${(ly+(played?-3:3.5)).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="9.5" fill="${TC}">${no}</text>`
-        +(played?`<text x="${lx.toFixed(1)}" y="${(ly+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="9.5"><tspan fill="${m.winner===m.a?wc:'#5b7089'}" font-weight="700">${m.sa}</tspan><tspan fill="#5b7089">:</tspan><tspan fill="${m.winner===m.b?wc:'#5b7089'}" font-weight="700">${m.sb}</tspan></text>`:'')
+          fill="rgba(3,6,13,.94)" stroke="${dn?wc:'rgba(120,140,170,.4)'}" stroke-width="1"/>
+        <text x="${lx.toFixed(1)}" y="${(ly+(dn?-3:3.5)).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="9.5" fill="${TC}">${no}</text>`
+        +(dn?`<text x="${lx.toFixed(1)}" y="${(ly+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="9.5"><tspan fill="${m.winner===m.a?wc:'#5b7089'}" font-weight="700">${m.sa}</tspan><tspan fill="#5b7089">:</tspan><tspan fill="${m.winner===m.b?wc:'#5b7089'}" font-weight="700">${m.sb}</tspan></text>`:'')
         +`</g>`;
     });
     g.forEach((t,i)=>{
-      const v=V[i],co=t.clubObj||{c:'#8a95a5',key:''},adv=played&&advTid.has(t.tid),s=stOf.get(t.tid);
-      const x=v.x-BW/2,y=v.y-BH/2;
+      const v=V[i],x=v.x-BW/2,y=v.y-BH/2;
+      if(t.pending){
+        boxes+=`<g><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${BW}" height="${BH}" rx="4" fill="rgba(4,8,16,.6)" stroke="rgba(255,255,255,.14)" stroke-width="1" stroke-dasharray="4 4"/>
+          <text x="${(x+10).toFixed(1)}" y="${(y+16).toFixed(1)}" font-family="Share Tech Mono" font-size="8.5" letter-spacing="1.4" fill="#3f4d61">${GL}${i+1}</text>
+          <text x="${(x+10).toFixed(1)}" y="${(y+32).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#3f4d61">待定</text></g>`;
+        return;
+      }
+      const co=t.clubObj||{c:'#8a95a5',key:''},adv=advSet.has(t),s=cyc.get(t);
       boxes+=`<g class="bnode" data-tid="${t.tid}" style="cursor:pointer">
         ${adv?`<rect x="${(x-3.5).toFixed(1)}" y="${(y-3.5).toFixed(1)}" width="${BW+7}" height="${BH+7}" rx="6" fill="none" stroke="${TC}" stroke-width="1.2" opacity=".6"/>`:''}
         <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${BW}" height="${BH}" rx="4" fill="rgba(4,8,16,.97)" stroke="${adv?TC:co.c}" stroke-width="${adv?2.2:1.3}"/>
         <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="3.5" height="${BH}" rx="1.6" fill="${co.c}"/>
         <text x="${(x+10).toFixed(1)}" y="${(y+16).toFixed(1)}" font-family="Share Tech Mono" font-size="8.5" letter-spacing="1.4" fill="${TC}">${GL}${i+1}</text>
         <text x="${(x+10).toFixed(1)}" y="${(y+32).toFixed(1)}" font-family="Orbitron,sans-serif" font-weight="700" font-size="11" fill="${adv?'#eafcff':'#9fb0c8'}">${t.label}</text>`
-        +(played?`<text x="${(x+BW-8).toFixed(1)}" y="${(y+32).toFixed(1)}" text-anchor="end" font-family="Orbitron,sans-serif" font-weight="900" font-size="11.5" fill="${co.c}">${s.w}</text>
+        +(gPlayed&&s?`<text x="${(x+BW-8).toFixed(1)}" y="${(y+32).toFixed(1)}" text-anchor="end" font-family="Orbitron,sans-serif" font-weight="900" font-size="11.5" fill="${co.c}">${s.w}</text>
         <text x="${(x+BW-8).toFixed(1)}" y="${(y+16).toFixed(1)}" text-anchor="end" font-family="Share Tech Mono" font-size="7.5" fill="#5b7089">勝場</text>`:'')
         +`</g>`;
     });
-    const rows=rk.map((r,i)=>`<div class="rrrow ${played&&i<2?'adv':''}" data-tid="${r.t.tid}">
-      <span class="rk">${played?i+1:'—'}</span><span class="nm">${GL}${g.indexOf(r.t)+1}　${r.t.label}</span>
-      <span class="wl">${played?r.w+'－'+r.l:'—'}</span><span class="rt">${played?r.rt.toFixed(3):'—'}</span>
-      <span class="ad">${played?(i<2?'晉級':'止步'):'—'}</span></div>`).join('');
+    const verdict=(i)=>!gPlayed?'—':!gDone?'暫列':(amb[i]?'⚠ 並列待判定':(i<2?'晉級':'止步'));
+    const rows=rk.map((r,i)=>`<div class="rrrow ${gDone&&advSet.has(r.t)?'adv':''}" data-tid="${r.t.tid}">
+      <span class="rk">${gPlayed?i+1:'—'}</span><span class="nm">${GL}${g.indexOf(r.t)+1}　${r.t.label}</span>
+      <span class="wl">${gPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${gPlayed?r.rt.toFixed(3):'—'}</span>
+      <span class="ad">${verdict(i)}</span></div>`)
+      .concat(g.filter(t=>t.pending).map(t=>`<div class="rrrow">
+        <span class="rk">—</span><span class="nm">${GL}${g.indexOf(t)+1}　待定（晉級後公布）</span>
+        <span class="wl">—</span><span class="rt">—</span><span class="ad">—</span></div>`)).join('');
     return `<div class="rrcell">
-      <div class="rrct"><span class="gk">${GL} 組</span><span class="gs">五角全循環 · 5 隊 10 場</span>
+      <div class="rrct"><span class="gk">${GL} 組</span><span class="gs">五角全循環 · 5 隊 10 場${gDone?'':gPlayed?' · 進行中（暫列）':''}</span>
         <span class="gmore" data-group="${tr.key}_${gi}">▸ 組進程</span></div>
       <svg class="rrsvg" viewBox="0 0 480 400"><g>${lines}</g><g>${boxes}</g><g>${labs}</g></svg>
       <div class="rrtable">
@@ -889,7 +939,7 @@
     prog=(prog==null?RN+2:prog);
     const done=Math.max(0,Math.min(prog-1,RN));            // 已打完的決勝輪數
     // crowned 需同時「輪次跑完」且「冠軍是真隊」——TBD 佔位（決賽未打）不得加冕
-    const seeded=prog>=1, crowned=(done>=RN)&&!!(d.champ&&!d.champ.pending&&d.champ.clubObj), thirdDone=prog>=RN+2;
+    const crowned=(done>=RN)&&!!(d.champ&&!d.champ.pending&&d.champ.clubObj);
     const TC=tr.col,T=2.6; // T=光子/注滿同步週期
     const N0=d.ko[0].teams.length;
     const FW=182,FH=42,GAPY=(N0<=4?34:14),TOP=12;
@@ -934,7 +984,7 @@
     }
     function nodeTBD(x,cy){const y=cy-FH/2;
       return `<g><rect x="${x}" y="${y}" width="${FW}" height="${FH}" rx="4" fill="rgba(6,11,20,.5)" stroke="rgba(255,255,255,.08)" stroke-width="1" stroke-dasharray="4 4"/>
-        <text x="${x+FW/2}" y="${cy+4}" text-anchor="middle" font-family="Share Tech Mono" font-size="11" fill="#3f4d61">待　定　TBD</text></g>`;}
+        <text x="${x+FW/2}" y="${cy+4}" text-anchor="middle" font-family="Share Tech Mono" font-size="10.5" fill="#3f4d61">待定（晉級後公布）</text></g>`;}
     // state: 'future'無晉級線 / 'front'光子流+注滿 / 'done'晉級線常亮+光子
     function conn(cyA,cyB,x1r,x2l,nextCy,winnerCy,wc,state){
       const midX=(x1r+x2l)/2,cyMid=(cyA+cyB)/2;
@@ -963,11 +1013,14 @@
     }
     let nodes='',conns='',mnos='';
     for(let i=0;i<RN;i++){
-      const R=d.ko[i], known=(i===0?seeded:done>=i);
+      const R=d.ko[i];
       R.teams.forEach((t,j)=>{
-        if(!known){nodes+=nodeTBD(COLX[i],cys[i][j]);return;}
-        const win=(done>=i+1)&&R.winners.indexOf(t)>=0;
-        nodes+=node(t,COLX[i],cys[i][j],win,done>=i+1?lastSc(t,R.name):'',win?2:(done===i?1:0));
+        // 逐席以雲端為準：該席雲端有隊名就顯示（含人工裁定入座），沒有就是待定——
+        // 不再用「輪次進度」一刀切隱藏雲端已公布的席次
+        if(!t||t.pending){nodes+=nodeTBD(COLX[i],cys[i][j]);return;}
+        const m=R.ms&&R.ms[Math.floor(j/2)];
+        const win=!!(m&&m.done&&m.winner===t);
+        nodes+=node(t,COLX[i],cys[i][j],win,lastSc(t,R.name),win?2:(done===i?1:0));
       });
       // 收束到下一輪（最後一輪收束到封王八角）
       const nx=(i<RN-1)?COLX[i+1]:crownX, nys=(i<RN-1)?cys[i+1]:[chCy];
@@ -1012,11 +1065,13 @@
         ${chco.key?`<g transform="translate(${chc-19},${chCy-19}) scale(0.19)">${embMini(chco.key,cc)}</g>`:''}
         <text x="${chc}" y="${chCy+52}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="13" fill="${cc}">${CH.label}</text>
         <text x="${chc}" y="${chCy+66}" text-anchor="middle" font-family="Share Tech Mono" font-size="8" letter-spacing="2" fill="${TC}">CHAMPION ♛</text></g>`;}
-    // 季軍賽（決賽之後進行）
-    const thNo=MNO[tr.key].third;
-    const third=thirdDone
-      ?`<text x="8" y="${(botY+FH/2+34).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#5b7089">季軍賽 #${thNo}　<tspan fill="${d.thirdW&&d.thirdW.clubObj?d.thirdW.clubObj.c:'#34e07a'}" font-weight="700">${d.thirdW?d.thirdW.label:'—'}</tspan>${d.sfL.length===2?' 勝 '+d.sfL.filter(t=>t!==d.thirdW)[0].label+'（季軍／殿軍各得名次分 60）':''}</text>`
-      :`<text x="8" y="${(botY+FH/2+34).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#3f4d61">季軍賽 #${thNo}　準決賽敗方對戰 · 待決賽後進行</text>`;
+    // 季軍賽：兩隊＝雲端 #third 列的隊A／隊B（人工裁定直接生效），依雲端狀態三段顯示
+    const thNo=MNO[tr.key].third,tm=d.thirdM;
+    const third=(tm&&tm.done)
+      ?`<text x="8" y="${(botY+FH/2+34).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#5b7089">季軍賽 #${thNo}　<tspan fill="${d.thirdW&&d.thirdW.clubObj?d.thirdW.clubObj.c:'#34e07a'}" font-weight="700">${d.thirdW?d.thirdW.label:'—'}</tspan>${d.sfL.length===2?' '+tm.sc+' 勝 '+d.sfL.filter(t=>t!==d.thirdW)[0].label+'（季軍／殿軍各得名次分 60）':''}</text>`
+      :(tm&&d.sfL.length===2
+        ?`<text x="8" y="${(botY+FH/2+34).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#5b7089">季軍賽 #${thNo}　${tm.a.label} vs ${tm.b.label} · 待進行（季殿賽中 · 名次分暫計 40）</text>`
+        :`<text x="8" y="${(botY+FH/2+34).toFixed(1)}" font-family="Share Tech Mono" font-size="10" fill="#3f4d61">季軍賽 #${thNo}　對戰組合待定（準決賽後公布）</text>`);
     const heads=d.ko.map((R,i)=>`<text x="${(COLX[i]+FW/2).toFixed(1)}" y="6" text-anchor="middle" font-family="Share Tech Mono" font-size="8.5" letter-spacing="1.5" fill="${TC}" opacity=".8">${R.head}</text>`).join('')
       +`<text x="${chc}" y="6" text-anchor="middle" font-family="Share Tech Mono" font-size="8.5" letter-spacing="1.5" fill="${TC}" opacity=".8">封王 CROWN</text>`;
     const H=botY+FH/2+48, W=crownX+120;
@@ -1031,25 +1086,32 @@
 
   // 初賽 ＋ 複賽兩段（隨賽程進度拉桿重繪：prog=0 只顯示場次編號、不顯示比分）
   function stageHTML(d,tr,prog){
-    const played=prog>=1;
+    // 逐場顯示：完賽亮比分與勝方，未完賽只有場次與（雲端已公布的）隊名——
+    // 不再用階級整體進度一刀切（會把已完賽比分藏起來）
     const card=(m,seatTxt)=>`<div class="r1card"><div class="gno">#${m.no}${seatTxt?`<span class="seat">▸ ${seatTxt}</span>`:''}</div>
-      ${seed(m.a,played?m.sa:null,played&&m.winner===m.a)}${seed(m.b,played?m.sb:null,played&&m.winner===m.b)}</div>`;
+      ${seed(m.a,m.done?m.sa:null,m.done&&m.winner===m.a)}${seed(m.b,m.done?m.sb:null,m.done&&m.winner===m.b)}</div>`;
     if(tr.type==='comp'){
       const pre=d.preMatches.map(m=>card(m,m.seat)).join('');
-      return `<div class="r1block"><div class="prehead">初賽<span class="pn">20 隊抽籤單淘汰 · 10 場 → 晉級 10 隊（勝方進入複賽席次 A1–A5／B1–B5）</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
+      return `<div class="r1block"><div class="prehead">初賽<span class="pn">20 隊抽籤單淘汰 · 10 場 → 晉級 10 隊（配對＝現場抽籤後公布）</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
           <div class="r1scroll">${pre}</div></div>
         <div class="rrblock"><div class="rrhead">複賽<span class="pn">A／B 兩組 × 5 隊五角全循環 · 每組 10 場 · 各取前二晉級準決賽</span></div>
-          <div class="rrgrid">${d.groups.map((_,i)=>rrPentBoard(d,tr,i,played)).join('')}</div></div>`;
+          <div class="rrgrid">${d.groups.map((_,i)=>rrPentBoard(d,tr,i)).join('')}</div></div>`;
     }
+    const triPlayed=d.triMatches.some(m=>m.done),triDone=!!d.triDone;
+    const triAmb=triDone?rrAmbiguity(d.triRank,2):[];
     const pre=d.preMatches.map(m=>card(m,'')).join('');
     const koCards=d.koMatches.map(m=>card(m,'')).join('');
-    const triCards=d.tri.map(t=>seed(t,null,played&&d.triTop2.indexOf(t)>=0)).join('');
-    const triLog=d.triMatches.map(m=>`<div class="trim"><span>#${m.no}　${m.a.label} vs ${m.b.label}</span><b>${played?m.sc:'—'}</b></div>`).join('');
-    const triStand=d.triRank.map((r,i)=>`<div class="rrrow ${played&&i<2?'adv':''}" data-tid="${r.t.tid}">
-      <span class="rk">${played?i+1:'—'}</span><span class="nm">${r.t.label}</span>
-      <span class="wl">${played?r.w+'－'+r.l:'—'}</span><span class="rt">${played?r.rt.toFixed(3):'—'}</span>
-      <span class="ad">${played?(i<2?'晉級':'止步'):'—'}</span></div>`).join('');
-    return `<div class="r1block"><div class="prehead">初賽<span class="pn">30 隊單淘汰 · 15 場 → 晉級 15 隊</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
+    const triCards=d.tri.map(t=>seed(t,null,d.triTop2.indexOf(t)>=0)).join('');
+    const triLog=d.triMatches.map(m=>`<div class="trim"><span>#${m.no}　${m.a.label} vs ${m.b.label}</span><b>${m.done?m.sc:'—'}</b></div>`).join('');
+    const triVerdict=(i)=>!triPlayed?'—':!triDone?'暫列':(triAmb[i]?'⚠ 並列待判定':(i<2?'晉級':'止步'));
+    const triStand=d.triRank.map((r,i)=>`<div class="rrrow ${triDone&&i<2&&!triAmb[i]?'adv':''}" data-tid="${r.t.tid}">
+      <span class="rk">${triPlayed?i+1:'—'}</span><span class="nm">${r.t.label}</span>
+      <span class="wl">${triPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${triPlayed?r.rt.toFixed(3):'—'}</span>
+      <span class="ad">${triVerdict(i)}</span></div>`)
+      .concat(d.tri.filter(t=>t.pending).map(()=>`<div class="rrrow">
+        <span class="rk">—</span><span class="nm">待定（晉級後公布）</span>
+        <span class="wl">—</span><span class="rt">—</span><span class="ad">—</span></div>`)).join('');
+    return `<div class="r1block"><div class="prehead">初賽<span class="pn">30 隊抽籤單淘汰 · 15 場 → 晉級 15 隊（配對＝現場抽籤後公布）</span><span class="r1hint">← 左右滑動 · 自動捲動中 →</span></div>
         <div class="r1scroll">${pre}</div></div>
       <div class="r2block"><div class="prehead">複賽<span class="pn">15 → 8 強 · 12 隊單淘汰取 6 ＋ 3 隊三角循環取 2</span></div>
         <div class="r2cols">
@@ -1140,8 +1202,10 @@
       function edge(a,b){const dx=b.x-a.x,dy=b.y-a.y,dd=Math.hypot(dx,dy),ux=dx/dd,uy=dy/dd;return {x1:a.x+ux*nodeR,y1:a.y+uy*nodeR,x2:b.x-ux*nodeR,y2:b.y-uy*nodeR};}
       let defs='',links='',photons='',labels='',nodes='';
       gm.forEach((m,k)=>{
+        if(!m.done)return;                       // 只畫已完賽；待打／待抽籤不畫線不猜
         const ai=idx.get(m.a),bi=idx.get(m.b);
-        const wi=m.winner?idx.get(m.winner):ai, li=wi===ai?bi:ai;
+        if(ai===undefined||bi===undefined)return; // 雲端隊名不在本組成員（防禦）
+        const wi=idx.get(m.winner), li=wi===ai?bi:ai;
         const A=V[ai],B=V[bi],wv=V[wi],lv=V[li];
         const wc=((m.winner&&m.winner.clubObj)||{c:TC}).c;
         const e=edge(A,B),le=edge(lv,wv);
@@ -1167,29 +1231,30 @@
           <text x="${(mx+6).toFixed(1)}" y="${(my+4).toFixed(1)}" text-anchor="start" font-family="Orbitron,sans-serif" font-weight="${!leftWin?'900':'500'}" font-size="11" fill="${!leftWin?wc:dim}">${rightScore}</text></g>`;
       });
       const rank=d.standings[gi].map(r=>({t:r.t,i:g.indexOf(r.t),w:r.w,l:r.l,rt:r.rt}));
-      // 並列跨越第2/第3名分界線＝並列待判定，不自動排定晉級或止步（v2.7 定案：交現場人工判斷，
-      // 不採秩序冊的直接對戰自動判勝）。只有並列整段落在前二或整段落在後段，才算有明確結果。
-      const EPS=1e-9;
-      const ambiguous=new Array(rank.length).fill(false);
-      for(let s=0,k=1;k<=rank.length;k++){
-        if(k===rank.length||rank[k].w!==rank[s].w||Math.abs(rank[k].rt-rank[s].rt)>EPS){
-          if(k-s>=2&&s<2&&k>2)for(let x=s;x<k;x++)ambiguous[x]=true;
-          s=k;
-        }
-      }
+      // 並列跨越晉級分界＝並列待判定（v2.7 人工判）；與主視圖 rrPentBoard 共用同一實作
+      const ambiguous=rrAmbiguity(rank,2);
       const advSet=groupDone?new Set(rank.filter((r,i)=>i<2&&!ambiguous[i]).map(r=>r.i)):new Set();
       const pendingSet=groupDone?new Set(rank.filter((r,i)=>ambiguous[i]).map(r=>r.i)):new Set();
       g.forEach((t,i)=>{const v=V[i],adv=groupDone&&advSet.has(i),co=t.clubObj||{c:TC,key:''},c=co.c;
+        // 勝敗一律用本循環代理值（rank），不用隊伍物件的跨輪累積 w/l（會混入初賽勝場）
+        const rr=rank.find(x=>x.t===t);const cw=rr?rr.w:0,cl=rr?rr.l:0;
         const lyOff=(i===0)?-(nodeR+16):(nodeR+16);const labY=v.y+lyOff,labW=Math.max(52,t.label.length*11+16);
+        if(t.pending){
+          nodes+=`<g class="gnode" data-i="${i}">
+            <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR}" fill="rgba(3,6,13,.6)" stroke="rgba(255,255,255,.14)" stroke-width="1.4" stroke-dasharray="4 4"/>
+            <g class="nlabel"><rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-11).toFixed(1)}" width="${labW}" height="22" rx="3" fill="rgba(3,6,13,.9)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+              <text x="${v.x.toFixed(1)}" y="${(labY+3).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="9.5" fill="#3f4d61">${t.label}</text></g></g>`;
+          return;
+        }
         nodes+=`<g class="gnode ${adv?'adv':''}" data-i="${i}">
           ${adv?`<circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR+5}" fill="none" stroke="${TC}" stroke-width="2" opacity=".9"/>`:''}
           <circle cx="${v.x.toFixed(1)}" cy="${v.y.toFixed(1)}" r="${nodeR}" fill="rgba(3,6,13,.9)" stroke="${c}" stroke-width="2.6"/>
           ${co.key?`<g transform="translate(${(v.x-16).toFixed(1)},${(v.y-16).toFixed(1)}) scale(0.16)">${embMini(co.key,c)}</g>`:''}
           <circle cx="${(v.x+15).toFixed(1)}" cy="${(v.y-15).toFixed(1)}" r="9" fill="${c}"/>
-          <text x="${(v.x+15).toFixed(1)}" y="${(v.y-11.5).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="10" fill="#03060d">${t.w}</text>
+          <text x="${(v.x+15).toFixed(1)}" y="${(v.y-11.5).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="900" font-size="10" fill="#03060d">${cw}</text>
           <g class="nlabel"><rect x="${(v.x-labW/2).toFixed(1)}" y="${(labY-11).toFixed(1)}" width="${labW}" height="22" rx="3" fill="rgba(3,6,13,.9)" stroke="${adv?TC:'rgba(255,255,255,.12)'}" stroke-width="1"/>
             <text x="${v.x.toFixed(1)}" y="${(labY-1).toFixed(1)}" text-anchor="middle" font-family="Orbitron,sans-serif" font-weight="700" font-size="11" fill="${adv?'#eafcff':'#9fb0c8'}">${t.label}</text>
-            <text x="${v.x.toFixed(1)}" y="${(labY+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="7.5" fill="${c}">${t.w}勝 ${t.l}敗</text></g></g>`;
+            <text x="${v.x.toFixed(1)}" y="${(labY+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="7.5" fill="${c}">${cw}勝 ${cl}敗</text></g></g>`;
       });
       gsvg.innerHTML=`<defs>${defs}</defs><g>${links}</g><g>${photons}</g><g>${labels}</g><g>${nodes}</g>`;
       // 積分榜

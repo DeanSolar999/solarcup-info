@@ -227,10 +227,36 @@ function liveScenario(fail){
   // ---- 淘汰樹戰績卡凍結期積分：晉級四強後、決賽或季軍賽打完前，必須顯示 40 分 ----
   // 2026-08-06：晉級準決賽的隊伍 placePts 預設 0，只有拿到冠亞季殿才會被 setPlace，
   // 準決賽打完前公開頁顯示的積分比後端少 40；季軍賽未打完就先判「殿軍」也是同一種提早結算。
-  if(!bracketTxt.includes("semiIn.forEach(t=>setPlace(t,40,'四強'));"))
+  // 2026-08-12 雲端化改版：四強 40 綁在「雲端準決賽場次列的兩隊」上（sfMs），行為不變。
+  if(!bracketTxt.includes("sfMs.forEach(m=>[m.a,m.b].forEach(t=>setPlace(t,40,'四強')));"))
     bad.push('bracket-tree.html 晉級四強未立即標 40 分（凍結期積分會比後端少 40）');
-  if(!bracketTxt.includes('if(d.thirdW)sfL.forEach'))
-    bad.push('bracket-tree.html 季軍賽未打完就可能提早判定殿軍');
+  if(!bracketTxt.includes("if(tm.done){setPlace(tm.winner,60,'四強 · 季軍');")
+    || !bracketTxt.includes("else d.sfL.forEach(t=>setPlace(t,40,'季殿賽中'));"))
+    bad.push('bracket-tree.html 季軍賽未打完就可能提早判定殿軍（或季殿賽中 40 過渡態遺失）');
+
+  // ---- 淘汰賽入座不得結構推導（2026-08-11 團長定案：初賽配對＝現場抽籤）----
+  // 全日推演實證兩缺陷：C1 未完賽用 0 勝席次序捏造入座、C2 人工裁定被席次 fallback 覆蓋。
+  // 鐵則：playM 只吃（輪名, 場次編號），參賽隊伍一律由雲端 8_發布 場次列解析；
+  // playM 第一參數若不是字串字面值＝把結構席次餵回去了，直接紅燈。
+  {
+    for(const m of bracketTxt.matchAll(/playM\(\s*([^)\s,]+)/g)){
+      if(bracketTxt.slice(Math.max(0,m.index-9),m.index)==='function ')continue; // 定義行
+      if(!/^['"`]/.test(m[1]))
+        bad.push(`bracket-tree.html playM 第一參數不是輪名字串（結構推導入座回歸）：playM(${m[1]}…`);
+    }
+    if(/makePool|poolFromTD|tdTiers\(|const (?:RR|TRI)_PAIRS=/.test(bracketTxt))
+      bad.push('bracket-tree.html 殘留結構配對來源（makePool／poolFromTD／tdTiers／RR_PAIRS／TRI_PAIRS）——若加回同名常數，離線工具 bracket.js 會靜默改以 HTML 為準');
+    if(!/function rrMembers\(/.test(bracketTxt))
+      bad.push('bracket-tree.html 循環組成員未由雲端場次聯集取得（rrMembers 不存在）');
+    if(!/待定（抽籤後公布）/.test(bracketTxt))
+      bad.push('bracket-tree.html 缺少「待定（抽籤後公布）」空席文案（初賽）');
+    if(!/待定（晉級後公布）/.test(bracketTxt))
+      bad.push('bracket-tree.html 缺少「待定（晉級後公布）」空席文案（複賽以後輪次）');
+    // 只驗「兩種文案都存在」擋不住分流被壓平（三處硬字串會讓存在性檢查照樣過關）——
+    // 直接釘 TBD_DRAW 的分流形狀：初賽＝抽籤、其餘輪次＝晉級。
+    if(!/round===['"]初賽['"]\s*\)\s*\?\s*['"]待定（抽籤後公布）['"]\s*:\s*['"]待定（晉級後公布）['"]/.test(bracketTxt))
+      bad.push('bracket-tree.html TBD_DRAW 空席文案分流失效（初賽＝抽籤後公布／其餘輪次＝晉級後公布）');
+  }
 
   // ---- 力場排行球團明細：tier/tierName/w/l 從未回填，明細視窗永遠顯示賽前假資料 ----
   const afrTxt=fs.readFileSync(path.join(DIR,'at-field-ranking.html'),'utf8');
