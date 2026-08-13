@@ -58,13 +58,25 @@ function safeLiteral(text) {
   return new Function(`return (${stripped});`)();
 }
 
+// 官方公告圖的循環配對順序（場次編號遞增；五角第一輪 (1,2)(3,4)…）。
+// 2026-08-12 bracket-tree 雲端化改版後，網站不再結構推導配對，HTML 已
+// 刪除這兩個常數；但離線工具（fullPlan／scenario-engine／offline-sim）
+// 仍需「官方表定配對順序」這個賽程事實，故由本地常數承接——內容與
+// 刪除前的 bracket-tree 常數逐字相同。HTML 若仍有同名常數則以 HTML 為準。
+const OFFICIAL_RR_PAIRS = Object.freeze([[0, 1], [2, 3], [1, 4], [0, 3], [2, 4], [1, 3], [0, 4], [1, 2], [0, 2], [3, 4]]);
+const OFFICIAL_TRI_PAIRS = Object.freeze([[0, 1], [1, 2], [0, 2]]);
+
 function loadTopology(htmlPath) {
   const file = htmlPath || path.join(__dirname, '..', 'bracket-tree.html');
   const source = fs.readFileSync(file, 'utf8');
   const topology = {
     MNO: safeLiteral(extractObjectLiteral(source, 'const MNO=')),
-    RR_PAIRS: safeLiteral(extractObjectLiteral(source, 'const RR_PAIRS=')),
-    TRI_PAIRS: safeLiteral(extractObjectLiteral(source, 'const TRI_PAIRS='))
+    RR_PAIRS: source.includes('const RR_PAIRS=')
+      ? safeLiteral(extractObjectLiteral(source, 'const RR_PAIRS='))
+      : OFFICIAL_RR_PAIRS.map((pair) => [...pair]),
+    TRI_PAIRS: source.includes('const TRI_PAIRS=')
+      ? safeLiteral(extractObjectLiteral(source, 'const TRI_PAIRS='))
+      : OFFICIAL_TRI_PAIRS.map((pair) => [...pair])
   };
   assertTopology(topology);
   return topology;
@@ -141,10 +153,14 @@ function rankGroup(teams, matches) {
 }
 
 // ── 種子序 ────────────────────────────────────────────────────
-// 白金＝各組第 1、黃金＝各組第 2（休閒同理），因此同一級別內只有兩種組內排名。
-// 直接照編號排會讓第一輪變成「第 1 名互打、第 2 名互打」，所以交錯成
-// 1st,2nd,1st,2nd…，配對 seeds[2i] vs seeds[2i+1] 就是第 1 名對第 2 名。
-// 這是模擬用的假抽籤，不代表現場實際籤運。
+// ⚠️ DEPRECATED（2026-08-12 團長定案 #4）：本函式是模擬時代的「假抽籤」
+// （名次分層、層內名冊編號排序、跨組交錯配對），與網站實際入座行為
+// （poolFromTD：各組第 1、2 名依組序展開、初賽＝同組冠亞重賽）不一致，
+// finalrun 對帳實測 132 場入座全錯位。入座推導一律改走 site-engine.js
+// （bracket-tree.html 原始碼直跑）。本函式僅為既有測試相容而保留，
+// 不得再用於任何入座推導。另：正式賽日初賽配對＝現場抽籤（2026-08-12
+// 定案），任何工具都不得假設可預測配對。
+// （原註解：白金＝各組第 1、黃金＝各組第 2，交錯成 1st,2nd,1st,2nd…）
 function seedsFor(tierKey, qualRows) {
   const meta = TIER_META[tierKey];
   const mine = qualRows.filter((r) => r.tier === meta.qualTier);
@@ -278,5 +294,7 @@ function deriveAll(topology, seedsByTier, results) {
 
 module.exports = {
   TIER_KEYS, TIER_META, loadTopology, assertTopology, knockoutNumbers,
-  rankGroup, seedsFor, deriveTier, deriveAll
+  rankGroup, seedsFor, deriveTier, deriveAll,
+  // 匯出供回歸測試釘住「官方表定配對順序」這個賽程事實（site-engine.test.js）。
+  OFFICIAL_RR_PAIRS, OFFICIAL_TRI_PAIRS
 };
