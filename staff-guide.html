@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- 內部工作文件：不掛導覽列、不進搜尋結果，靠連結分享給賽務組 -->
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0e1116" media="(prefers-color-scheme:dark)">
+<meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme:light)">
+<meta name="description" content="曜日盃 TWO 賽務組現場操作手冊 — 後端資料庫填寫流程、異常排除、爭議判定">
+<title>曜日盃 TWO ｜後端資料庫 現場操作手冊</title>
+<style>
+  :root{
+    --paper:#f3f5f8; --card:#ffffff; --ink:#151a22; --ink-2:#4a5462; --ink-3:#78838f;
+    --line:#dde3ea; --line-2:#eef2f6;
+    --type:#e3a80c;        /* 你要填的（試算表黃色格） */
+    --type-bg:#fff8e0;
+    --calc:#1f9d63;        /* 公式自動算 */
+    --pre:#2f6fd0;         /* 賽前預填 */
+    --stop:#c2334d;        /* 禁忌／卡關 */
+    --stop-bg:#fdeef1;
+    --plat:#2f7fd8; --gold:#c99a00; --silv:#d63a58; --bron:#199c56;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"PingFang TC","Noto Sans TC","Hiragino Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#0e1116; --card:#161b23; --ink:#e8edf3; --ink-2:#a7b2be; --ink-3:#7c8794;
+      --line:#252c36; --line-2:#1d232b;
+      --type:#ffcf33; --type-bg:#2a2410;
+      --calc:#34e07a; --pre:#5fa2ff;
+      --stop:#ff5f78; --stop-bg:#2b1319;
+      --plat:#4d9fff; --gold:#ffcf33; --silv:#ff4d6a; --bron:#34e07a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0e1116; --card:#161b23; --ink:#e8edf3; --ink-2:#a7b2be; --ink-3:#7c8794;
+    --line:#252c36; --line-2:#1d232b;
+    --type:#ffcf33; --type-bg:#2a2410;
+    --calc:#34e07a; --pre:#5fa2ff;
+    --stop:#ff5f78; --stop-bg:#2b1319;
+    --plat:#4d9fff; --gold:#ffcf33; --silv:#ff4d6a; --bron:#34e07a;
+  }
+  :root[data-theme="light"]{
+    --paper:#f3f5f8; --card:#ffffff; --ink:#151a22; --ink-2:#4a5462; --ink-3:#78838f;
+    --line:#dde3ea; --line-2:#eef2f6;
+    --type:#e3a80c; --type-bg:#fff8e0;
+    --calc:#1f9d63; --pre:#2f6fd0;
+    --stop:#c2334d; --stop-bg:#fdeef1;
+    --plat:#2f7fd8; --gold:#c99a00; --silv:#d63a58; --bron:#199c56;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.75;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:40rem; margin:0 auto; padding:0 16px 72px}
+
+  /* ── 頁首 ── */
+  header{padding:30px 0 18px; border-bottom:2px solid var(--ink)}
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.18em;
+    color:var(--ink-3); text-transform:uppercase;
+  }
+  h1{font-size:26px; line-height:1.35; margin:6px 0 8px; letter-spacing:-.01em; text-wrap:balance}
+  .sub{color:var(--ink-2); font-size:14px; margin:0}
+
+  /* ── 快速跳轉 ── */
+  nav{
+    position:sticky; top:0; z-index:20; background:var(--paper);
+    padding:10px 0; margin:0 -16px; padding-left:16px; padding-right:16px;
+    border-bottom:1px solid var(--line); overflow-x:auto; white-space:nowrap;
+    -webkit-overflow-scrolling:touch;
+  }
+  nav a{
+    display:inline-block; font-family:var(--mono); font-size:12px; letter-spacing:.04em;
+    color:var(--ink-2); text-decoration:none; padding:5px 11px; margin-right:6px;
+    border:1px solid var(--line); border-radius:999px; background:var(--card);
+  }
+  nav a:focus-visible{outline:2px solid var(--type); outline-offset:2px}
+
+  section{margin-top:34px; scroll-margin-top:60px}
+  h2{
+    font-size:19px; margin:0 0 4px; letter-spacing:-.005em;
+    display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  }
+  h2 .clock{font-family:var(--mono); font-size:12px; color:var(--ink-3); letter-spacing:.06em}
+  h3{font-size:15px; margin:22px 0 6px}
+  p{margin:8px 0}
+  strong{font-weight:700}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:15px 16px; margin-top:12px;
+  }
+
+  /* 最重要那件事 */
+  .alarm{
+    border:2px solid var(--stop); background:var(--stop-bg);
+    border-radius:10px; padding:16px; margin-top:16px;
+  }
+  .alarm .tag{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    color:var(--stop); font-weight:700;
+  }
+  .alarm h2{margin:4px 0 6px; font-size:18px}
+
+  /* 色票規則 */
+  .keys{display:grid; gap:8px; margin-top:12px}
+  .key{
+    display:grid; grid-template-columns:16px 1fr; gap:11px; align-items:start;
+    background:var(--card); border:1px solid var(--line); border-radius:8px; padding:11px 13px;
+  }
+  .sw{width:16px; height:16px; border-radius:4px; margin-top:5px}
+  .key b{display:block; font-size:15px}
+  .key span{color:var(--ink-2); font-size:13.5px; line-height:1.6}
+
+  /* 步驟 */
+  ol.steps{margin:10px 0 0; padding-left:0; list-style:none; counter-reset:s}
+  ol.steps>li{
+    counter-increment:s; position:relative; padding-left:34px; margin-bottom:11px;
+  }
+  ol.steps>li::before{
+    content:counter(s,decimal-leading-zero);
+    position:absolute; left:0; top:2px; font-family:var(--mono); font-size:12px;
+    color:var(--type); font-weight:700; letter-spacing:.04em;
+  }
+  ul.plain{margin:8px 0; padding-left:19px}
+  ul.plain li{margin-bottom:5px}
+
+  /* 表 */
+  .scroll{overflow-x:auto; -webkit-overflow-scrolling:touch; margin-top:12px}
+  table{border-collapse:collapse; width:100%; font-size:14px; min-width:min(100%,420px)}
+  th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line-2); vertical-align:top}
+  th{
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--ink-3);
+    text-transform:uppercase; border-bottom:1px solid var(--line); font-weight:600;
+  }
+  td:first-child{font-weight:600}
+  tbody tr:last-child td{border-bottom:none}
+
+  code,.cell{
+    font-family:var(--mono); font-size:13px; background:var(--line-2);
+    padding:1px 5px; border-radius:4px; color:var(--ink);
+  }
+  .cell.y{background:var(--type-bg); color:var(--type); font-weight:700}
+
+  .tier{font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.05em}
+  .t-p{color:var(--plat)} .t-g{color:var(--gold)} .t-s{color:var(--silv)} .t-b{color:var(--bron)}
+
+  .note{
+    border-left:3px solid var(--type); padding:2px 0 2px 13px; margin:13px 0;
+    color:var(--ink-2); font-size:14.5px;
+  }
+  .note b{color:var(--ink)}
+
+  .ban{display:grid; gap:7px; margin-top:12px}
+  .ban div{
+    display:grid; grid-template-columns:20px 1fr; gap:9px; align-items:start;
+    font-size:14.5px; color:var(--ink);
+  }
+  .ban span{color:var(--stop); font-weight:700; font-family:var(--mono); text-align:center}
+
+  .status{
+    display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;
+    font-family:var(--mono); font-size:12px;
+  }
+  .status i{
+    font-style:normal; border:1px solid var(--line); border-radius:999px;
+    padding:4px 10px; color:var(--ink-2); background:var(--card);
+  }
+  .status i b{color:var(--calc)}
+
+  footer{
+    margin-top:44px; padding-top:16px; border-top:1px solid var(--line);
+    color:var(--ink-3); font-size:12.5px; font-family:var(--mono); line-height:1.9;
+  }
+  a{color:inherit}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">SOLAR CUP TWO · 2026.08.15</div>
+  <h1>後端資料庫 現場操作手冊</h1>
+  <p class="sub">賽務組・記分人員｜大安運動中心 10 面場地・310 場</p>
+</header>
+
+<nav aria-label="快速跳轉">
+  <a href="#one">最要緊的事</a>
+  <a href="#color">顏色規則</a>
+  <a href="#am">上午 資格賽</a>
+  <a href="#noon">中午 抽籤</a>
+  <a href="#pm">下午 淘汰賽</a>
+  <a href="#judge">爭議判定</a>
+  <a href="#stuck">卡住了</a>
+  <a href="#ban">禁忌</a>
+</nav>
+
+<section id="one">
+  <div class="alarm">
+    <div class="tag">今天唯一會讓公開頁停住的事</div>
+    <h2>每一輪的隊名，都要人工填</h2>
+    <p style="margin:0">準決賽打完，決賽那一列<strong>不會</strong>自己出現勝方隊名。系統只記錄、不遞補。你不填，全場手機上的決勝樹就會停在「待定」，冠軍不會加冕。</p>
+    <p style="margin:8px 0 0">下午總共要填 <strong>264 格</strong>隊名。<strong>每打完一輪就立刻填下一輪</strong>，不要留到最後。</p>
+  </div>
+  <div class="note"><b>開場前先指定一個人專門認領這件事。</b>可以跟填分數的是同一位，但要有人明確扛下來，否則沒人會覺得那是自己的工作。</div>
+</section>
+
+<section id="color">
+  <h2>顏色規則<span class="clock">記住這個就不會出錯</span></h2>
+  <p>整份試算表只有一條規則：<strong>你只填黃色格子。</strong></p>
+  <div class="keys">
+    <div class="key"><span class="sw" style="background:var(--type)"></span><div><b>黃色 · 你要填</b><span>比賽分數、淘汰賽隊名、覆蓋欄。全天的工作就是這些格子。</span></div></div>
+    <div class="key"><span class="sw" style="background:var(--calc)"></span><div><b>綠色 · 公式自動算</b><span>勝方、名次、得失分率、分級、積分。碰了會壞，而且不會有警告。</span></div></div>
+    <div class="key"><span class="sw" style="background:var(--pre)"></span><div><b>藍色 · 賽前預填</b><span>場次編號、時間、場地、資格賽隊伍。照著看就好。</span></div></div>
+  </div>
+  <p style="margin-top:14px">填一筆分數，系統會自己往下跑：判勝方 → 算組內名次 → 分白金／黃金／白銀／青銅 → 更新隊伍總分與球團排名 → <strong>45 秒內</strong>同步到全場選手的手機。</p>
+</section>
+
+<section id="am">
+  <h2>上午 · 資格賽<span class="clock">08:40 – 12:35 ｜ 150 場</span></h2>
+  <p>分頁：<code>2_資格賽成績</code>。隊伍早就預填好，<strong>只填分數</strong>。</p>
+  <ol class="steps">
+    <li>拿成績單先看<strong>場次編號</strong>（1–150，唯一不重複）。別用「競資-A」找，那個代號每組會重複 6 場。</li>
+    <li>找到該列，填 <span class="cell y">分A</span> <span class="cell y">分B</span> 兩格。核對隊名跟成績單一致。</li>
+    <li>「狀態」欄自動變成<strong>已完賽</strong>＝成功。</li>
+    <li>分數照實填。21:15 就填 21:15，deuce 打到 23:21 也照填。</li>
+  </ol>
+  <div class="note"><b>棄賽填 0:21。</b>不要填 0:0 佔位——21 分制沒有平手，系統一律當成還沒打完。要留白就兩格都留白。</div>
+
+  <h3>12:35 前務必做這件事</h3>
+  <p>打開 <code>3_資格賽積分榜</code>，掃一遍「晉級」欄有沒有出現 <strong>「—」</strong>。</p>
+  <p>那代表該組還有場次沒填分數。<strong>一組漏一場，那組四隊全部拿不到分級</strong>，下午的下拉選單就選不到她們，等於進不了淘汰賽。有「—」就立刻回 <code>2_資格賽成績</code> 篩「未賽」把漏掉的補上。</p>
+</section>
+
+<section id="noon">
+  <h2>中午 · 分級與抽籤<span class="clock">12:35 – 13:05 ｜ 全天最緊的 30 分鐘</span></h2>
+  <p>資格賽跑完，四個級別自動產生：<span class="tier t-p">白金 20</span>　<span class="tier t-g">黃金 20</span>　<span class="tier t-s">白銀 30</span>　<span class="tier t-b">青銅 30</span></p>
+  <ol class="steps">
+    <li>確認該級別隊數到齊（積分榜「晉級」欄沒有「—」）。</li>
+    <li><strong>現場抽籤</strong>決定初賽誰對誰。官方賽程表的初賽席位本來就是空白的，這是正式規則。</li>
+    <li>抽籤結果填進 <code>4_淘汰賽成績</code> 對應初賽列的 <span class="cell y">隊A隊名</span> <span class="cell y">隊B隊名</span>，<strong>一律用下拉選</strong>。</li>
+  </ol>
+  <div class="note"><b>下拉只會出現該級別的隊伍。</b>白金列只列白金隊、黃金列只列黃金隊。選錯級別會被直接擋下。<br>分級還沒完成時下拉是空的——那代表「還不能填」，不是壞掉。</div>
+  <div class="note"><b>省時間的做法：</b>60 張隊名籤賽前先印好。12:50 到現場只做「按分級分兩桶、抽」，不要現場寫。</div>
+</section>
+
+<section id="pm">
+  <h2>下午 · 淘汰賽<span class="clock">12:50 – 17:20 ｜ 132 場</span></h2>
+  <p>分頁：<code>4_淘汰賽成績</code>。這裡<strong>隊名和分數都要填</strong>。</p>
+
+  <h3>每輪的固定動作</h3>
+  <ol class="steps">
+    <li>比賽結束 → 填 <span class="cell y">分A</span> <span class="cell y">分B</span>。</li>
+    <li><strong>立刻</strong>把晉級隊名填進下一輪那一列。</li>
+    <li>看一眼公開頁有沒有跟上（45 秒內）。</li>
+  </ol>
+
+  <h3>下一輪的隊名從哪來</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>輪次</th><th>隊名來源</th></tr></thead>
+      <tbody>
+        <tr><td>複賽</td><td>初賽勝方</td></tr>
+        <tr><td>8 強<br><span style="font-weight:400;color:var(--ink-3);font-size:13px">僅白銀／青銅</span></td><td>複賽晉級隊</td></tr>
+        <tr><td>準決賽</td><td>循環組前二／8 強勝方<br><strong>配對＝現場抽籤決定</strong></td></tr>
+        <tr><td>決賽</td><td>準決賽勝方</td></tr>
+        <tr><td>季軍賽</td><td>準決賽敗方（或現場裁定）</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>準決賽配對是抽籤，不是交叉制。</b>四隊確定的當下立刻抽、立刻填。競技組約 16:20、休閒組約 16:50，兩邊會擠在一起。</div>
+  <div class="note"><b>下拉會列出該級別全部隊伍</b>（不會只留還沒淘汰的），所以「填哪一隊」還是要照場上結果判斷。系統只擋跨級別填錯。</div>
+
+  <h3>17:20 頒獎 · 零緩衝</h3>
+  <p>最後 8 場結束就是頒獎時間，而<strong>球團總冠軍要等白金／黃金最後 4 場入帳</strong>才算得出來。派人守著決賽與季殿那幾列，哨音一響立刻填。主持可以先頒 17:05 已完賽的白銀／青銅個人獎爭取時間。</p>
+</section>
+
+<section id="judge">
+  <h2>爭議與特殊狀況</h2>
+
+  <h3>看到「⚠ 並列待判定」</h3>
+  <p>勝場、得失分率兩層都一樣，而且卡在晉級分界線上。<strong>系統不會替你決定。</strong>照官網秩序冊的順序處理：</p>
+  <ol class="steps">
+    <li>得失分率（系統已經比過，就是因為這層也相同才會標並列）</li>
+    <li><strong>兩隊對戰勝負</strong>——直接看她們那場誰贏</li>
+    <li>三隊以上互咬、對戰也繞圈 → <strong>抽籤</strong>（或競賽組裁定）</li>
+  </ol>
+  <p>判完直接把隊名填進下一輪那一列，公開頁以你填的為準，不會被系統推算覆蓋。建議在備註欄記一句判定依據。</p>
+
+  <h3>填錯了</h3>
+  <p>直接改成正確數字就好。全系統即時重算，不用刪列、不用回報。兩個網站 45 秒內自動跟上。</p>
+
+  <h3>下拉擋住你要填的隊名</h3>
+  <p>先到 <code>1_隊伍名冊</code> D 欄把正確隊名補上或修正，再回來填。<strong>不要為了趕時間去關掉資料驗證</strong>——關掉之後打錯就完全沒有提示了。遇到這種狀況先找賽務組長。</p>
+
+  <h3>需要推翻系統的判定</h3>
+  <p><code>6_積分總表</code> 有兩欄黃色覆蓋欄。填了就立刻取代公式結果，總分與球團積分全部跟著變；清空就回到公式。這是競賽組的最終裁定權。</p>
+</section>
+
+<section id="stuck">
+  <h2>卡住了 · 對照表</h2>
+  <p>戰情看板每 45 秒抓一次資料，它就是你的即時對帳機。</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>畫面上看到</th><th>原因與解法</th></tr></thead>
+      <tbody>
+        <tr><td>待定（抽籤後公布）</td><td>該<strong>初賽</strong>場次還沒填隊名 → 抽籤結果填進去</td></tr>
+        <tr><td>待定（晉級後公布）</td><td>該<strong>複賽以後</strong>場次還沒填隊名 → <strong>系統不會自動遞補</strong>，人工填</td></tr>
+        <tr><td>上一輪打完了<br>下一輪還是待定</td><td>最常見的卡關：忘了填下一輪隊名 → 立刻補</td></tr>
+        <tr><td>填了分數<br>看板沒亮</td><td>填錯列 → 用場次編號重新核對</td></tr>
+        <tr><td>隊名灰灰的<br>沒有球團色</td><td>隊名與名冊不一致（多半是空格或錯字）→ 改用下拉重選</td></tr>
+        <tr><td>編號欄顯示「查無」</td><td>同上，隊名是手打且打錯 → 下拉重選</td></tr>
+        <tr><td>比分左右顛倒</td><td>分A分B填反 → 兩格數字對調</td></tr>
+        <tr><td>力場排行全部 0<br>名次「—」</td><td><strong>正常</strong>。淘汰賽第一場分數填進去才會啟動</td></tr>
+        <tr><td>得失分率顯示「—」</td><td><strong>正常</strong>。還沒打過，或該隊打出 21:0（失分 0 算不出比率）</td></tr>
+        <tr><td>更新時間不動</td><td>重新整理頁面；確認試算表共用設定沒被改掉</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note"><b>疑難雜症的終點站：</b>打開 <code>8_發布_戰情看板</code> 找那一列。<b>這頁有什麼，網站 45 秒內就顯示什麼。</b>這頁不對＝上游填錯；這頁對但網站不對＝重新整理再等一輪。</div>
+
+  <h3>四強之後分數會「凍住」</h3>
+  <p>四強產生到冠亞、季殿填完之間，那四隊的名次分固定在 <strong>40</strong>，力場排行會標「進入四強戰 · 待結算」。這是刻意的——不凍結的話那段期間分數會掉到 0、排名亂跳。冠亞與季殿比分一填，就一次跳到 100／80／60／60。<strong>賽務不用做任何事。</strong></p>
+</section>
+
+<section id="ban">
+  <h2>五個絕對不要</h2>
+  <div class="ban">
+    <div><span>✕</span><div>不改綠色、藍色格子</div></div>
+    <div><span>✕</span><div>不刪除、不插入整列，<strong>不使用排序功能</strong></div></div>
+    <div><span>✕</span><div>不動 <code>8_發布_戰情看板</code></div></div>
+    <div><span>✕</span><div>不用 Apple Numbers 開這份檔案再儲存（會毀掉下拉選單與公式）</div></div>
+    <div><span>✕</span><div>淘汰賽隊名不要手打，也不要整塊貼上——<strong>貼上會蓋掉防呆</strong></div></div>
+  </div>
+</section>
+
+<section id="ok">
+  <h2>系統目前狀態</h2>
+  <div class="status">
+    <i>分數已清空 <b>✓</b></i>
+    <i>LIVE 開關 <b>1 · 正式</b></i>
+    <i>測試橫幅 <b>已移除</b></i>
+    <i>隊名分級鎖 <b>264 格</b></i>
+    <i>分數範圍檢查 <b>620 格</b></i>
+  </div>
+  <p style="margin-top:12px">兩個公開網站都顯示「尚未開賽」，等你填第一筆分數。<strong>開機程序已經做完，早上不用再做任何設定。</strong></p>
+  <div class="note"><b>開賽後第一件事：</b>填完第一場分數，拿一支手機開戰情看板確認 45 秒內有亮。亮了就代表從試算表到全場手機這整條線是通的。</div>
+</section>
+
+<section id="sos">
+  <h2>求救</h2>
+  <ul class="plain">
+    <li>公式怪怪的、系統規則問題 → 回報<strong>團長</strong></li>
+    <li>判決爭議 → 競賽組組長裁定後，用覆蓋欄定案</li>
+    <li>試算表當掉 → 紙本成績單照記，恢復後補登。<strong>場次編號是唯一鑰匙</strong>，照編號補就對</li>
+  </ul>
+</section>
+
+<footer>
+  積分規則唯一依據：曜日盃TWO_積分制度_正式定案 v2.7<br>
+  賽制條文（局數／DEUCE／同分判定）以官網秩序冊為準<br>
+  手冊版本 2026-08-15
+</footer>
+
+</div>
+</body>
+</html>
