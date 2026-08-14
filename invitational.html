@@ -221,6 +221,9 @@
 </script>
 <script>
 (function(){
+  // 得失分率顯示一律走資料層的唯一實作：999 是「失分為 0／尚未開打」的內部哨兵值
+  // （21：0 與棄賽 0：21 的勝方都會撞到），不能印成 999.00 給球友看。
+  const fmtRT=(v,d)=>(window.SolarCupData&&SolarCupData.fmtRatio)?SolarCupData.fmtRatio(v,d):'—';
   // ---- 曜請 8 隊（受邀外部隊伍｜名單已與雲端 1_隊伍名冊 核對一致）----
   const TEAMS=[
     {id:0,label:'雷熊嗷嗷2',c:'#ffc24b',p:['熊','雷']},{id:1,label:'羽球次等生',c:'#ff8a3c',p:['康恩','恩尼']},
@@ -325,12 +328,15 @@
   const standEl=document.getElementById('stand');
   function drawStand(){
     const allDone=MATCHES.every(m=>m.done);
+    // 一場都還沒打完時八隊全部 0 勝、得失分率全是哨兵值 999，rankGroup 只能維持原始順序＝
+    // 後端的「八隊並列第 1」。這時候排出 1–8 名是憑空生出來的名次，一律顯示「—」。
+    const played=MATCHES.some(m=>m.done);
     const {rank}=calc();
     const medals=['🥇','🥈','🥉'];
     standEl.innerHTML=rank.map((t,i)=>{
       const cls=i===0?'p1':i===1?'p2':i===2?'p3':'';
-      const ratio=t._r!=null&&t._r<90?('總得失分率 '+t._r.toFixed(2)):'';
-      return `<div class="row ${cls}"><span class="rk">${i+1}</span><span class="medal">${i<3&&allDone?medals[i]:''}</span>
+      const ratio='總得失分率 '+fmtRT(t._r,2);
+      return `<div class="row ${cls}"><span class="rk">${played?i+1:'—'}</span><span class="medal">${i<3&&allDone?medals[i]:''}</span>
         <span class="nm" style="color:${t.c}">${t.label}</span>
         <span class="wl">${t.w} 勝 ${t.l} 敗</span><span class="rt">${ratio}</span></div>`;
     }).join('');
@@ -372,6 +378,7 @@
     curRec=i;
     const t=TEAMS[i],{rank}=calc();
     const allDone=MATCHES.every(m=>m.done);
+    const played=MATCHES.some(m=>m.done);   // 0 場完賽時的 pos 只是原始席次，不是名次
     const me=rank.find(x=>x.id===i),pos=rank.indexOf(me)+1;
     rcard.style.setProperty('--rc',t.c);rcard.style.setProperty('--rg','color-mix(in srgb,'+t.c+' 30%,transparent)');
     // 該隊 7 場(按輪序)
@@ -387,7 +394,8 @@
     const medals=['🥇 冠軍','🥈 亞軍','🥉 季軍'];
     const foot=allDone
       ?(pos<=3?`最終名次：<b>${medals[pos-1]}</b> · ${me.w} 勝 ${me.l} 敗`:`最終名次：<b>第 ${pos} 名</b> · ${me.w} 勝 ${me.l} 敗`)
-      :`目前排名：<b>第 ${pos} 名</b> · 已賽 ${me.w+me.l} / 7 場 · 賽果陸續更新`;
+      :(played?`目前排名：<b>第 ${pos} 名</b> · 已賽 ${me.w+me.l} / 7 場 · 賽果陸續更新`
+              :`尚未開賽 · 全循環 7 場待賽`);
     rcard.innerHTML=`<div class="wm" id="rwm" style="opacity:.22">${octoEmb(t.c)}</div>
       <span class="rx" id="rx">✕</span><div class="rin">
       <div class="rhead"><div class="emb">${octoEmb(t.c)}</div>
@@ -397,7 +405,7 @@
       <div class="rstats">
         <div class="c"><div class="v">${me.w}</div><div class="k">勝</div></div>
         <div class="c"><div class="v">${me.l}</div><div class="k">敗</div></div>
-        <div class="c"><div class="v">${pos}</div><div class="k">${allDone?'最終名次':'目前排名'}</div></div></div>
+        <div class="c"><div class="v">${played?pos:'—'}</div><div class="k">${allDone?'最終名次':'目前排名'}</div></div></div>
       <div class="rlog"><div class="lh">對戰紀錄 · MATCH LOG</div>${logs}</div>
       <div class="rfoot">${foot}</div>
       <div class="rop"><span>背景徽記濃度</span><input type="range" id="rwmR" min="0" max="100" value="22"><span class="pv" id="rwmV">22%</span></div></div>`;

@@ -301,6 +301,15 @@
   const PAD=n=>String(n).padStart(2,'0');
   function toMin(t){const p=String(t).split(':');return (+p[0])*60+(+p[1]);}
   function minHHMM(m){return PAD(Math.floor(m/60))+':'+PAD(m%60);}
+  // 「現在戰況」標題列的時間：nowMin() 算不出時間時回 -1（非賽事日／尚無比分／時區 API 失效），
+  // 直接餵給 minHHMM 會印出「-1:-1」。算不出來就不印時間——
+  // 賽前（還沒有任何比分）補一句中性的「尚未開賽」，其餘情況只留標題本身。
+  // 清單模式與單場地模式共用這一支，不得各寫一套。
+  function nowFocusTitle(){
+    const m=nowMin();
+    if(m>=0)return '現在戰況 · '+minHHMM(m);
+    return LIVE?'現在戰況':'現在戰況 · 尚未開賽';
+  }
   function isDone(m){return !!(results[m.n]&&results[m.n].done);}
   let LIVE=false;
   const EVENT_DATE='2026-08-15';                                  // 賽事日（台北時間）
@@ -417,6 +426,10 @@
     // 不得靠「frontier=-1 時第一場即亮紅」的邏輯誤判成已經開打。
     if(!Object.keys(results||{}).length)return;
     const nm=nowMin();
+    // 燈號只點在「已經知道是誰打」的場次上：淘汰賽抽籤前雲端還沒填隊名，格子寫「待分流」，
+    // 亮紅燈等於叫一支還不存在的隊伍就位（資格賽全完賽後十面場地會整排誤亮）。
+    // 刻意不用 isEventDay() 擋——那會讓賽事當天的即時就位提醒整組失效。
+    const named=m=>!!(m&&m._t&&m._t[0]&&m._t[1]);
     for(let c=1;c<=SC.courts;c++){
       const ms=byCourt[c]||[];
       // frontier＝該場地最後一場已填分的（不是最早未完賽的）。
@@ -425,15 +438,15 @@
       // 進行中＝frontier 的下一場。不看時鐘：前一場分數一填，下一場立刻亮紅提醒就位。
       // 場地還沒有任何分數時 frontier=-1 → 第一場就亮紅（賽事開始即提醒）。
       const pi=frontier+1;
-      const hasPlaying=pi<ms.length&&!isDone(ms[pi]);
+      const hasPlaying=pi<ms.length&&!isDone(ms[pi])&&named(ms[pi]);
       if(hasPlaying)PLAYING.add(ms[pi].n);
       // 準備上場＝再下一場（下下場）
       const ri=frontier+2;
-      if(ri<ms.length&&!isDone(ms[ri]))READY.add(ms[ri].n);
+      if(ri<ms.length&&!isDone(ms[ri])&&named(ms[ri]))READY.add(ms[ri].n);
       // 時間觸發（防輸入遲延）：進行中那場依賽程已開打滿 10 分卻還沒填分，
       // 代表分數回報落後了，把再下一未完賽場也補亮準備。
       if(hasPlaying&&nm>=0&&nm>=toMin(ms[pi].s)+10){
-        for(let j=pi+1;j<ms.length;j++){if(!isDone(ms[j])){READY.add(ms[j].n);break;}}
+        for(let j=pi+1;j<ms.length;j++){if(!isDone(ms[j])){if(named(ms[j]))READY.add(ms[j].n);break;}}
       }
     }
   }
@@ -450,7 +463,7 @@
     el.style.display='block';
     const get=set=>[...set].map(n=>SC.matches.find(m=>m.n===n)).filter(m=>m&&visible(m)).sort((a,b)=>a.ct-b.ct);
     const playing=get(PLAYING), ready=get(READY);
-    let h='<div class="nf-h"><span class="d"></span>現在戰況 · '+minHHMM(nowMin())+'</div><div class="nf-grid">';
+    let h='<div class="nf-h"><span class="d"></span>'+nowFocusTitle()+'</div><div class="nf-grid">';
     if(!playing.length&&!ready.length)h+='<div class="nf-empty">目前無進行中場次</div>';
     playing.forEach(m=>h+=nfItem(m,'play'));ready.forEach(m=>h+=nfItem(m,'rdy'));
     h+='</div>';el.innerHTML=h;

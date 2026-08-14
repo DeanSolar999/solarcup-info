@@ -430,6 +430,9 @@ if(!window.SolarCupData){
   const D=window.SolarCupData;if(!D){document.body.innerHTML='<p style="color:#fff;padding:40px">資料層 tournament-data.js 未載入</p>';return;}
   const TD=D.buildTournament();
   const embMini=D.embMini,embChip=D.embChip,TIER_META=D.TIER_META;
+  // 得失分率顯示一律走資料層的唯一實作：999 是「失分為 0／尚未開打」的內部哨兵值
+  // （21：0 與棄賽 0：21 的勝方都會撞到），不能印成 999.00 給球友看。
+  const fmtRT=(v,d)=>D.fmtRatio?D.fmtRatio(v,d):'—';
 
   // ---- 小四角節點（組網格用）----
   function quadMini(group){
@@ -698,7 +701,7 @@ if(!window.SolarCupData){
           <text x="${v.x.toFixed(1)}" y="${(labY+9).toFixed(1)}" text-anchor="middle" font-family="Share Tech Mono" font-size="7.5" fill="${c}">${t.w}勝 ${t.l}敗</text></g></g>`;
     });
     const stand=g.rank.map((t,i)=>{const up=i<2,c=t.club.c,tierM=up?upM:dnM;
-      const ratio=t._ratio!=null&&t._ratio<90?('得失分率 '+t._ratio.toFixed(2)):'';
+      const ratio='得失分率 '+fmtRT(t._ratio,2);
       return `<div class="srow ${up?'up':'dn'}"><span class="rk">${i+1}</span>
         <span class="rchip">${embChip(t.club)}</span><span class="rnm">${t.label}</span>
         <span class="rwl">${t.w}勝 ${t.l}敗</span><span class="rrt">${ratio}</span>

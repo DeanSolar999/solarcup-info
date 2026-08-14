@@ -507,6 +507,10 @@
     return `<svg viewBox="0 0 200 200" class="chipsvg"><circle cx="100" cy="100" r="86" fill="rgba(3,6,13,.6)" stroke="${club.c}" stroke-width="6"/>${embMini(club.key,club.c)}</svg>`;
   }
 
+  // 得失分率顯示一律走資料層的唯一實作：999 是「失分為 0／尚未開打」的內部哨兵值
+  // （21：0 與棄賽 0：21 的勝方都會撞到），不能印成 999.000 給球友看。
+  const fmtRT=(v,d)=>(window.SolarCupData&&SolarCupData.fmtRatio)?SolarCupData.fmtRatio(v,d):'—';
+
   const TIERS=[
     {key:'plat',name:'白金',en:'PLATINUM',badge:'badge-p',col:'#4d9fff',glow:'rgba(77,159,255,.45)',type:'comp',kind:'競技',cr:'C'},
     {key:'gold',name:'黃金',en:'GOLD',badge:'badge-g',col:'#ffcf33',glow:'rgba(255,207,51,.45)',type:'comp',kind:'競技',cr:'C'},
@@ -798,20 +802,25 @@
     ?[{t:'初賽單淘汰',th:1},{t:'五角複賽',cyc:1,th:1},{t:'準決賽',th:2},{t:'決賽',fin:1,th:3}]
     :[{t:'初賽單淘汰',th:1},{t:'複賽混合',cyc:1,th:1},{t:'8 強',th:2},{t:'準決賽',th:3},{t:'決賽',fin:1,th:4}];}
   // 依 progState 亮燈：完成=done(亮階級色)、鋒面=live(呼吸)、prog=4 全亮含 ♛
+  // 亮燈的前提是「該階級淘汰賽真的有場次完賽」——只看資格賽進度或全站總場數會提前亮：
+  // 資格賽 150 場打完、淘汰賽 0 場時 prog 還是 0，舊版會把第一格「初賽」點成 live（呼吸），
+  // 看起來像初賽已經開打。初賽一場都還沒完賽就整條泳道維持未點亮。
   function updateLanes(){
     document.querySelectorAll('.lane').forEach(lane=>{
       const tk=lane.dataset.key,prog=progState[tk],tr=TIERS.find(t=>t.key===tk);
       const mx=progMax(tr.type);
+      const started=doneOf((MNO[tk]||{}).pre||[])>0;   // 該階級初賽實際完賽數
       const stgs=[...lane.querySelectorAll('.stg')],ths=laneStages(tr.type).map(s=>s.th);
       let liveSet=false;
       stgs.forEach((el,i)=>{
         el.classList.remove('done','live','off');
+        if(!started){el.classList.add('off');return;}
         if(prog>=ths[i]){el.classList.add('done');}
         else if(!liveSet&&prog<mx){el.classList.add('live');liveSet=true;}
         else{el.classList.add('off');}
       });
       const cr=lane.querySelector('.crown');
-      if(cr){cr.classList.toggle('done',prog>=mx);cr.classList.toggle('dimc',prog<mx);}
+      if(cr){cr.classList.toggle('done',started&&prog>=mx);cr.classList.toggle('dimc',!started||prog<mx);}
     });
   }
   TIERS.forEach(tr=>{
@@ -919,7 +928,7 @@
     const verdict=(i)=>!gPlayed?'—':!gDone?'暫列':(amb[i]?'⚠ 並列待判定':(i<2?'晉級':'止步'));
     const rows=rk.map((r,i)=>`<div class="rrrow ${gDone&&advSet.has(r.t)?'adv':''}" data-tid="${r.t.tid}">
       <span class="rk">${gPlayed?i+1:'—'}</span><span class="nm">${GL}${g.indexOf(r.t)+1}　${r.t.label}</span>
-      <span class="wl">${gPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${gPlayed?r.rt.toFixed(3):'—'}</span>
+      <span class="wl">${gPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${gPlayed?fmtRT(r.rt):'—'}</span>
       <span class="ad">${verdict(i)}</span></div>`)
       .concat(g.filter(t=>t.pending).map(t=>`<div class="rrrow">
         <span class="rk">—</span><span class="nm">${GL}${g.indexOf(t)+1}　待定（晉級後公布）</span>
@@ -1106,7 +1115,7 @@
     const triVerdict=(i)=>!triPlayed?'—':!triDone?'暫列':(triAmb[i]?'⚠ 並列待判定':(i<2?'晉級':'止步'));
     const triStand=d.triRank.map((r,i)=>`<div class="rrrow ${triDone&&i<2&&!triAmb[i]?'adv':''}" data-tid="${r.t.tid}">
       <span class="rk">${triPlayed?i+1:'—'}</span><span class="nm">${r.t.label}</span>
-      <span class="wl">${triPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${triPlayed?r.rt.toFixed(3):'—'}</span>
+      <span class="wl">${triPlayed?r.w+'－'+r.l:'—'}</span><span class="rt">${triPlayed?fmtRT(r.rt):'—'}</span>
       <span class="ad">${triVerdict(i)}</span></div>`)
       .concat(d.tri.filter(t=>t.pending).map(()=>`<div class="rrrow">
         <span class="rk">—</span><span class="nm">待定（晉級後公布）</span>
@@ -1262,7 +1271,7 @@
         const advTxt=!groupDone?'暫列':(pending?'⚠ 並列待判定':(adv?'晉級':'止步'));
         return `<div class="gstand ${adv?'adv':''}${pending?' pending':''}"><span class="grk">${i+1}${pending?'（並列）':''}</span>
           <span class="gchip">${co.key?embChip(co):''}</span><span class="gnm">${t.label}</span>
-          <span class="gwl">${r.w}<i>勝</i> ${r.l}<i>敗</i>　<i>得失分率</i> ${r.rt.toFixed(3)}</span><span class="gadv">${advTxt}</span></div>`;}).join('');
+          <span class="gwl">${r.w}<i>勝</i> ${r.l}<i>敗</i>　<i>得失分率</i> ${fmtRT(r.rt)}</span><span class="gadv">${advTxt}</span></div>`;}).join('');
       if(standEl)standEl.innerHTML=stand;
       // 互動
       const links_=[...gsvg.querySelectorAll('.glink')],labels_=[...gsvg.querySelectorAll('.scoreLbl')],nodes_=[...gsvg.querySelectorAll('.gnode')];

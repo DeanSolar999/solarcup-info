@@ -962,10 +962,13 @@ window.SC2_ART=[["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACq
       render();
     }
     const done=liveData.qualDone||0,total=liveData.qualTotal||150;
-    const txt=`◆ <b style="color:#ffcf33">偵測未啟動</b> ｜ 資格賽進行中 ${done} / ${total}・淘汰賽開打後啟動力場偵測`;
+    // 資格賽全數完賽（8/15 約 12:35–13:05，淘汰賽還沒開打）不能再寫「進行中 150 / 150」，
+    // 那句自相矛盾。措辭與手機版 renderField() 對齊，兩站同一套文案，不得各寫一套。
+    const qualText=(done>=total)?`資格賽 ${total}／${total} 全數完賽`:`資格賽 ${done}／${total}`;
+    const txt=`◆ <b style="color:#ffcf33">偵測未啟動</b> ｜ ${qualText}・淘汰賽開打後全面展開`;
     const sub=document.getElementById('btSub'); if(sub)sub.innerHTML=txt;
     const foot=document.getElementById('demoFooter');
-    if(foot)foot.innerHTML=`◆ <b style="color:#ffcf33">偵測未啟動</b> · 九大球團力場處於「絕」・資格賽 ${done}/${total}`;
+    if(foot)foot.innerHTML=`◆ <b style="color:#ffcf33">偵測未啟動</b> · 九大球團力場處於「絕」・${qualText}`;
   }
 
   // ── 兩段狀態機（2026-08-01 起站上不再有 demo）：待機 → 淘汰賽開打 LIVE ──

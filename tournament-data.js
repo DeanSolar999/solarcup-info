@@ -178,13 +178,25 @@
   //     不一致——同一組人在兩個頁面會看到不同的晉級結果。2 隊並列不影響「都晉級」
   //     這種明確結果，只有並列跨過晉級名額分界線時才真正需要人工判斷，這段由呼叫端
   //     （bracket-tree 的組進程卡）依名額分界線自行判斷是否要擋下自動晉級顯示。
+  // 得失分率哨兵值：失分為 0（打出 21：0，含棄賽 0：21 的勝方）或該隊還沒開打時，
+  // 總得÷總失 算不出來，一律以 999 代表「無限大」，與後端同一套。
+  // ⚠ 它是排序用的內部值，不是可以印在畫面上的數字——任何頁面要顯示得失分率
+  // 一律呼叫 fmtRatio()，全站唯一實作，不得各自寫一套門檻（999／90／isFinite…）。
+  const RATIO_SENTINEL=999;
+  function fmtRatio(v,digits){
+    const d=(digits==null)?3:digits;
+    if(v===null||v===undefined)return '—';
+    const n=Number(v);
+    if(!isFinite(n)||n>=RATIO_SENTINEL)return '—';
+    return n.toFixed(d);
+  }
   function rankGroup(teams,matches){
     const order=new Map();
     teams.forEach((t,i)=>{
       let gf=0,ga=0;
       matches.forEach(m=>{if(!m.done)return;
         if(m.a===t){gf+=m.sa;ga+=m.sb;}else if(m.b===t){gf+=m.sb;ga+=m.sa;}});
-      t._ratio=ga>0?Math.min(gf/ga,999):999;t._h2hgf=gf;t._h2hga=ga;t._tied=false;
+      t._ratio=ga>0?Math.min(gf/ga,RATIO_SENTINEL):RATIO_SENTINEL;t._h2hgf=gf;t._h2hga=ga;t._tied=false;
       order.set(t,i);
     });
     const EPS=1e-9;
@@ -340,7 +352,7 @@
   global.SolarCupData={
     CLUB_DATA,CLUB_BY_KEY,NINE,FREE,TIER_META,INVITE_CLUBS,
     ngon,pstr,EMB,embMini,embChip,
-    rankGroup,buildTournament,buildInvitational,buildAllTeams,
+    rankGroup,RATIO_SENTINEL,fmtRatio,buildTournament,buildInvitational,buildAllTeams,
     setLive,hasLive,liveResult,INVITE_SCHEDULE,QUAL_SCHEDULE,GROUP_MAP,
   };
 })(typeof window!=='undefined'?window:this);
