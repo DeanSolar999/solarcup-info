@@ -320,10 +320,17 @@
         <tr><td>力場排行全部 0<br>名次「—」</td><td><strong>正常</strong>。淘汰賽第一場分數填進去才會啟動</td></tr>
         <tr><td>得失分率顯示「—」</td><td><strong>正常</strong>。還沒打過，或該隊打出 21:0（失分 0 算不出比率）</td></tr>
         <tr><td>更新時間不動</td><td>重新整理頁面；確認試算表共用設定沒被改掉</td></tr>
+        <tr><td><strong>選「101」被擋</strong><br><span style="font-weight:400;color:var(--ink-3);font-size:13px">下拉列得出來<br>卻選不進去</span></td><td>純數字隊名的已知狀況，不是你操作錯 → 改用<strong>手打 <span class="cell y">'101</span></strong>（數字前面加一個半形單引號）。見下一段</td></tr>
       </tbody>
     </table>
   </div>
   <div class="note"><b>疑難雜症的終點站：</b>打開 <code>8_發布_戰情看板</code> 找那一列。<b>這頁有什麼，網站 45 秒內就顯示什麼。</b>這頁不對＝上游填錯；這頁對但網站不對＝重新整理再等一輪。</div>
+
+  <h3>「101」這支隊伍要特別處理</h3>
+  <p>隊名「101」是純數字，Google Sheets 會在你點下拉的瞬間把它當成<strong>數字</strong>寫進格子，但名單上存的是<strong>文字</strong>，兩邊對不起來就被擋下。<strong>不是你選錯，也不是她沒晉級。</strong></p>
+  <p><strong>做法：直接在格子裡打 <span class="cell y">'101</span></strong>——101 前面加一個<strong>半形單引號</strong>。那個符號是「請把這格當文字」的記號，<strong>不會變成隊名的一部分</strong>，存進去就是乾淨的 101。</p>
+  <p>還是被擋的話：到 <code>3_資格賽積分榜</code> P 欄找到「101」那格複製，回來按 <strong>Cmd+Shift+V</strong>（只貼值）。</p>
+  <div class="note"><b>101 每晉一輪都要這樣填一次</b>（複賽、8 強、準決賽、決賽或季殿）。填進去之後編號、勝方、樹狀圖、公開看板全部照常，不用回頭修。<br>全部 108 隊只有這一支會這樣，其他隊照常用下拉。</div>
 
   <h3>四強之後分數會「凍住」</h3>
   <p>四強產生到冠亞、季殿填完之間，那四隊的名次分固定在 <strong>40</strong>，力場排行會標「進入四強戰 · 待結算」。這是刻意的——不凍結的話那段期間分數會掉到 0、排名亂跳。冠亞與季殿比分一填，就一次跳到 100／80／60／60。<strong>賽務不用做任何事。</strong></p>
