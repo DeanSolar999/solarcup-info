@@ -234,7 +234,35 @@ const SECTIONS = [
 ];
 
 const STORAGE_KEY = 'sc2_delivery_v2';
-let state = { received:{}, hidden:{}, extras:{} };
+// 2026-08-21 同步團長手機的勾選進度（25/36 已完成）：裝置無 localStorage 紀錄時以此為起點
+const DEFAULT_STATE = {
+  received: {
+    // 火曜延平 08/11
+    abao:true, zihe:true, xiaocao:true, pengpeng:true, oneplus:true, benlin:true,
+    // 水曜二重 08/12
+    lici:true, congcong:true, xiaoluo:true, kaili:true, jimlin:true, xiaoxiang:true,
+    // 木曜大同 08/13
+    abin:true, weixiaokai:true, lion:true,
+    // 土曜興雅 08/15
+    kaiwen:true, hepu:true,
+    // 現場取貨（已提前領取）
+    caizhongxian:true, heng:true, azhang:true, gaga:true, youguaze:true, huangwenwen:true,
+    // 球聚面交
+    wangduoduo:true, kangen:true,
+  },
+  hidden: {
+    tuesday:  { cn:true, luke:true },
+    thursday: { baozi:true },
+    saturday: { kaili:true },
+    spot:     { hepu:true },
+    gather:   { jimlin:true, xiaoxiang:true },
+  },
+  extras: {
+    wednesday: ['kaili','jimlin','xiaoxiang'],
+    saturday:  ['hepu'],
+  },
+};
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 function loadState()  { try { const s = JSON.parse(localStorage.getItem(STORAGE_KEY)); if (s) state = s; } catch(e) {} }
 function saveState()  { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
